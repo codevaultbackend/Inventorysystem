@@ -11,43 +11,6 @@ import { useSuperStockAdmin } from "@/app/context/SuperStockAdminContext";
 export default function Dashboard() {
     const { data, loading, error, refresh } = useSuperStockAdmin();
 
-    const columns = [
-        { key: "branch", label: "Branch Name" },
-        { key: "category", label: "Category" },
-        { key: "hsn", label: "HSN Code" },
-        { key: "current", label: "Current Stock" },
-        { key: "stockIn", label: "Stock IN" },
-        { key: "stockOut", label: "Stock OUT" },
-        { key: "condition", label: "Condition" },
-        { key: "action", label: "Action" },
-    ];
-
-
-    const pieData = [
-        { name: "Current Stock", value: 4800, color: "#2563EB" },
-        { name: "Stock IN", value: 3200, color: "#16A34A" },
-        { name: "Stock OUT", value: 2100, color: "#F59E0B" },
-        { name: "Aging Items", value: 1200, color: "#EF4444" },
-    ];
-
-    const agingData = [
-        { range: "0-30", value: 12000 },
-        { range: "30-60", value: 7000 },
-        { range: "60-90", value: 3000 },
-        { range: "90+", value: 800 },
-    ];
-
-    const movementData = [
-        { month: "Jan", value: 6200 },
-        { month: "Feb", value: 5900 },
-        { month: "Mar", value: 6400 },
-        { month: "Apr", value: 6800 },
-        { month: "May", value: 7200 },
-        { month: "Jun", value: 7600 },
-        { month: "Jul", value: 8000 },
-        { month: "Aug", value: 8300 },
-        { month: "Sep", value: 8500 },
-    ];
 
     /* ================= LOADING ================= */
 
