@@ -16,7 +16,11 @@ export function middleware(req: NextRequest) {
     super_admin: ["/super-admin"],
     admin: ["/admin"],
     hr_admin: ["/hr-admin"],
+
+
     stock_manager: ["/stock-manager"],
+    super_stock_manager: ["/stock-manager"],
+
     sales_manager: ["/sales-manager"],
     purchase_manager: ["/purchase-manager"],
     finance: ["/finance"],
@@ -24,6 +28,7 @@ export function middleware(req: NextRequest) {
 
   const allowedRoutes = roleAccess[role || ""];
 
+  // If role does not exist in mapping
   if (!allowedRoutes) {
     return NextResponse.redirect(new URL("/unauthorized", req.url));
   }

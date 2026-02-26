@@ -56,7 +56,7 @@ const SuperDashboardContext = createContext<ContextType | null>(null);
 /* ================= HELPERS ================= */
 
 const BASE_URL =
-  "https://c42c-2401-4900-8840-ecd4-5df8-9d37-79eb-ef55.ngrok-free.app";
+  "https://e342-2401-4900-8842-575f-fcaf-9cdd-7733-b03e.ngrok-free.app";
 
 const getAuthHeader = () => {
   const token =
@@ -72,7 +72,7 @@ const getAuthHeader = () => {
   };
 };
 
-/* ================= PROVIDER ================= */
+
 
 export function SuperDashboardProvider({
   children,
@@ -88,7 +88,7 @@ export function SuperDashboardProvider({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  /* ================= FETCH DASHBOARD ================= */
+ 
 
   const fetchDashboard = useCallback(async () => {
     try {
@@ -111,7 +111,7 @@ export function SuperDashboardProvider({
     }
   }, []);
 
-  /* ================= FETCH BY LOCATION ================= */
+ 
 
   const fetchByLocation = useCallback(async () => {
     if (!location) return;

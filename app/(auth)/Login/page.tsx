@@ -2,38 +2,33 @@
 
 import { useState } from "react";
 import Exclmationerror from "../../svgIcons/Exclmationerror";
-import axios from "axios";
-import { useRouter } from "next/navigation";
+import { useAuth } from "@/app/context/AuthContext";
 
 export default function Login() {
+  const { login } = useAuth();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
   const [loading, setLoading] = useState(false);
   const [apiError, setApiError] = useState("");
-  const router = useRouter();
 
   const [touched, setTouched] = useState({
     email: false,
     password: false,
   });
 
-  const roleRoutes = {
-    super_admin: "/super-admin",
-    admin: "/admin",
-    hr_admin: "/hr-admin",
-    stock_manager: "/stock-manager",
-    sales_manager: "/sales-manager",
-    purchase_manager: "/purchase-manager",
-    finance: "/finance",
-  };
+  /* ================= VALIDATION ================= */
 
   const emailValid =
     email.length > 0 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
   const passwordValid = password.length >= 6;
 
-  const handleLogin = async (e) => {
+  /* ================= HANDLE LOGIN ================= */
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!emailValid || !passwordValid) return;
@@ -42,30 +37,18 @@ export default function Login() {
     setApiError("");
 
     try {
-      const res = await axios.post(
-        "https://c42c-2401-4900-8840-ecd4-5df8-9d37-79eb-ef55.ngrok-free.app/sql/login",
-        { email, password }
+      await login(email, password);
+      // redirect handled inside AuthContext
+    } catch (err: any) {
+      setApiError(
+        err?.response?.data?.error ||
+          err?.message ||
+          "Login failed"
       );
-
-      if (res.data?.token) {
-        const role = res.data.user.role;
-
-        // ✅ IMPORTANT → set cookies (middleware reads these)
-        document.cookie = `token=${res.data.token}; path=/`;
-        document.cookie = `role=${role}; path=/`;
-
-        const redirectPath = roleRoutes[role];
-        localStorage.setItem('token', res.data?.token)
-
-        router.replace(redirectPath || "/");
-      }
-    } catch (error) {
-      console.error(error)
     } finally {
       setLoading(false);
     }
   };
-
 
   return (
     <section className="relative min-h-screen bg-[#F7F9FB] flex justify-center overflow-hidden">
@@ -147,7 +130,10 @@ export default function Login() {
                 name="password"
                 onChange={(e) => setPassword(e.target.value)}
                 onBlur={() =>
-                  setTouched((p) => ({ ...p, password: true }))
+                  setTouched((p) => ({
+                    ...p,
+                    password: true,
+                  }))
                 }
                 className={`w-full h-[58px] px-4 pr-12 rounded-[12px] outline-none border transition
                   ${
@@ -159,7 +145,9 @@ export default function Login() {
 
               <button
                 type="button"
-                onClick={() => setShowPassword(!showPassword)}
+                onClick={() =>
+                  setShowPassword(!showPassword)
+                }
                 className="absolute right-4 top-1/2 -translate-y-1/2 text-black/60"
               >
                 {showPassword ? (
@@ -171,13 +159,20 @@ export default function Login() {
             </div>
 
             <div className="text-right mt-2">
-              <a href="/Resetpassword" className="text-[#2563EB] text-sm">
+              <a
+                href="/Resetpassword"
+                className="text-[#2563EB] text-sm"
+              >
                 Forgot password?
               </a>
             </div>
           </div>
 
-          {apiError && <p className="text-red-500 text-sm">{apiError}</p>}
+          {apiError && (
+            <p className="text-red-500 text-sm">
+              {apiError}
+            </p>
+          )}
 
           {/* LOGIN BUTTON */}
           <div
@@ -190,14 +185,20 @@ export default function Login() {
           >
             <button
               type="submit"
-              disabled={!emailValid || !passwordValid || loading}
+              disabled={
+                !emailValid ||
+                !passwordValid ||
+                loading
+              }
               className={`w-full h-full rounded-[12px] text-lg text-white ${
                 !emailValid || !passwordValid
                   ? "cursor-not-allowed"
                   : "cursor-pointer"
               }`}
             >
-              {loading ? "Logging in..." : "Log In"}
+              {loading
+                ? "Logging in..."
+                : "Log In"}
             </button>
           </div>
 

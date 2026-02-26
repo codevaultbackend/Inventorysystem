@@ -2,8 +2,8 @@
 
 import Image from "next/image";
 import { Search } from "lucide-react";
-import { useApp } from "../../../context/AppContext";
-import ToggleNav from "../../../svgIcons/ToggleNav";
+import { useApp } from "../context/AppContext";
+import ToggleNav from "../svgIcons/ToggleNav";
 import Link from "next/link";
 
 export default function TopBar() {

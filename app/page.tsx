@@ -1,6 +1,6 @@
 import Link from "next/link";
-import Sidebar from "./(super-admin)/super-admin/component/Sidebar";
-import Topbar from "./(super-admin)/super-admin/component/Topbar";
+import Sidebar from "./Component/Sidebar";
+import Topbar from "./Component/Topbar";
 
 export default function Home() {
     return (

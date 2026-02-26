@@ -1,7 +1,7 @@
 "use client";
 
 import DashboardLayout from "../../Component/DashboardLayout";
-import { SuperDashboardProvider } from "@/app/context/SuperDashboardContext";
+import { SuperStockAdminProvider } from "@/app/context/SuperStockAdminContext";
 
 export default function Layout({
   children,
@@ -9,10 +9,10 @@ export default function Layout({
   children: React.ReactNode;
 }) {
   return (
-    <SuperDashboardProvider>
-      <DashboardLayout role="super_admin">
+    <SuperStockAdminProvider>
+      <DashboardLayout role="super_stock_manager">
         {children}
       </DashboardLayout>
-    </SuperDashboardProvider>
+    </SuperStockAdminProvider>
   );
 }
