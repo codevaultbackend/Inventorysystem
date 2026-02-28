@@ -33,9 +33,9 @@ const ROLE_NAV_ITEMS: Record<string, NavItem[]> = {
 
   super_stock_manager: [
     { label: "Dashboard", href: "/stock-manager", icon: DashboardIcon },
-    { label: "Stock Overview", href: "/stock-manager/stock", icon: BranchOverview },
-    { label: "User Management", href: "/stock-manager/users", icon: UserManagement },
-    { label: "Reports", href: "/stock-manager/reports", icon: Reports },
+    { label: "All Stocks", href: "/stock-manager/AllStocks", icon: BranchOverview },
+    { label: "Aging", href: "/stock-manager/users", icon: UserManagement },
+    { label: "Reports & Analytics", href: "/stock-manager/reports", icon: Reports },
   ],
 
   sales_manager: [

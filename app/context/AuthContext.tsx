@@ -10,18 +10,37 @@ import {
 import axios from "axios";
 import { useRouter } from "next/navigation";
 
+/* ================= ROLE TYPE ================= */
 
+export type Role =
+  | "super_admin"
+  | "admin"
+  | "hr_admin"
+  | "super_stock_manager"
+  | "stock_manager"
+  | "sales_manager"
+  | "purchase_manager"
+  | "finance";
+
+/* ================= USER TYPE ================= */
+
+interface User {
+  id: string;
+  email: string;
+  role: Role;
+  [key: string]: any;
+}
+
+/* ================= CONTEXT TYPE ================= */
 
 type AuthContextType = {
   token: string | null;
-  role: string | null;
-  user: any;
+  role: Role | null;
+  user: User | null;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
   loading: boolean;
 };
-
-
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
@@ -29,8 +48,8 @@ const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
-  const [role, setRole] = useState<string | null>(null);
-  const [user, setUser] = useState<any>(null);
+  const [role, setRole] = useState<Role | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   const router = useRouter();
@@ -46,7 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const roleCookie = document.cookie
         .split("; ")
         .find((row) => row.startsWith("role="))
-        ?.split("=")[1];
+        ?.split("=")[1] as Role | undefined;
 
       if (roleCookie) setRole(roleCookie);
     }
@@ -73,20 +92,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .toLowerCase()
       .trim()
       .replace(/\s+/g, "_")
-      .replace(/-/g, "_");
+      .replace(/-/g, "_") as Role;
+
+    const loggedInUser: User = {
+      ...res.data.user,
+      role: normalizedRole,
+    };
 
     // Save in state
     setToken(token);
     setRole(normalizedRole);
-    setUser(res.data.user);
+    setUser(loggedInUser);
 
     // Save in storage
     localStorage.setItem("token", token);
     document.cookie = `token=${token}; path=/; SameSite=Lax`;
     document.cookie = `role=${normalizedRole}; path=/; SameSite=Lax`;
 
-    // Redirect mapping
-    const roleRoutes: Record<string, string> = {
+    // Redirect mapping (fully typed)
+    const roleRoutes: Record<Role, string> = {
       super_admin: "/super-admin",
       admin: "/admin",
       hr_admin: "/hr-admin",
@@ -97,7 +121,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       finance: "/finance",
     };
 
-    router.replace(roleRoutes[normalizedRole] || "/unauthorized");
+    router.replace(roleRoutes[normalizedRole]);
   };
 
   /* ================= LOGOUT ================= */
@@ -129,7 +153,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 export function useAuth() {
   const context = useContext(AuthContext);
-  if (!context)
+  if (!context) {
     throw new Error("useAuth must be used inside AuthProvider");
+  }
   return context;
 }

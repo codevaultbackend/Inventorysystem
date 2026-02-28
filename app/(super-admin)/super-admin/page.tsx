@@ -2,17 +2,13 @@
 
 import DashboardLayout from "../../Component/DashboardLayout";
 import { SuperDashboardProvider } from "@/app/context/SuperDashboardContext";
+import DashboardPage from "./Dashboard/page";
 
-export default function Layout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function Dashboard(){
+ 
   return (
-    <SuperDashboardProvider>
-      <DashboardLayout role="super_admin">
-        {children}
-      </DashboardLayout>
-    </SuperDashboardProvider>
+   <>
+   <DashboardPage />
+   </>
   );
 }

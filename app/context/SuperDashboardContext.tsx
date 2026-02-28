@@ -56,7 +56,7 @@ const SuperDashboardContext = createContext<ContextType | null>(null);
 /* ================= HELPERS ================= */
 
 const BASE_URL =
-  "https://e342-2401-4900-8842-575f-fcaf-9cdd-7733-b03e.ngrok-free.app";
+  "https://ims-2gyk.onrender.com";
 
 const getAuthHeader = () => {
   const token =

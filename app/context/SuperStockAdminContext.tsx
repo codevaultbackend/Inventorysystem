@@ -10,9 +10,7 @@ import {
 } from "react";
 import axios from "axios";
 
-/* =======================================================
-   TYPES
-======================================================= */
+/* ================= TYPES ================= */
 
 export type StockItem = {
   id: number;
@@ -53,15 +51,9 @@ type ContextType = {
   refresh: () => Promise<void>;
 };
 
-/* =======================================================
-   CONTEXT
-======================================================= */
+/* ================= CONTEXT ================= */
 
 const SuperStockAdminContext = createContext<ContextType | null>(null);
-
-/* =======================================================
-   CONFIG
-======================================================= */
 
 const BASE_URL = "https://ims-2gyk.onrender.com";
 
@@ -76,9 +68,7 @@ const getAuthHeader = () => {
   };
 };
 
-/* =======================================================
-   PROVIDER
-======================================================= */
+/* ================= PROVIDER ================= */
 
 export function SuperStockAdminProvider({
   children,
@@ -107,38 +97,44 @@ export function SuperStockAdminProvider({
         { headers }
       );
 
-      const api = res.data;
+      const api = res?.data;
 
-      if (!api) throw new Error("Invalid response from server");
+      if (!api) {
+        throw new Error("Invalid response from server");
+      }
 
-      /* ================= TRANSFORM DATA ================= */
+      /* ================= SAFE TRANSFORM ================= */
 
       const transformedData: StockDashboardData = {
-        totalStock: api.stats.totalStock,
-        totalValue: api.stats.totalValue,
-        lowStock: api.stats.lowStock,
-        damagedStock: api.stats.damagedStock,
-        repairableStock: api.stats.repairableStock,
+        totalStock: api?.stats?.totalStock ?? 0,
+        totalValue: api?.stats?.totalValue ?? 0,
+        lowStock: api?.stats?.lowStock ?? 0,
+        damagedStock: api?.stats?.damagedStock ?? 0,
+        repairableStock: api?.stats?.repairableStock ?? 0,
 
-        categoryChart: api.charts.categoryChart.map((item: any) => ({
-          category: item.category,
-          currentStock: Number(item.currentStock),
-        })),
+        categoryChart: Array.isArray(api?.charts?.categoryChart)
+          ? api.charts.categoryChart
+          : [],
 
-        movementData: api.charts.movementData,
+        movementData: Array.isArray(api?.charts?.movementData)
+          ? api.charts.movementData
+          : [],
 
-        stockList: api.stocks.map((item: any) => ({
-          id: item.id,
-          name: item.item,
-          quantity: item.quantity,
-          value: item.value,
-          category: item.category,
-          branchName: item.branch?.name,
-          location: item.branch?.location,
-        })),
+        stockList: Array.isArray(api?.stocks)
+          ? api.stocks.map((item: any) => ({
+              id: item?.id ?? 0,
+              name: item?.item ?? "",
+              quantity: item?.quantity ?? 0,
+              value: item?.value ?? 0,
+              category: item?.category ?? "",
+              branchName: item?.branch?.name ?? "",
+              location: item?.branch?.location ?? "",
+            }))
+          : [],
       };
 
       setData(transformedData);
+      
     } catch (err: any) {
       console.error("Dashboard Fetch Error:", err);
 
@@ -175,9 +171,7 @@ export function SuperStockAdminProvider({
   );
 }
 
-/* =======================================================
-   HOOK
-======================================================= */
+/* ================= HOOK ================= */
 
 export function useSuperStockAdmin() {
   const context = useContext(SuperStockAdminContext);

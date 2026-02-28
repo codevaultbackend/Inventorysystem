@@ -1,6 +1,7 @@
 import { SuperDashboardProvider } from "@/app/context/SuperDashboardContext";
 import Sidebar from "../../Component/Sidebar";
 import Topbar from "../../Component/Topbar";
+import DashboardLayout from "@/app/Component/DashboardLayout";
 
 export default function SuperAdminLayout({
   children,
@@ -10,10 +11,15 @@ export default function SuperAdminLayout({
   return (
     <SuperDashboardProvider>
       <div className="flex flex-col min-h-screen bg-[#F6F8FA] max-w-[1440px] ">
+        <DashboardLayout>
 
-        <main className="flex-1  max-[1140px]:pl-0 overflow-y-auto">
-          {children}
-        </main>
+          <main className="flex-1  max-[1140px]:pl-0 overflow-y-auto">
+            {children}
+          </main>
+
+        </DashboardLayout>
+
+
 
       </div>
     </SuperDashboardProvider>
