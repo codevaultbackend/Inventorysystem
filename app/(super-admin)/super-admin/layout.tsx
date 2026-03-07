@@ -10,7 +10,7 @@ export default function SuperAdminLayout({
 }) {
   return (
     <SuperDashboardProvider>
-      <div className="flex flex-col min-h-screen bg-[#F6F8FA] max-w-[1440px] ">
+      <div className="flex flex-col min-h-screen bg-[#F6F8FA]  ">
         <DashboardLayout>
 
           <main className="flex-1 pt-[20px]  max-[1140px]:pl-0 overflow-y-auto">
