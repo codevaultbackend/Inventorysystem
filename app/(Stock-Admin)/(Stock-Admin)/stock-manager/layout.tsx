@@ -7,6 +7,8 @@ import DashboardLayout, {
 
 import { SuperStockAdminProvider } from "@/app/context/SuperStockAdminContext";
 import { LocationsProvider } from "@/app/context/LocationsContext";
+import { StateLocationProvider } from "@/app/context/StateLocation";
+import { StockProvider } from "@/app/context/StockContext";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -17,18 +19,20 @@ export default function Layout({ children }: LayoutProps) {
   const role: Role = "super_stock_manager";
 
   return (
+ <StockProvider>
+    <StateLocationProvider>
+      <LocationsProvider>
 
-    <LocationsProvider>
+        <SuperStockAdminProvider>
 
-      <SuperStockAdminProvider>
+          <DashboardLayout role={role}>
+            {children}
+          </DashboardLayout>
 
-        <DashboardLayout role={role}>
-          {children}
-        </DashboardLayout>
+        </SuperStockAdminProvider>
 
-      </SuperStockAdminProvider>
-
-    </LocationsProvider>
+      </LocationsProvider>
+    </StateLocationProvider></StockProvider>
 
   );
 }

@@ -33,14 +33,10 @@ export default function StockDistributionByStateChart({
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
-    const checkScreen = () => {
-      setIsMobile(window.innerWidth < 640);
-    };
-
-    checkScreen();
-    window.addEventListener("resize", checkScreen);
-
-    return () => window.removeEventListener("resize", checkScreen);
+    const check = () => setIsMobile(window.innerWidth < 640);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
   }, []);
 
   const chartHeight = isMobile ? 240 : height;
@@ -89,12 +85,7 @@ export default function StockDistributionByStateChart({
 
             <BarChart
               data={data}
-              margin={{
-                top: 10,
-                right: 20,
-                left: 0,
-                bottom: 0,
-              }}
+              margin={{ top: 10, right: 20, left: 0, bottom: 0 }}
             >
 
               {/* GRID */}
@@ -150,7 +141,7 @@ export default function StockDistributionByStateChart({
                 dataKey="stock"
                 fill="#2563EB"
                 radius={[8, 8, 0, 0]}
-                barSize={isMobile ? 22 : 36}
+                barSize={isMobile ? 20 : 36}
               />
 
             </BarChart>

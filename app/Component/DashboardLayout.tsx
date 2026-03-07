@@ -5,7 +5,7 @@ import Sidebar from "./Sidebar";
 import Topbar from "./Topbar";
 import { useAuth } from "@/app/context/AuthContext";
 
-/* ===== ROLE TYPE (must match AuthContext roles) ===== */
+/* ===== ROLE TYPE ===== */
 export type Role =
   | "super_admin"
   | "admin"
@@ -20,9 +20,7 @@ interface DashboardLayoutProps {
   children: React.ReactNode;
 }
 
-export default function DashboardLayout({
-  children,
-}: DashboardLayoutProps) {
+export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const { role, loading } = useAuth();
 
   if (loading) {
@@ -42,12 +40,24 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-100">
-      <Topbar role={role as Role} />
-    
-      <div className="flex">
-         <Sidebar role={role as Role} />
-        <div className="p-6 w-full">{children}</div>
+    <div className="md:min-h-screen lg:min-h-screen bg-[#F7F9FB]">
+
+      {/* TOPBAR */}
+      <div className="px-4 lg:px-6 py-4">
+        <Topbar role={role as Role} />
+      </div>
+
+      {/* SIDEBAR + CONTENT */}
+      <div className="lg:flex gap-6 px-4 lg:px-6 pb-6">
+
+        {/* Sidebar (handles mobile + desktop internally) */}
+        <Sidebar role={role as Role} />
+
+        {/* Page Content */}
+        <main className="flex-1 min-w-0">
+          {children}
+        </main>
+
       </div>
     </div>
   );

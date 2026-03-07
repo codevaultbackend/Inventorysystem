@@ -23,33 +23,64 @@ export default function StockCount({
     <div
       className="
         bg-white
-        rounded-[18px]
-        p-6
+        rounded-[20px]
+        p-4
+        sm:p-5
+        md:p-6
         border border-[#EEF2F6]
-        shadow-[0px_6px_20px_rgba(17,24,39,0.04)]
+        shadow-[1px_1px_4px_rgba(0,0,0,0.1)]
         transition-all
         hover:shadow-[0px_10px_28px_rgba(17,24,39,0.06)]
         w-full
       "
     >
-      <div className="flex items-start justify-between">
+      <div className="flex items-start justify-between gap-3">
+
         {/* LEFT SECTION */}
-        <div className="space-y-3">
+        <div className="space-y-2 sm:space-y-3">
+
           {/* Icon */}
           <div
-            className="h-[44px] w-[44px] rounded-[12px] flex items-center justify-center"
+            className="
+              h-[36px] w-[36px]
+              sm:h-[40px] sm:w-[40px]
+              md:h-[44px] md:w-[44px]
+              rounded-[12px]
+              flex
+              items-center
+              justify-center
+            "
             style={{ backgroundColor: iconBgColor }}
           >
-            <Icon className="h-5 w-5 text-[#2563EB]" />
+            <Icon className="h-4 w-4 sm:h-5 sm:w-5 text-[#2563EB]" />
           </div>
 
           {/* Title */}
-          <p className="text-[14px] text-[#6B7280] font-[500]">
+          <p
+            className="
+              text-[12px]
+              sm:text-[13px]
+              md:text-[14px]
+              text-[#6B7280]
+              font-[500]
+              leading-none
+            "
+          >
             {title}
           </p>
 
           {/* Value */}
-          <h2 className="text-[28px] font-[700] text-[#111827] tracking-tight">
+          <h2
+            className="
+              text-[20px]
+              sm:text-[24px]
+              md:text-[28px]
+              font-[700]
+              text-[#111827]
+              tracking-tight
+              break-all
+            "
+          >
             {value}
           </h2>
         </div>
@@ -58,9 +89,14 @@ export default function StockCount({
         {percentage !== undefined && (
           <div
             className={`
-              flex items-center gap-1
-              text-[14px]
+              flex
+              items-center
+              gap-1
+              text-[12px]
+              sm:text-[13px]
+              md:text-[14px]
               font-[600]
+              whitespace-nowrap
               ${
                 trend === "up"
                   ? "text-[#16A34A]"
@@ -69,9 +105,9 @@ export default function StockCount({
             `}
           >
             {trend === "up" ? (
-              <TrendingUp className="h-4 w-4" />
+              <TrendingUp className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             ) : (
-              <TrendingDown className="h-4 w-4" />
+              <TrendingDown className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             )}
             {percentage}%
           </div>

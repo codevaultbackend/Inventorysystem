@@ -1,13 +1,13 @@
 "use client";
 
 import Image from "next/image";
-import { Search } from "lucide-react";
+import { Search, Settings } from "lucide-react";
 import { useApp } from "../context/AppContext";
 import ToggleNav from "../svgIcons/ToggleNav";
 import Link from "next/link";
 
 export default function TopBar() {
-  const { collapsed, setCollapsed, setMobileOpen } = useApp();
+  const { setCollapsed, setMobileOpen } = useApp();
 
   const handleToggle = () => {
     if (window.innerWidth < 1140) {
@@ -20,31 +20,32 @@ export default function TopBar() {
   return (
     <header
       className="
-        w-full
-        h-[72px]
-        bg-white
-        rounded-2xl
-        px-6
-        flex
-        items-center
-        justify-between
-        shadow-[0_1px_3px_rgba(0,0,0,0.06)]
-      "
+      w-full
+      h-[72px]
+      bg-white
+      rounded-[12px]
+      px-4 lg:px-6
+      flex items-center
+      justify-between
+      shadow-[1px_1px_4px_rgba(0,0,0,0.1)]  
+    "
     >
-      {/* ================= LEFT ================= */}
-      <div className="flex items-center gap-3">
+      {/* LEFT */}
+      <div className="flex items-center gap-4">
 
         <span className="text-[16px] font-[500] text-[#0A58A6] whitespace-nowrap">
           Athratech Pvt Limited
         </span>
 
-          <button
+        {/* Toggle visible only on desktop */}
+        <button
           onClick={handleToggle}
           className="
+            hidden lg:flex
             h-10 w-10
             rounded-lg
             border border-[#E5E7EB]
-            flex items-center justify-center
+            items-center justify-center
             bg-white
             hover:bg-[#F3F4F6]
             transition
@@ -54,11 +55,11 @@ export default function TopBar() {
         </button>
       </div>
 
-      {/* ================= CENTER ================= */}
-      <div className="flex-1 max-w-[820px] px-6">
+      {/* SEARCH */}
+      <div className="hidden lg:flex flex-1 max-w-[720px] px-6">
         <div
           className="
-            h-[48px]
+            h-[44px]
             bg-[#F8FAFC]
             rounded-xl
             flex items-center
@@ -85,8 +86,20 @@ export default function TopBar() {
         </div>
       </div>
 
-      {/* ================= RIGHT ================= */}
+      {/* RIGHT */}
       <div className="flex items-center gap-4">
+
+        <button
+          className="
+            h-10 w-10
+            rounded-lg
+            flex items-center justify-center
+            hover:bg-[#F3F4F6]
+            transition
+          "
+        >
+          <Settings size={18} className="text-[#374151]" />
+        </button>
 
         <Link href="/super-admin/Profile">
           <div className="flex items-center gap-3 cursor-pointer">
@@ -99,29 +112,18 @@ export default function TopBar() {
               className="rounded-full"
             />
 
-            <div className="leading-tight">
+            <div className="hidden md:block leading-tight">
               <p className="text-[14px] font-medium text-[#0F172A]">
                 Gustavo Xavier
               </p>
 
-              <p
-                className="
-                  text-[10px]
-                  bg-[#F2F8FF]
-                  text-[#131313]
-                  rounded-full
-                  px-2 py-[2px]
-                  text-center
-                  mt-1
-                "
-              >
+              <p className="text-[10px] bg-[#F2F8FF] text-[#131313] rounded-full px-2 py-[2px] text-center mt-1">
                 Super Admin
               </p>
             </div>
 
           </div>
         </Link>
-
       </div>
     </header>
   );

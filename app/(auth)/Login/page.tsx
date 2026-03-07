@@ -38,7 +38,7 @@ export default function Login() {
 
     try {
       await login(email, password);
-      // redirect handled inside AuthContext
+    
     } catch (err: any) {
       setApiError(
         err?.response?.data?.error ||
@@ -176,9 +176,9 @@ export default function Login() {
 
           {/* LOGIN BUTTON */}
           <div
-            className={`w-[476px] h-16 rounded-xl shadow-[2px_2px_4px_0px_rgba(0,0,0,0.24)]
+            className={`max-w-[476px] w-full h-16 rounded-xl shadow-[2px_2px_4px_0px_rgba(0,0,0,0.24)]
               ${
-                !emailValid || !passwordValid
+                emailValid || passwordValid
                   ? "bg-[#B9B9B9]"
                   : "bg-blue-800 hover:bg-blue-700"
               }`}

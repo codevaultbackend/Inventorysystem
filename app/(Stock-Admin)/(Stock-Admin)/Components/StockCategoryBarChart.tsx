@@ -29,44 +29,45 @@ export default function StockCategoryBarChart({
   title,
   subtitle,
   data = [],
-  height = 320,
 }: Props) {
+
   const safeData = Array.isArray(data) ? data : [];
 
   return (
     <div
       className="
       bg-white
-      rounded-[18px]
+      rounded-[20px]
       border border-[#EEF2F6]
-      shadow-[0_6px_20px_rgba(17,24,39,0.04)]
-      p-6
+      shadow-[1px_1px_4px_rgba(0,0,0,0.1)]
+      p-4 sm:p-5 lg:p-6
       w-full
+      overflow-hidden
     "
     >
       {/* ================= HEADER ================= */}
 
-      <div className="flex items-start justify-between mb-6">
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
 
         <div>
-          <h3 className="text-[16px] font-[600] text-[#111827]">
+          <h3 className="text-[15px] sm:text-[16px] font-[600] text-[#111827]">
             {title}
           </h3>
 
           {subtitle && (
-            <p className="text-[13px] text-[#6B7280] mt-1">
+            <p className="text-[12px] sm:text-[13px] text-[#6B7280] mt-1">
               {subtitle}
             </p>
           )}
         </div>
 
-        {/* ===== LEGEND ===== */}
+        {/* LEGEND */}
 
-        <div className="flex gap-4 text-[13px] font-[500]">
+        <div className="flex flex-wrap gap-x-4 gap-y-2 text-[12px] sm:text-[13px] font-[500]">
 
           <div className="flex items-center gap-1 text-[#2563EB]">
             <span className="w-2.5 h-2.5 rounded-full bg-[#2563EB]" />
-            Current Stock
+            Current
           </div>
 
           <div className="flex items-center gap-1 text-[#10B981]">
@@ -81,11 +82,10 @@ export default function StockCategoryBarChart({
 
           <div className="flex items-center gap-1 text-[#EF4444]">
             <span className="w-2.5 h-2.5 rounded-full bg-[#EF4444]" />
-            Stock Aging
+            Aging
           </div>
 
         </div>
-
       </div>
 
       {/* ================= CHART ================= */}
@@ -95,68 +95,95 @@ export default function StockCategoryBarChart({
           No category data
         </div>
       ) : (
-        <ResponsiveContainer width="100%" height={height}>
-          <BarChart
-            data={safeData}
-            barGap={6}
-            barCategoryGap={18}
+        <div
+          className="
+          w-full
+          overflow-x-auto
+        "
+        >
+          <div
+            className="
+            min-w-[520px]
+            h-[240px]
+            sm:h-[280px]
+            lg:h-[320px]
+          "
           >
-            <CartesianGrid
-              stroke="#E5E7EB"
-              strokeDasharray="4 4"
-              vertical={false}
-            />
+            <ResponsiveContainer width="100%" height="100%">
 
-            <XAxis
-              dataKey="name"
-              tick={{ fill: "#6B7280", fontSize: 12 }}
-              axisLine={false}
-              tickLine={false}
-            />
+              <BarChart
+                data={safeData}
+                barGap={6}
+                barCategoryGap="20%"
+              >
 
-            <YAxis
-              tick={{ fill: "#6B7280", fontSize: 12 }}
-              axisLine={false}
-              tickLine={false}
-            />
+                <CartesianGrid
+                  stroke="#E5E7EB"
+                  strokeDasharray="4 4"
+                  vertical={false}
+                />
 
-            <Tooltip
-              contentStyle={{
-                borderRadius: "10px",
-                border: "1px solid #E5E7EB",
-              }}
-            />
+                <XAxis
+                  dataKey="name"
+                  tick={{ fill: "#6B7280", fontSize: 12 }}
+                  axisLine={false}
+                  tickLine={false}
+                  interval={0}
+                  tickFormatter={(value) =>
+                    value.length > 8
+                      ? value.slice(0, 8) + "…"
+                      : value
+                  }
+                />
 
-            <Bar
-              dataKey="current"
-              fill="#2563EB"
-              radius={[6, 6, 0, 0]}
-              barSize={10}
-            />
+                <YAxis
+                  tick={{ fill: "#6B7280", fontSize: 12 }}
+                  axisLine={false}
+                  tickLine={false}
+                  width={30}
+                />
 
-            <Bar
-              dataKey="in"
-              fill="#10B981"
-              radius={[6, 6, 0, 0]}
-              barSize={10}
-            />
+                <Tooltip
+                  contentStyle={{
+                    borderRadius: "10px",
+                    border: "1px solid #E5E7EB",
+                    fontSize: "12px",
+                  }}
+                />
 
-            <Bar
-              dataKey="out"
-              fill="#F59E0B"
-              radius={[6, 6, 0, 0]}
-              barSize={10}
-            />
+                <Bar
+                  dataKey="current"
+                  fill="#2563EB"
+                  radius={[6, 6, 0, 0]}
+                  barSize={8}
+                />
 
-            <Bar
-              dataKey="aging"
-              fill="#EF4444"
-              radius={[6, 6, 0, 0]}
-              barSize={10}
-            />
+                <Bar
+                  dataKey="in"
+                  fill="#10B981"
+                  radius={[6, 6, 0, 0]}
+                  barSize={8}
+                />
 
-          </BarChart>
-        </ResponsiveContainer>
+                <Bar
+                  dataKey="out"
+                  fill="#F59E0B"
+                  radius={[6, 6, 0, 0]}
+                  barSize={8}
+                />
+
+                <Bar
+                  dataKey="aging"
+                  fill="#EF4444"
+                  radius={[6, 6, 0, 0]}
+                  barSize={8}
+                />
+
+              </BarChart>
+
+            </ResponsiveContainer>
+          </div>
+        </div>
       )}
     </div>
   );

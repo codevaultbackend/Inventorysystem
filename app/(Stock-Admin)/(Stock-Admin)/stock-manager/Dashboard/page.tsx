@@ -10,18 +10,13 @@ import {
 import StockCount from "../../Components/StockCounts";
 import StockLineChart from "../../Components/StockLineChart";
 import StockCategoryBarChart from "../../Components/StockCategoryBarChart";
-import StockInventoryTable from "../../Components/StockInventoryTable";
+import InventoryTable from "../../Components/inventoryTable";
 
 import { useSuperStockAdmin } from "@/app/context/SuperStockAdminContext";
 
 export default function Dashboard() {
 
-  const context = useSuperStockAdmin();
-
-  const data = context?.data || {};
-  const loading = context?.loading;
-  const error = context?.error;
-  const refresh = context?.refresh;
+  const { data = {}, loading, error, refresh } = useSuperStockAdmin();
 
   /* ================= LOADING ================= */
 
@@ -38,12 +33,8 @@ export default function Dashboard() {
   if (error) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-
         <div className="bg-white p-6 rounded-2xl shadow-md">
-
-          <p className="text-red-600 mb-4">
-            {error}
-          </p>
+          <p className="text-red-600 mb-4">{error}</p>
 
           <button
             onClick={refresh}
@@ -53,7 +44,6 @@ export default function Dashboard() {
           </button>
 
         </div>
-
       </div>
     );
   }
@@ -104,6 +94,7 @@ export default function Dashboard() {
       const index = Number(parts[1]) - 1;
 
       label = monthNames[index] ?? m.month;
+
     }
 
     return {
@@ -113,7 +104,6 @@ export default function Dashboard() {
     };
 
   });
-
 
   /* ================= TABLE COLUMNS ================= */
 
@@ -128,8 +118,7 @@ export default function Dashboard() {
     { key: "action", label: "Action" },
   ];
 
-
-  /* ================= TABLE MAP ================= */
+  /* ================= TABLE DATA ================= */
 
   const locationTable = locations.map((l, i) => ({
 
@@ -137,17 +126,11 @@ export default function Dashboard() {
 
     category: "Warehouse",
 
-    hsn: l?.location
-      ? "LOC-" + (i + 1)
-      : "NA",
+    hsn: l?.location ? `LOC-${i + 1}` : "NA",
 
-    current: l?.totalStock
-      ? Number(l.totalStock)
-      : "NA",
+    current: l?.totalStock ? Number(l.totalStock) : "NA",
 
-    stockIn: l?.totalStock
-      ? Number(l.totalStock)
-      : "NA",
+    stockIn: l?.totalStock ? Number(l.totalStock) : "NA",
 
     stockOut: l?.totalStock
       ? Math.floor(Number(l.totalStock) / 2)
@@ -159,19 +142,17 @@ export default function Dashboard() {
 
   }));
 
-
   /* ================= UI ================= */
 
   return (
 
     <div className="w-full bg-[#F7F9FB] min-h-screen">
 
-      <div className="max-w-[1320px] mx-auto px-6 py-6 space-y-6">
+      <div className="max-w-[1320px] mx-auto py-6  space-y-6">
 
+        {/* COUNT CARDS */}
 
-        {/* ================= COUNT ================= */}
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-5">
 
           <StockCount
             title="Total Stock Items"
@@ -203,8 +184,7 @@ export default function Dashboard() {
 
         </div>
 
-
-        {/* ================= BAR ================= */}
+        {/* BAR CHART */}
 
         <StockCategoryBarChart
           title="Stock Category Overview"
@@ -212,28 +192,34 @@ export default function Dashboard() {
           data={categoryData}
         />
 
-
-        {/* ================= LINE ================= */}
+        {/* LINE CHARTS */}
 
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
 
           <StockLineChart
-            title="Stock Movement"
-            subtitle="Stock In vs Stock Out"
+            title="Stock Aging Analytics"
+            subtitle="Track sales and purchase trends"
             data={movement}
+            lines={[
+              { key: "stockIn", color: "#2563EB" }
+            ]}
           />
 
           <StockLineChart
-            title="Stock Out Trend"
+            title="Stock Movement Trends"
+            subtitle="Track stock sale trends"
             data={movement}
+            lines={[
+              { key: "stockIn", color: "#2563EB" },
+              { key: "stockOut", color: "#60A5FA" },
+            ]}
           />
 
         </div>
 
+        {/* TABLE */}
 
-        {/* ================= TABLE ================= */}
-
-        <StockInventoryTable
+        <InventoryTable
           title="Complete Stock Inventory"
           columns={columns}
           data={locationTable}
@@ -241,10 +227,8 @@ export default function Dashboard() {
           onExport={() => console.log("Export")}
         />
 
-
       </div>
 
     </div>
-
   );
 }
