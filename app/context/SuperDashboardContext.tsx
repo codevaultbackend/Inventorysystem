@@ -9,6 +9,7 @@ import {
   useCallback,
 } from "react";
 import axios from "axios";
+import { useAuth } from "./AuthContext";   
 
 /* ================= TYPES ================= */
 
@@ -55,8 +56,7 @@ const SuperDashboardContext = createContext<ContextType | null>(null);
 
 /* ================= HELPERS ================= */
 
-const BASE_URL =
-  "https://ims-2gyk.onrender.com";
+const BASE_URL = "https://ims-2gyk.onrender.com";
 
 const getAuthHeader = () => {
   const token =
@@ -72,13 +72,15 @@ const getAuthHeader = () => {
   };
 };
 
-
+/* ================= PROVIDER ================= */
 
 export function SuperDashboardProvider({
   children,
 }: {
   children: ReactNode;
 }) {
+  const { user } = useAuth();  // 👈 get logged user
+
   const [data, setData] = useState<DashboardData | null>(null);
   const [users, setUsers] = useState<UserData[] | null>(null);
   const [branches, setBranches] = useState<Branch[] | null>(null);
@@ -88,7 +90,7 @@ export function SuperDashboardProvider({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
- 
+  /* ================= DASHBOARD FETCH ================= */
 
   const fetchDashboard = useCallback(async () => {
     try {
@@ -103,15 +105,36 @@ export function SuperDashboardProvider({
         { headers }
       );
 
-      setData(res.data);
+      let dashboardData = res.data;
+
+      /* ================= BRANCH FILTER ================= */
+
+      if (
+        user &&
+        user.role !== "super_admin" &&
+        user.branch_id &&
+        dashboardData?.branchOverview
+      ) {
+        dashboardData = {
+          ...dashboardData,
+          branchOverview: dashboardData.branchOverview.filter(
+            (branch: Branch) => branch.id === user.branch_id
+          ),
+        };
+
+        /* optional stats fix */
+        dashboardData.stats.totalBranches = 1;
+      }
+
+      setData(dashboardData);
     } catch (err: any) {
       setError(
         err?.response?.data?.message || "Failed to load dashboard"
       );
     }
-  }, []);
+  }, [user]);
 
- 
+  /* ================= FETCH BY LOCATION ================= */
 
   const fetchByLocation = useCallback(async () => {
     if (!location) return;
@@ -172,6 +195,8 @@ export function SuperDashboardProvider({
   /* ================= INITIAL LOAD ================= */
 
   useEffect(() => {
+    if (!user) return;
+
     const loadAll = async () => {
       setLoading(true);
 
@@ -185,9 +210,9 @@ export function SuperDashboardProvider({
     };
 
     loadAll();
-  }, [fetchDashboard, fetchUsers, fetchBranches]);
+  }, [user, fetchDashboard, fetchUsers, fetchBranches]);
 
-  /* ================= LOCATION CHANGE EFFECT ================= */
+  /* ================= LOCATION CHANGE ================= */
 
   useEffect(() => {
     fetchByLocation();

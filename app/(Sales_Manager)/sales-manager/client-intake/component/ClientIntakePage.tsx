@@ -1,0 +1,565 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import ClientForm from "./ClientForm";
+import RequirementsStep from "./RequirementsStep";
+import QuotationStep from "./QuotationStep";
+import { useAuth } from "@/app/context/AuthContext";
+
+export type ClientFormData = {
+  clientType: string;
+  companyName: string;
+  contactPerson: string;
+  email: string;
+  phone: string;
+  address: string;
+  city: string;
+  country: string;
+};
+
+export type Product = {
+  id: string;
+  name: string;
+  quantity: string;
+  price: string;
+  specs: string;
+};
+
+export type CreatedClient = {
+  id?: number;
+  client_code?: string;
+  client_type?: string;
+  company_name?: string;
+  contact_person?: string;
+  phone?: string;
+  email?: string;
+  address?: string;
+  city?: string;
+  country?: string;
+  branch_id?: number;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type WorkflowStage = "builder" | "decision" | "approved" | "rejected";
+export type DecisionModalType = null | "approve" | "reject";
+
+const STEPS = [
+  { id: 1, label: "Client-intake" },
+  { id: 2, label: "Requirements" },
+  { id: 3, label: "Quotation" },
+];
+
+const CREATE_CLIENT_URL =
+  process.env.NEXT_PUBLIC_CREATE_CLIENT_URL ||
+  "https://ims-2gyk.onrender.com/sales/clients-create";
+
+const CREATE_QUOTATION_URL =
+  process.env.NEXT_PUBLIC_CREATE_QUOTATION_URL ||
+  "https://ims-2gyk.onrender.com/sales/qt-gen";
+
+const initialClientData: ClientFormData = {
+  clientType: "",
+  companyName: "",
+  contactPerson: "",
+  email: "",
+  phone: "",
+  address: "",
+  city: "",
+  country: "",
+};
+
+const createInitialProduct = (): Product => ({
+  id:
+    typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+      ? crypto.randomUUID()
+      : `product-${Date.now()}`,
+  name: "",
+  quantity: "1",
+  price: "",
+  specs: "",
+});
+
+function getStoredJson(key: string) {
+  if (typeof window === "undefined") return null;
+
+  const raw =
+    window.localStorage.getItem(key) || window.sessionStorage.getItem(key);
+
+  if (!raw) return null;
+
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
+function getPersistedToken() {
+  if (typeof window === "undefined") return "";
+
+  const directKeys = [
+    "token",
+    "accessToken",
+    "authToken",
+    "ims_token",
+    "imsToken",
+    "jwt",
+  ];
+
+  for (const key of directKeys) {
+    const localValue = window.localStorage.getItem(key);
+    if (localValue) return localValue;
+
+    const sessionValue = window.sessionStorage.getItem(key);
+    if (sessionValue) return sessionValue;
+  }
+
+  const userLikeKeys = ["user", "authUser", "currentUser", "profile"];
+
+  for (const key of userLikeKeys) {
+    const parsed = getStoredJson(key);
+    if (!parsed) continue;
+
+    const nestedToken =
+      parsed?.token ||
+      parsed?.accessToken ||
+      parsed?.authToken ||
+      parsed?.jwt ||
+      parsed?.data?.token ||
+      parsed?.data?.accessToken;
+
+    if (nestedToken) return nestedToken;
+  }
+
+  return "";
+}
+
+async function parseErrorResponse(response: Response) {
+  const text = await response.text();
+
+  try {
+    const parsed = text ? JSON.parse(text) : {};
+    return (
+      parsed?.error ||
+      parsed?.message ||
+      parsed?.errors?.[0]?.message ||
+      "Something went wrong."
+    );
+  } catch {
+    return text || "Something went wrong.";
+  }
+}
+
+function formatUiDateTime(date: Date) {
+  const dd = String(date.getDate()).padStart(2, "0");
+  const mm = String(date.getMonth() + 1).padStart(2, "0");
+  const yyyy = date.getFullYear();
+
+  const hh = String(date.getHours()).padStart(2, "0");
+  const min = String(date.getMinutes()).padStart(2, "0");
+  const ss = String(date.getSeconds()).padStart(2, "0");
+
+  return `${dd}/${mm}/${yyyy}, ${hh}:${min}:${ss}`;
+}
+
+function generateUiQuotationNo() {
+  const tail = String(Date.now()).slice(-6);
+  return `QT${tail}`;
+}
+
+export default function ClientIntakePage() {
+  const { token, user, loading: authLoading } = useAuth();
+
+  const [step, setStep] = useState(1);
+  const [workflowStage, setWorkflowStage] =
+    useState<WorkflowStage>("builder");
+  const [decisionModal, setDecisionModal] =
+    useState<DecisionModalType>(null);
+
+  const [clientData, setClientData] =
+    useState<ClientFormData>(initialClientData);
+  const [products, setProducts] = useState<Product[]>([createInitialProduct()]);
+  const [createdClient, setCreatedClient] =
+    useState<CreatedClient | null>(null);
+
+  const [clientLoading, setClientLoading] = useState(false);
+  const [clientApiError, setClientApiError] = useState("");
+
+  const [quotationLoading, setQuotationLoading] = useState(false);
+  const [quotationApiError, setQuotationApiError] = useState("");
+
+  const [quotationPdfUrl, setQuotationPdfUrl] = useState("");
+  const [quotationNo, setQuotationNo] = useState("");
+  const [quotationCreatedAt, setQuotationCreatedAt] = useState("");
+
+  useEffect(() => {
+    return () => {
+      if (quotationPdfUrl) {
+        URL.revokeObjectURL(quotationPdfUrl);
+      }
+    };
+  }, [quotationPdfUrl]);
+
+  const progress = useMemo(() => {
+    if (step === 1) return 33;
+    if (step === 2) return 67;
+    return 100;
+  }, [step]);
+
+  const total = useMemo(() => {
+    return products.reduce((sum, item) => {
+      const quantity = Number(item.quantity || 0);
+      const price = Number(item.price || 0);
+      return sum + quantity * price;
+    }, 0);
+  }, [products]);
+
+  const handleClientFieldChange = (
+    field: keyof ClientFormData,
+    value: string
+  ) => {
+    setClientData((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+    setClientApiError("");
+  };
+
+  const handleClientReset = () => {
+    setClientData(initialClientData);
+    setCreatedClient(null);
+    setClientApiError("");
+    setQuotationApiError("");
+    setProducts([createInitialProduct()]);
+    setStep(1);
+    setWorkflowStage("builder");
+    setDecisionModal(null);
+
+    if (quotationPdfUrl) {
+      URL.revokeObjectURL(quotationPdfUrl);
+      setQuotationPdfUrl("");
+    }
+
+    setQuotationNo("");
+    setQuotationCreatedAt("");
+  };
+
+  const handleCreateClient = async () => {
+    setClientApiError("");
+    setClientLoading(true);
+
+    try {
+      const authToken = token || getPersistedToken();
+
+      if (!authToken) {
+        throw new Error("No authentication token found. Please login again.");
+      }
+
+      const response = await fetch(CREATE_CLIENT_URL, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${authToken}`,
+        },
+        body: JSON.stringify({
+          client_type: clientData.clientType.trim(),
+          company_name: clientData.companyName.trim(),
+          contact_person: clientData.contactPerson.trim(),
+          phone: clientData.phone.trim(),
+          email: clientData.email.trim(),
+          address: clientData.address.trim(),
+          city: clientData.city.trim(),
+          country: clientData.country.trim(),
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(await parseErrorResponse(response));
+      }
+
+      const data = await response.json();
+      setCreatedClient(data?.client ?? null);
+      setStep(2);
+    } catch (error: unknown) {
+      setClientApiError(
+        error instanceof Error
+          ? error.message
+          : "Failed to create client. Check authentication, CORS, or network."
+      );
+    } finally {
+      setClientLoading(false);
+    }
+  };
+
+  const handleCreateQuotation = async () => {
+    setQuotationApiError("");
+    setQuotationLoading(true);
+
+    try {
+      const authToken = token || getPersistedToken();
+
+      if (!authToken) {
+        throw new Error("No authentication token found. Please login again.");
+      }
+
+      const branchId = createdClient?.branch_id ?? user?.branch_id;
+
+      if (!branchId) {
+        throw new Error("Branch ID not found. Please login again and retry.");
+      }
+
+      const response = await fetch(CREATE_QUOTATION_URL, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${authToken}`,
+        },
+        body: JSON.stringify({
+          client: {
+            client_type: clientData.clientType.trim(),
+            company_name: clientData.companyName.trim(),
+            contact_person: clientData.contactPerson.trim(),
+            phone: clientData.phone.trim(),
+            email: clientData.email.trim(),
+            address: clientData.address.trim(),
+            city: clientData.city.trim(),
+            country: clientData.country.trim(),
+          },
+          branch_id: branchId,
+          gst_percent: 0,
+          valid_till: null,
+          products: products.map((item) => ({
+            product_name: item.name.trim(),
+            quantity: Number(item.quantity || 0),
+            unit_price: Number(item.price || 0),
+            unit: "",
+            hsn: "",
+          })),
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(await parseErrorResponse(response));
+      }
+
+      const blob = await response.blob();
+
+      if (quotationPdfUrl) {
+        URL.revokeObjectURL(quotationPdfUrl);
+      }
+
+      const pdfUrl = URL.createObjectURL(blob);
+      setQuotationPdfUrl(pdfUrl);
+      setQuotationNo(generateUiQuotationNo());
+      setQuotationCreatedAt(formatUiDateTime(new Date()));
+      setStep(3);
+      setWorkflowStage("decision");
+
+      if (typeof window !== "undefined") {
+        window.open(pdfUrl, "_blank", "noopener,noreferrer");
+      }
+    } catch (error: unknown) {
+      setQuotationApiError(
+        error instanceof Error
+          ? error.message
+          : "Failed to create quotation. Please verify stock, auth, and backend response."
+      );
+    } finally {
+      setQuotationLoading(false);
+    }
+  };
+
+  const handleConfirmDecision = () => {
+    if (decisionModal === "approve") {
+      setWorkflowStage("approved");
+    } else if (decisionModal === "reject") {
+      setWorkflowStage("rejected");
+    }
+
+    setDecisionModal(null);
+  };
+
+  if (authLoading) {
+    return (
+      <div className="flex w-full justify-center px-4 py-10 sm:px-6 lg:px-8">
+        <div className="w-full max-w-[980px] rounded-[18px] border border-[#DEE4EC] bg-white p-6 text-[14px] text-[#4B5563]">
+          Loading...
+        </div>
+      </div>
+    );
+  }
+
+  if (workflowStage !== "builder") {
+    return (
+      <QuotationStep
+        stage={workflowStage}
+        decisionModal={decisionModal}
+        setDecisionModal={setDecisionModal}
+        onConfirmDecision={handleConfirmDecision}
+        clientData={clientData}
+        createdClient={createdClient}
+        products={products}
+        total={total}
+        quotationNo={quotationNo}
+        quotationCreatedAt={quotationCreatedAt}
+      />
+    );
+  }
+
+  return (
+    <div className="flex w-full justify-center px-4 py-6 sm:px-6 sm:py-8 lg:px-8 lg:py-10">
+      <div className="w-full max-w-[980px]">
+        <div className="mb-5 flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+          <div className="w-full max-w-[620px]">
+            <h1 className="text-[28px] font-[700] leading-[34px] tracking-[-0.02em] text-[#111827]">
+              Client Intake
+            </h1>
+
+            <p className="mt-[10px] text-[14px] font-[400] leading-[20px] text-[#4B5563]">
+              Enter client details to begin the sales process
+            </p>
+
+            <div className="mt-[14px] w-full max-w-[520px]">
+              <div className="mb-[8px] flex items-center justify-between">
+                <span className="text-[13px] font-[500] leading-[18px] text-[#374151]">
+                  Form Completion
+                </span>
+
+                <span className="text-[13px] font-[700] leading-[18px] text-[#2563EB]">
+                  {progress}%
+                </span>
+              </div>
+
+              <div className="relative h-[8px] w-full overflow-hidden rounded-full border border-[#E2E8F0] bg-[#E9EDF3] shadow-[inset_0_1px_2px_rgba(15,23,42,0.06),0_1px_0_rgba(255,255,255,0.7)]">
+                <div
+                  className="h-full rounded-full bg-[#2563EB] shadow-[0_1px_2px_rgba(37,99,235,0.28),inset_0_1px_0_rgba(255,255,255,0.18)] transition-all duration-300 ease-out"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="w-full rounded-[18px] border border-[#DEE4EC] bg-white p-4 shadow-[0_2px_10px_rgba(15,23,42,0.04)] sm:p-5 lg:p-6">
+          <div className="mb-8 sm:hidden">
+            <div className="relative pl-[52px]">
+              <div className="absolute bottom-[18px] left-[18px] top-[18px] w-[8px] rounded-full border border-[#DADADA] bg-[#E7E7E7] shadow-[inset_0_1px_2px_rgba(15,23,42,0.08),0_1px_0_rgba(255,255,255,0.72)]" />
+
+              <div className="flex flex-col gap-6">
+                {STEPS.map((item) => {
+                  const isActive = item.id <= step;
+
+                  return (
+                    <div
+                      key={item.id}
+                      className="relative flex min-h-[44px] items-center gap-4"
+                    >
+                      <div className="absolute -left-[52px] h-[38px] w-[38px] shrink-0 rounded-full border border-[#D5D5D5] bg-[#F8F8F8] shadow-[0_2px_6px_rgba(15,23,42,0.12),inset_0_1px_0_rgba(255,255,255,0.95)]">
+                        <div
+                          className={`absolute inset-[3px] flex items-center justify-center rounded-full border text-[14px] font-[700] text-white shadow-[inset_0_1px_1px_rgba(255,255,255,0.55)] ${
+                            isActive
+                              ? "border-[#2563EB] bg-[#2563EB]"
+                              : "border-[#C9C9C9] bg-[#D3D3D3]"
+                          }`}
+                        >
+                          {item.id}
+                        </div>
+                      </div>
+
+                      <div
+                        className={`flex h-[32px] items-center justify-center whitespace-nowrap rounded-full border px-[16px] text-[13px] font-[600] ${
+                          isActive
+                            ? "border-[#BFDBFE] bg-[#EFF6FF] text-[#2563EB]"
+                            : "border-[#DFDFDF] bg-[#EFEFEF] text-[#7A7A7A]"
+                        }`}
+                      >
+                        {item.label}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          <div className="mb-8 hidden w-full overflow-x-auto pb-1 sm:block">
+            <div className="relative min-w-[560px] px-[18px] sm:px-[28px] lg:px-[42px]">
+              <div className="absolute left-[74px] right-[74px] top-[15px] h-[8px] rounded-full border border-[#DADADA] bg-[#E7E7E7] shadow-[inset_0_1px_2px_rgba(15,23,42,0.08),0_1px_0_rgba(255,255,255,0.72)]" />
+
+              <div className="relative flex items-start justify-between">
+                {STEPS.map((item) => {
+                  const isActive = item.id <= step;
+
+                  return (
+                    <div
+                      key={item.id}
+                      className="flex min-w-[128px] flex-col items-center"
+                    >
+                      <div className="relative h-[38px] w-[38px] rounded-full border border-[#D5D5D5] bg-[#F8F8F8] shadow-[0_2px_6px_rgba(15,23,42,0.12),inset_0_1px_0_rgba(255,255,255,0.95)]">
+                        <div
+                          className={`absolute inset-[3px] flex items-center justify-center rounded-full border text-[14px] font-[700] text-white shadow-[inset_0_1px_1px_rgba(255,255,255,0.55)] ${
+                            isActive
+                              ? "border-[#2563EB] bg-[#2563EB]"
+                              : "border-[#C9C9C9] bg-[#D3D3D3]"
+                          }`}
+                        >
+                          {item.id}
+                        </div>
+                      </div>
+
+                      <div className="mt-[5px] h-0 w-0 border-b-[7px] border-l-[5px] border-r-[5px] border-b-[#D9D9D9] border-l-transparent border-r-transparent drop-shadow-[0_1px_0_rgba(255,255,255,0.72)]" />
+
+                      <div
+                        className={`mt-[6px] flex h-[32px] items-center justify-center whitespace-nowrap rounded-full border px-[16px] text-[13px] font-[600] ${
+                          isActive
+                            ? "border-[#BFDBFE] bg-[#EFF6FF] text-[#2563EB]"
+                            : "border-[#DFDFDF] bg-[#EFEFEF] text-[#7A7A7A]"
+                        }`}
+                      >
+                        {item.label}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          {step === 1 && (
+            <ClientForm
+              clientData={clientData}
+              onFieldChange={handleClientFieldChange}
+              onSubmit={handleCreateClient}
+              onReset={handleClientReset}
+              loading={clientLoading}
+              apiError={clientApiError}
+            />
+          )}
+
+          {step === 2 && (
+            <RequirementsStep
+              products={products}
+              setProducts={setProducts}
+              total={total}
+              onCreateQuotation={handleCreateQuotation}
+              back={() => setStep(1)}
+              loading={quotationLoading}
+              apiError={quotationApiError}
+            />
+          )}
+        </div>
+
+        <div className="mt-4 rounded-[12px] border border-[#B9D3FF] bg-[#EEF5FF] px-4 py-[14px] text-[13px] leading-[18px] text-[#1D4ED8]">
+          <span className="font-[700]">💡 Tip:</span>{" "}
+          <span className="font-[400]">
+            Make sure all required fields are filled correctly. You'll be able
+            to add product requirements in the next step.
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}

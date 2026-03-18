@@ -26,9 +26,9 @@ type NavItem = {
 };
 
 const ROLE_NAV_ITEMS: Record<string, NavItem[]> = {
- 
+
   super_admin: [
-    { label: "Dashboard", href: "/super-admin", icon: PiWindowsLogo  },
+    { label: "Dashboard", href: "/super-admin", icon: PiWindowsLogo },
     { label: "Branch Overview", href: "/super-admin/Branches", icon: BsBarChartLine },
     { label: "User Management", href: "/super-admin/users", icon: LuUsers },
     { label: "Reports & Analytics", href: "/super-admin/reports", icon: AiOutlineLineChart },
@@ -41,15 +41,28 @@ const ROLE_NAV_ITEMS: Record<string, NavItem[]> = {
     { label: "Aging", href: "/stock-manager/stock-aging", icon: UserManagement },
     { label: "Reports & Analytics", href: "/stock-manager/report-anylysis", icon: AiOutlineLineChart },
   ],
+  inventory_manager: [
+    { label: "Dashboard", href: "/inventory-manager", icon: DashboardIcon },
+    { label: "All Stocks", href: "/inventory-manager/all-stocks", icon: BsBarChartLine },
+    { label: "Aging", href: "/inventory-manager/stock-aging", icon: UserManagement },
+    { label: "Ledger Management", href: "/inventory-manager/ledger", icon: AiOutlineLineChart },
+    { label: "Reports & Analytics", href: "/inventory-manager/report-anylysis", icon: AiOutlineLineChart },
 
+  ],
   sales_manager: [
     { label: "Dashboard", href: "/sales-manager", icon: DashboardIcon },
-    { label: "Reports", href: "/sales-manager/reports", icon: AiOutlineLineChart },
+    { label: "Client Intake", href: "/sales-manager/client-intake", icon: AiOutlineLineChart },
+    { label: "Ledger", href: "/sales-manager/ledger", icon: AiOutlineLineChart },
+    { label: "Qutation", href: "/sales-manager/qutation", icon: AiOutlineLineChart },
+    { label: "Report & Analysis", href: "/sales-manager/report-analysis", icon: AiOutlineLineChart },
   ],
 
-  purchase_manager: [
-    { label: "Dashboard", href: "/purchase-manager", icon: DashboardIcon },
-    { label: "Reports", href: "/purchase-manager/reports", icon: Reports },
+  admin: [
+    { label: "Dashboard", href: "/branch-manager", icon: PiWindowsLogo },
+    { label: "Branch Overview", href: "/branch-manager/Branches", icon: BsBarChartLine },
+    { label: "User Management", href: "/branch-manager/users", icon: LuUsers },
+    { label: "Reports & Analytics", href: "/branch-manager/reports", icon: AiOutlineLineChart },
+    { label: "System Settings", href: "/branch-manager/settings", icon: SystemSetting },
   ],
 
   finance: [
@@ -92,6 +105,7 @@ export default function Sidebar() {
   return (
     <>
       {/* ================= MOBILE NAV ROW ================= */}
+      {/* ================= MOBILE NAV ROW ================= */}
       <div className="lg:hidden w-full px-1 mt-3">
         <div className="flex gap-2 overflow-x-auto no-scrollbar">
 
@@ -126,6 +140,24 @@ export default function Sidebar() {
               </Link>
             );
           })}
+
+          {/* LOGOUT BUTTON (MOBILE) */}
+          <button
+            onClick={logout}
+            className="
+        flex items-center gap-2
+        px-4 h-[42px] rounded-xl whitespace-nowrap
+        border transition
+        bg-white text-[#6B7280] border-[#E5E7EB]
+      "
+          >
+            <LogOut className="h-4 w-4 text-[#6B7280]" />
+
+            <span className="text-[13px] font-[500]">
+              Log Out
+            </span>
+          </button>
+
         </div>
       </div>
 
