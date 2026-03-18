@@ -3,9 +3,26 @@
 import { Search, Plus, Pencil, Check, X } from "lucide-react";
 import { useState, useMemo, useEffect } from "react";
 
-export default function DashboardTable({ data = [] }: any) {
+/* ✅ ROW TYPE */
+type RowType = {
+    itemName: string;
+    category: string;
+    hsn: string;
+    grn: string;
+    po: string;
+    stock: string;
+    stockIn: string;
+    stockOut: string;
+    scrap: string;
+    dispatch: string;
+    delivery: string;
+    status: string;
+};
+
+export default function DashboardTable({ data = [] }: { data?: RowType[] }) {
+
     const [search, setSearch] = useState("");
-    const [rows, setRows] = useState<any[]>([]);
+    const [rows, setRows] = useState<RowType[]>([]);
     const [adding, setAdding] = useState(false);
     const [editingIndex, setEditingIndex] = useState<number | null>(null);
 
@@ -15,7 +32,7 @@ export default function DashboardTable({ data = [] }: any) {
     }, [data]);
 
     /* ================= NEW ROW ================= */
-    const emptyRow = {
+    const emptyRow: RowType = {
         itemName: "",
         category: "",
         hsn: "",
@@ -30,14 +47,14 @@ export default function DashboardTable({ data = [] }: any) {
         status: "Good",
     };
 
-    const [newRow, setNewRow] = useState(emptyRow);
-    const [editRow, setEditRow] = useState<any>({});
+    const [newRow, setNewRow] = useState<RowType>(emptyRow);
+    const [editRow, setEditRow] = useState<RowType>(emptyRow);
 
     /* ================= FILTER ================= */
     const filteredData = useMemo(() => {
         if (!search) return rows;
 
-        return rows.filter((row: any) =>
+        return rows.filter((row) =>
             Object.values(row)
                 .join(" ")
                 .toLowerCase()
@@ -61,8 +78,9 @@ export default function DashboardTable({ data = [] }: any) {
     };
 
     const handleUpdate = () => {
+        if (editingIndex === null) return;
         const updated = [...rows];
-        updated[editingIndex!] = editRow;
+        updated[editingIndex] = editRow;
         setRows(updated);
         setEditingIndex(null);
     };
@@ -71,9 +89,9 @@ export default function DashboardTable({ data = [] }: any) {
         setEditingIndex(null);
     };
 
-    const handleChange = (key: string, value: any) => {
+    const handleChange = (key: keyof RowType, value: string) => {
         if (editingIndex !== null) {
-            setEditRow((prev: any) => ({ ...prev, [key]: value }));
+            setEditRow((prev) => ({ ...prev, [key]: value }));
         } else {
             setNewRow((prev) => ({ ...prev, [key]: value }));
         }
@@ -87,7 +105,7 @@ export default function DashboardTable({ data = [] }: any) {
         return "";
     };
 
-    const columns = [
+    const columns: (keyof RowType)[] = [
         "itemName",
         "category",
         "hsn",
@@ -144,7 +162,6 @@ export default function DashboardTable({ data = [] }: any) {
             <div className="overflow-x-auto max-h-[500px] overflow-y-auto">
                 <table className="w-full text-left min-w-[1000px]">
 
-                    {/* HEADER */}
                     <thead className="bg-[#F9FAFB] text-[12px] text-[#6B7280]">
                         <tr>
                             {[
@@ -169,18 +186,15 @@ export default function DashboardTable({ data = [] }: any) {
 
                     <tbody>
 
-                        {/* ADD ROW */}
                         {adding && (
                             <tr className="border-t bg-[#F8FAFC]">
-
                                 {columns.map((key) => (
                                     <td key={key} className="px-5 py-3">
-
                                         {key === "status" ? (
                                             <select
                                                 value={newRow.status}
                                                 onChange={(e) => handleChange(key, e.target.value)}
-                                                className="h-[34px] w-full rounded-[8px] border border-[#E5E7EB] bg-white px-2 text-[12px] text-[#374151] outline-none focus:ring-2 focus:ring-blue-100"
+                                                className="h-[34px] w-full rounded-[8px] border border-[#E5E7EB] bg-white px-2 text-[12px]"
                                             >
                                                 <option>Good</option>
                                                 <option>Damaged</option>
@@ -188,50 +202,35 @@ export default function DashboardTable({ data = [] }: any) {
                                             </select>
                                         ) : (
                                             <input
-                                                value={newRow[key] || ""}
+                                                value={newRow[key]}
                                                 onChange={(e) => handleChange(key, e.target.value)}
                                                 placeholder="Enter..."
-                                                className="h-[34px] w-full rounded-[8px] border border-[#E5E7EB] bg-white px-3 text-[12px] text-[#111827] placeholder:text-[#9CA3AF] outline-none focus:ring-2 focus:ring-blue-100"
+                                                className="h-[34px] w-full rounded-[8px] border border-[#E5E7EB] bg-white px-3 text-[12px]"
                                             />
                                         )}
-
                                     </td>
                                 ))}
 
-                                {/* ACTION BUTTONS */}
                                 <td className="px-5 py-3">
                                     <div className="flex items-center gap-2 justify-center">
-
-                                        <button
-                                            onClick={handleSave}
-                                            className="flex items-center justify-center h-[32px] w-[32px] rounded-[8px] bg-green-50 hover:bg-green-100 transition"
-                                        >
+                                        <button onClick={handleSave} className="h-[32px] w-[32px] rounded-[8px] bg-green-50">
                                             <Check size={16} className="text-green-600" />
                                         </button>
-
-                                        <button
-                                            onClick={() => setAdding(false)}
-                                            className="flex items-center justify-center h-[32px] w-[32px] rounded-[8px] bg-gray-100 hover:bg-gray-200 transition"
-                                        >
+                                        <button onClick={() => setAdding(false)} className="h-[32px] w-[32px] rounded-[8px] bg-gray-100">
                                             <X size={16} className="text-gray-600" />
                                         </button>
-
                                     </div>
                                 </td>
-
                             </tr>
                         )}
 
-                        {/* DATA */}
-                        {filteredData.map((row: any, index: number) => {
+                        {filteredData.map((row, index) => {
                             const isEditing = editingIndex === index;
 
                             return (
                                 <tr key={index} className="border-t hover:bg-[#F9FAFB] text-[13px]">
-
                                     {columns.map((key) => (
                                         <td key={key} className="px-4 py-3">
-
                                             {isEditing ? (
                                                 key === "status" ? (
                                                     <select
@@ -257,13 +256,10 @@ export default function DashboardTable({ data = [] }: any) {
                                             ) : (
                                                 row[key]
                                             )}
-
                                         </td>
                                     ))}
 
-                                    {/* ACTION */}
                                     <td className="px-4 py-3 flex gap-2">
-
                                         {isEditing ? (
                                             <>
                                                 <button onClick={handleUpdate}>
@@ -278,9 +274,7 @@ export default function DashboardTable({ data = [] }: any) {
                                                 <Pencil size={16} className="text-blue-600" />
                                             </button>
                                         )}
-
                                     </td>
-
                                 </tr>
                             );
                         })}
