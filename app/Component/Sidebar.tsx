@@ -119,7 +119,7 @@ export default function Sidebar() {
   return (
     <>
       
-      <div className="lg:hidden w-full px-1 mt-3">
+      <div className="lg:hidden h-fit  w-full px-1 mt-3">
         <div className="flex gap-2 overflow-x-auto no-scrollbar">
 
           {NAV_ITEMS.map((item) => {

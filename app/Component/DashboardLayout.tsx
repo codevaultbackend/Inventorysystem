@@ -43,14 +43,14 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   return (
     <div className="min-h-screen bg-[#F6F8FA]">
-      <div className="sticky !bg-[#F6F8FA] top-0 z-50 px-4 pt-[16px] lg:px-6">
+      <div className="sticky top-0 z-50 bg-[#F6F8FA] px-4 pt-4 lg:px-6">
         <Topbar />
       </div>
 
-      <div className="flex gap-[16px] px-4 pb-6 pt-4 lg:px-6">
+      <div className="flex flex-col gap-4 px-4 pb-6 pt-4 lg:flex-row lg:gap-[16px] lg:px-6">
         <Sidebar role={role} />
 
-        <main className="min-w-0 flex-1">
+        <main className="w-full min-w-0 flex-1">
           {children}
         </main>
       </div>
