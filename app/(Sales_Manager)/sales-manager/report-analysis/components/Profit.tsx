@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import {
   ResponsiveContainer,
@@ -7,38 +7,36 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
-  Tooltip
+  Tooltip,
 } from "recharts";
 
-export default function Profit() {
+type ProfitItem = {
+  month: string;
+  profit: number;
+};
 
-  const data = [
-    { month: "Jan", profit: 18000 },
-    { month: "Feb", profit: 22000 },
-    { month: "Mar", profit: 20000 },
-    { month: "Apr", profit: 26000 },
-    { month: "May", profit: 24000 },
-    { month: "Jun", profit: 28000 }
-  ];
+type Props = {
+  data: ProfitItem[];
+};
 
+const formatCurrency = (value: number) =>
+  new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(value);
+
+export default function Profit({ data }: Props) {
   return (
     <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm w-full">
-
-      {/* Title */}
       <h3 className="text-[16px] font-semibold text-gray-800 mb-4">
         Monthly Profit Analysis
       </h3>
 
-      {/* Chart */}
       <div className="w-full h-[300px]">
-
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data}>
-
-            <CartesianGrid
-              strokeDasharray="3 3"
-              stroke="#E5E7EB"
-            />
+            <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
 
             <XAxis
               dataKey="month"
@@ -53,19 +51,19 @@ export default function Profit() {
               tickLine={false}
             />
 
-            <Tooltip />
+            <Tooltip
+              formatter={(value: number) => [formatCurrency(Number(value)), "Profit (₹)"]}
+            />
 
             <Bar
               dataKey="profit"
               fill="#6366F1"
               radius={[6, 6, 0, 0]}
               barSize={36}
-              name="Profit ($)"
+              name="Profit (₹)"
             />
-
           </BarChart>
         </ResponsiveContainer>
-
       </div>
     </div>
   );

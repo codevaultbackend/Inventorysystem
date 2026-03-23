@@ -3,28 +3,31 @@
 import { useState } from "react";
 import { Calendar, Filter } from "lucide-react";
 
-export default function ReportFilterBar({ onFilterChange }) {
+type FilterValues = {
+  date: string;
+  type: string;
+};
+
+type Props = {
+  onFilterChange?: (filters: FilterValues) => void;
+};
+
+export default function ReportFilterBar({ onFilterChange }: Props) {
   const [date, setDate] = useState("");
   const [type, setType] = useState("");
 
-  const handleChange = (newDate, newType) => {
+  const handleChange = (newDate?: string | null, newType?: string | null) => {
     const filters = {
       date: newDate ?? date,
       type: newType ?? type,
     };
 
-    if (onFilterChange) {
-      onFilterChange(filters);
-    }
+    onFilterChange?.(filters);
   };
 
   return (
     <div className="w-full bg-white border border-gray-200 rounded-xl p-4 sm:p-5 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-
-      {/* Filters */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-4 w-full">
-
-        {/* Date Range */}
         <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
           <div className="flex items-center gap-2 text-gray-600">
             <Calendar size={18} />
@@ -42,7 +45,6 @@ export default function ReportFilterBar({ onFilterChange }) {
           />
         </div>
 
-        {/* Report Type */}
         <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
           <div className="flex items-center gap-2 text-gray-600">
             <Filter size={18} />
@@ -63,7 +65,6 @@ export default function ReportFilterBar({ onFilterChange }) {
             <option value="clients">Clients</option>
           </select>
         </div>
-
       </div>
     </div>
   );

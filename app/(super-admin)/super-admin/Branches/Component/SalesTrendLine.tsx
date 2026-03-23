@@ -11,18 +11,19 @@ import {
 } from "recharts";
 import { ChevronDown } from "lucide-react";
 
-const data = [
-  { week: "Week 1", purchase: 10000, sales: 9000 },
-  { week: "Week 2", purchase: 50000, sales: 20000 },
-  { week: "Week 3", purchase: 100000, sales: 60000 },
-  { week: "Week 4", purchase: 120000, sales: 140000 },
-];
+type SalesTrendPoint = {
+  week: string;
+  purchase: number;
+  sales: number;
+};
 
-export function SalesTrendLine() {
+type Props = {
+  data?: SalesTrendPoint[];
+};
+
+export function SalesTrendLine({ data = [] }: Props) {
   return (
     <div className="bg-white rounded-2xl border border-[#EEF2F6] shadow-[0_6px_20px_rgba(0,0,0,0.04)] p-6 w-full">
-      
-      {/* Header */}
       <div className="flex items-start justify-between mb-6">
         <div>
           <h3 className="text-[16px] font-semibold text-[#0F172A]">
@@ -39,11 +40,14 @@ export function SalesTrendLine() {
         </button>
       </div>
 
-      {/* Chart */}
       <div className="h-[260px]">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={data}>
-            <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#E2E8F0" />
+            <CartesianGrid
+              strokeDasharray="4 4"
+              vertical={false}
+              stroke="#E2E8F0"
+            />
             <XAxis
               dataKey="week"
               tick={{ fill: "#94A3B8", fontSize: 12 }}

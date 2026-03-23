@@ -97,7 +97,7 @@ export default function LedgerTable({ columns, data, onView }: Props) {
 
             {filtered.map((row, i) => (
 
-              <tr key={i} className="hover:bg-gray-50">
+              <tr key={i} className="hover:bg-gray-50 border-[#D3D3D3]">
 
                 {columns.map((col) => {
 

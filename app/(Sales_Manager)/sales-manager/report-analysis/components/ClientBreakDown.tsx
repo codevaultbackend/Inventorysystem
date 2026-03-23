@@ -8,34 +8,35 @@ import {
   Tooltip,
 } from "recharts";
 
-export default function ClientBreakDown() {
+type Props = {
+  data: {
+    newClients: number;
+    returningClients: number;
+  };
+};
 
-  const data = [
-    { name: "New Clients", value: 40, color: "#6366F1" },
-    { name: "Returning Clients", value: 30, color: "#10B981" },
-    { name: "VIP Clients", value: 20, color: "#F59E0B" },
-    { name: "Inactive Clients", value: 10, color: "#EF4444" },
+export default function ClientBreakDown({ data }: Props) {
+  const total = data.newClients + data.returningClients;
+
+  const chartData = [
+    { name: "New Clients", value: data.newClients, color: "#6366F1" },
+    { name: "Returning Clients", value: data.returningClients, color: "#10B981" },
   ];
 
   return (
     <div className="bg-white border border-gray-200 rounded-xl shadow-sm w-full h-full flex flex-col">
-
-      {/* Header */}
       <div className="px-6 py-4 border-b border-gray-100">
         <h3 className="text-base font-semibold text-gray-800">
           Client Breakdown
         </h3>
       </div>
 
-      {/* Content */}
       <div className="flex flex-col md:flex-row items-center md:items-center justify-center gap-8 p-6 flex-1">
-
-        {/* Chart */}
         <div className="w-[180px] h-[180px] shrink-0">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
-                data={data}
+                data={chartData}
                 dataKey="value"
                 innerRadius={55}
                 outerRadius={80}
@@ -43,7 +44,7 @@ export default function ClientBreakDown() {
                 cx="50%"
                 cy="50%"
               >
-                {data.map((entry, index) => (
+                {chartData.map((entry, index) => (
                   <Cell key={index} fill={entry.color} />
                 ))}
               </Pie>
@@ -52,36 +53,24 @@ export default function ClientBreakDown() {
           </ResponsiveContainer>
         </div>
 
-        {/* Legend */}
         <div className="flex flex-col gap-4 text-sm w-full max-w-[220px]">
-
-          {data.map((item, index) => (
-            <div
-              key={index}
-              className="flex items-center justify-between"
-            >
-
+          {chartData.map((item, index) => (
+            <div key={index} className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-2">
                 <span
                   className="w-3 h-3 rounded-full"
                   style={{ backgroundColor: item.color }}
                 />
-                <span className="text-gray-700 font-medium">
-                  {item.name}
-                </span>
+                <span className="text-gray-700 font-medium">{item.name}</span>
               </div>
 
               <span className="text-gray-900 font-semibold">
-                {item.value}%
+                {total > 0 ? `${Math.round((item.value / total) * 100)}%` : "0%"}
               </span>
-
             </div>
           ))}
-
         </div>
-
       </div>
-
     </div>
   );
 }

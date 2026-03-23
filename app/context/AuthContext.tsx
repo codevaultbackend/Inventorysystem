@@ -6,20 +6,21 @@ import {
   useEffect,
   useState,
   ReactNode,
+  useCallback,
 } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
-
 
 export type Role =
   | "super_admin"
   | "admin"
   | "super_inventory_manager"
-  | "hr_admin"
+  | "inventory_manager"
   | "super_stock_manager"
   | "stock_manager"
   | "sales_manager"
   | "purchase_manager"
+  | "super_sales_manager"
   | "finance";
 
 interface User {
@@ -37,21 +38,71 @@ type AuthContextType = {
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
   loading: boolean;
+  isAuthenticated: boolean;
 };
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
+const VALID_ROLES: Role[] = [
+  "super_admin",
+  "admin",
+  "super_inventory_manager",
+  "inventory_manager",
+  "super_sales_manager",
+  "super_stock_manager",
+  "stock_manager",
+  "sales_manager",
+  "purchase_manager",
+  "finance",
+];
 
+function normalizeRole(rawRole: unknown): Role | null {
+  if (!rawRole) return null;
 
-function normalizeRole(rawRole: string): Role {
-  return String(rawRole)
+  const normalized = String(rawRole)
     .toLowerCase()
     .trim()
     .replace(/\s+/g, "_")
     .replace(/-/g, "_") as Role;
+
+  return VALID_ROLES.includes(normalized) ? normalized : null;
 }
 
+function getCookie(name: string): string | null {
+  if (typeof document === "undefined") return null;
 
+  const match = document.cookie
+    .split("; ")
+    .find((row) => row.startsWith(`${name}=`));
+
+  return match ? decodeURIComponent(match.split("=").slice(1).join("=")) : null;
+}
+
+function setAuthHeader(token: string | null) {
+  if (token) {
+    axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+  } else {
+    delete axios.defaults.headers.common["Authorization"];
+  }
+}
+
+function getRouteByRole(role: Role | null): string {
+  const roleRoutes: Record<Role, string> = {
+    super_admin: "/super-admin",
+    admin: "/super-admin",
+    super_inventory_manager: "/inventory-manager",
+    inventory_manager: "/inventory-manager",
+    super_stock_manager: "/stock-manager",
+    stock_manager: "/stock-manager",
+    sales_manager: "/sales-manager",
+    super_sales_manager: "/sales-manager",
+    purchase_manager: "/purchase-manager",
+    finance: "/finance",
+  };
+
+  if (!role) return "/";
+  return roleRoutes[role] || "/";
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
@@ -61,116 +112,163 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const router = useRouter();
 
-  useEffect(() => {
-    const storedToken = localStorage.getItem("token");
-    const storedUser = localStorage.getItem("user");
+  const clearAuthState = useCallback(() => {
+    setToken(null);
+    setRole(null);
+    setUser(null);
 
-    if (storedToken) {
-      setToken(storedToken);
-      axios.defaults.headers.common["Authorization"] = `Bearer ${storedToken}`;
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
     }
 
-    if (storedUser) {
-      try {
-        const parsedUser: User = JSON.parse(storedUser);
-        setUser(parsedUser);
-        setRole(parsedUser.role);
-      } catch (error) {
-        console.error("Failed to parse stored user:", error);
-        localStorage.removeItem("user");
-      }
-    } else {
-      const roleCookie = document.cookie
-        .split("; ")
-        .find((row) => row.startsWith("role="))
-        ?.split("=")[1] as Role | undefined;
-
-      if (roleCookie) {
-        setRole(roleCookie);
-      }
+    if (typeof document !== "undefined") {
+      document.cookie =
+        "token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC; SameSite=Lax";
+      document.cookie =
+        "role=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC; SameSite=Lax";
     }
 
-    setLoading(false);
+    setAuthHeader(null);
   }, []);
 
-  const login = async (email: string, password: string) => {
-    const res = await axios.post("https://ims-2gyk.onrender.com/sql/login", {
-      email,
-      password,
-    });
+  const persistAuth = useCallback((newToken: string, loggedInUser: User) => {
+    const normalizedRole = normalizeRole(loggedInUser.role);
 
-    const newToken = res.data?.token;
-    const rawRole = res.data?.user?.role;
-
-    if (!newToken || !rawRole) {
-      throw new Error("Invalid login response");
+    if (!normalizedRole) {
+      throw new Error("Invalid user role received");
     }
 
-    const normalizedRole = normalizeRole(rawRole);
-
-    const loggedInUser: User = {
-      ...res.data.user,
+    const safeUser: User = {
+      ...loggedInUser,
       role: normalizedRole,
     };
 
     setToken(newToken);
     setRole(normalizedRole);
-    setUser(loggedInUser);
+    setUser(safeUser);
 
-    localStorage.setItem("token", newToken);
-    localStorage.setItem("user", JSON.stringify(loggedInUser));
+    if (typeof window !== "undefined") {
+      localStorage.setItem("token", newToken);
+      localStorage.setItem("user", JSON.stringify(safeUser));
+    }
 
-    document.cookie = `token=${newToken}; path=/; SameSite=Lax`;
-    document.cookie = `role=${normalizedRole}; path=/; SameSite=Lax`;
+    if (typeof document !== "undefined") {
+      document.cookie = `token=${encodeURIComponent(
+        newToken
+      )}; path=/; SameSite=Lax`;
+      document.cookie = `role=${encodeURIComponent(
+        normalizedRole
+      )}; path=/; SameSite=Lax`;
+    }
 
-    axios.defaults.headers.common["Authorization"] = `Bearer ${newToken}`;
+    setAuthHeader(newToken);
+  }, []);
 
-    const roleRoutes: Record<Role, string> = {
-      super_admin: "/super-admin",
-      admin: "/branch-manager",
-      hr_admin: "/hr-admin",
-      super_stock_manager: "/stock-manager",
-      stock_manager: "/stock-manager",
-      sales_manager: "/sales-manager",
-      inventory_manager: "/inventory-manager",
-      purchase_manager: "/purchase-manager",
-      finance: "/finance",
-    };
+  useEffect(() => {
+    if (typeof window === "undefined") return;
 
-    router.replace(roleRoutes[normalizedRole]);
-  };
+    try {
+      const storedToken = localStorage.getItem("token");
+      const storedUser = localStorage.getItem("user");
 
-  const logout = () => {
-    setToken(null);
-    setRole(null);
-    setUser(null);
+      if (storedToken) {
+        setToken(storedToken);
+        setAuthHeader(storedToken);
+      }
 
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
+      if (storedUser) {
+        try {
+          const parsedUser = JSON.parse(storedUser) as User;
+          const normalizedStoredRole = normalizeRole(parsedUser?.role);
 
-    document.cookie =
-      "token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
-    document.cookie =
-      "role=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
+          if (normalizedStoredRole) {
+            const safeUser: User = {
+              ...parsedUser,
+              role: normalizedStoredRole,
+            };
 
-    delete axios.defaults.headers.common["Authorization"];
+            setUser(safeUser);
+            setRole(normalizedStoredRole);
+          } else {
+            localStorage.removeItem("user");
+          }
+        } catch (error) {
+          console.error("Failed to parse stored user:", error);
+          localStorage.removeItem("user");
+        }
+      } else {
+        const cookieRole = normalizeRole(getCookie("role"));
+        if (cookieRole) {
+          setRole(cookieRole);
+        }
+      }
 
+      if (!storedToken && !storedUser) {
+        setAuthHeader(null);
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const login = useCallback(
+    async (email: string, password: string) => {
+      const res = await axios.post("https://ims-swp9.onrender.com/sql/login", {
+        email,
+        password,
+      });
+
+      const newToken = res.data?.token;
+      const apiUser = res.data?.user;
+      const normalizedRole = normalizeRole(apiUser?.role);
+
+      if (!newToken || !apiUser || !normalizedRole) {
+        throw new Error("Invalid login response");
+      }
+
+      const loggedInUser: User = {
+        ...apiUser,
+        role: normalizedRole,
+      };
+
+      persistAuth(newToken, loggedInUser);
+
+      router.replace(getRouteByRole(normalizedRole));
+    },
+    [persistAuth, router]
+  );
+
+  const logout = useCallback(() => {
+    clearAuthState();
     router.replace("/Login");
-  };
+  }, [clearAuthState, router]);
+
+  const isAuthenticated = !!token && !!user;
 
   return (
-    <AuthContext.Provider value={{ token, role, user, login, logout, loading }}>
+    <AuthContext.Provider
+      value={{
+        token,
+        role,
+        user,
+        login,
+        logout,
+        loading,
+        isAuthenticated,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
 }
 
-/* ================= HOOK ================= */
-
 export function useAuth() {
   const context = useContext(AuthContext);
+
   if (!context) {
     throw new Error("useAuth must be used inside AuthProvider");
   }
+
   return context;
 }

@@ -173,7 +173,7 @@ export default function InventoryTable({
 
           <thead>
 
-            <tr className="bg-[#F9FAFB] border-b border-[#EEF2F6] text-[#6B7280]">
+            <tr className="bg-[#F9FAFB]  text-[#6B7280]">
 
               {safeColumns.map((col) => (
 
@@ -210,7 +210,7 @@ export default function InventoryTable({
 
               <tr
                 key={index}
-                className="border-b border-[#F1F5F9] hover:bg-[#FAFAFA]"
+                className=" hover:bg-[#FAFAFA]"
               >
 
                 {safeColumns.map((col) => {

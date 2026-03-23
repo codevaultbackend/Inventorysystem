@@ -3,131 +3,117 @@
 import { useMemo, useState } from "react";
 import { ListFilter, Search } from "lucide-react";
 import LedgerCompanyCard from "./LedgerCompanyCard";
-import { LedgerCompany, LedgerEntry } from "../data/ledgerData";
+import { LedgerCompany } from "../data/ledgerData";
 
 type Props = {
   companies?: LedgerCompany[];
 };
 
-type FlatInvoiceItem = {
-  company: LedgerCompany;
-  entry: LedgerEntry;
-};
-
-const parseLedgerDate = (value: string) => {
-  if (!value) return 0;
-
-  // expected: 20/02/2026, 16:04:26
-  const [datePart = "", timePart = "00:00:00"] = value.split(",");
-  const [dd = "01", mm = "01", yyyy = "1970"] = datePart.trim().split("/");
-  const [hh = "00", min = "00", sec = "00"] = timePart.trim().split(":");
-
-  const date = new Date(
-    Number(yyyy),
-    Number(mm) - 1,
-    Number(dd),
-    Number(hh),
-    Number(min),
-    Number(sec)
-  );
-
-  return Number.isNaN(date.getTime()) ? 0 : date.getTime();
-};
+type SortMode = "default" | "amount" | "pending" | "entries";
 
 export default function LedgerCompanyList({ companies = [] }: Props) {
   const [query, setQuery] = useState("");
-  const [sortMode, setSortMode] = useState<"default" | "date" | "amount">(
-    "default"
-  );
+  const [sortMode, setSortMode] = useState<SortMode>("default");
 
-  const allInvoices = useMemo<FlatInvoiceItem[]>(() => {
-    if (!Array.isArray(companies)) return [];
-
-    return companies.flatMap((company) =>
-      Array.isArray(company.entries)
-        ? company.entries.map((entry) => ({ company, entry }))
-        : []
-    );
-  }, [companies]);
-
-  const filteredInvoices = useMemo(() => {
+  const filteredCompanies = useMemo(() => {
     const normalized = query.trim().toLowerCase();
 
-    let result = allInvoices.filter(({ company, entry }) => {
+    let result = companies.filter((company) => {
       if (!normalized) return true;
 
       return (
-        company.companyName.toLowerCase().includes(normalized) ||
-        company.companyShort.toLowerCase().includes(normalized) ||
-        entry.client.toLowerCase().includes(normalized) ||
-        entry.entryId.toLowerCase().includes(normalized) ||
-        entry.transactionId.toLowerCase().includes(normalized) ||
-        entry.billNumber.toLowerCase().includes(normalized)
+        String(company.companyName || "")
+          .toLowerCase()
+          .includes(normalized) ||
+        String(company.companyShort || "")
+          .toLowerCase()
+          .includes(normalized) ||
+        String(company.email || "")
+          .toLowerCase()
+          .includes(normalized) ||
+        String(company.phone || "")
+          .toLowerCase()
+          .includes(normalized) ||
+        String(company.gstNumber || "")
+          .toLowerCase()
+          .includes(normalized) ||
+        String(company.clientId).includes(normalized)
       );
     });
 
     if (sortMode === "amount") {
-      result = [...result].sort((a, b) => b.entry.amount - a.entry.amount);
+      result = [...result].sort((a, b) => b.totalAmt - a.totalAmt);
     }
 
-    if (sortMode === "date") {
-      result = [...result].sort(
-        (a, b) => parseLedgerDate(b.entry.dateTime) - parseLedgerDate(a.entry.dateTime)
-      );
+    if (sortMode === "pending") {
+      result = [...result].sort((a, b) => b.pendingAmt - a.pendingAmt);
+    }
+
+    if (sortMode === "entries") {
+      result = [...result].sort((a, b) => b.totalEntries - a.totalEntries);
     }
 
     return result;
-  }, [allInvoices, query, sortMode]);
+  }, [companies, query, sortMode]);
+
+  const sortLabel =
+    sortMode === "default"
+      ? "Sort by Amount / Pending / Entries"
+      : sortMode === "amount"
+      ? "Sorted by Amount"
+      : sortMode === "pending"
+      ? "Sorted by Pending"
+      : "Sorted by Entries";
+
+  const handleSortToggle = () => {
+    setSortMode((prev) =>
+      prev === "default"
+        ? "amount"
+        : prev === "amount"
+        ? "pending"
+        : prev === "pending"
+        ? "entries"
+        : "default"
+    );
+  };
 
   return (
     <section className="overflow-hidden rounded-[16px] border border-[#E5EAF0] bg-white shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
-      <div className="border-b border-[#EEF2F6] px-[20px] py-[18px]">
-        <h2 className="text-[15px] font-semibold leading-[20px] text-[#111827]">
-          All Invoice Entries
+      <div className="border-b border-[#EEF2F6] px-4 py-4 sm:px-5 sm:py-[18px]">
+        <h2 className="text-[15px] font-semibold leading-[20px] text-[#111827] sm:text-[16px]">
+          All Ledger Entries
         </h2>
       </div>
 
-      <div className="flex flex-col gap-[12px] border-b border-[#EEF2F6] px-[16px] py-[14px] sm:flex-row sm:items-center sm:justify-between sm:px-[20px]">
-        <div className="relative w-full sm:max-w-[290px]">
+      <div className="flex flex-col gap-3 border-b border-[#EEF2F6] px-4 py-4 sm:px-5 lg:flex-row lg:items-center lg:justify-between">
+        <div className="relative w-full lg:max-w-[320px]">
           <Search className="pointer-events-none absolute left-[12px] top-1/2 h-[14px] w-[14px] -translate-y-1/2 text-[#9CA3AF]" />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search by ID or Client Name..."
+            placeholder="Search by company, email, phone..."
             className="h-[40px] w-full rounded-[10px] border border-[#E5E7EB] bg-[#FCFCFD] pl-[36px] pr-[12px] text-[13px] font-medium text-[#111827] outline-none placeholder:text-[#9CA3AF] focus:border-[#D1D5DB]"
           />
         </div>
 
         <button
           type="button"
-          onClick={() =>
-            setSortMode((prev) =>
-              prev === "default" ? "date" : prev === "date" ? "amount" : "default"
-            )
-          }
-          className="inline-flex h-[40px] items-center gap-[8px] rounded-[10px] border border-[#E5E7EB] bg-[#FCFCFD] px-[14px] text-[13px] font-medium text-[#6B7280] transition hover:bg-white"
+          onClick={handleSortToggle}
+          className="inline-flex h-[40px] w-full items-center justify-center gap-[8px] rounded-[10px] border border-[#E5E7EB] bg-[#FCFCFD] px-[14px] text-[13px] font-medium text-[#6B7280] transition hover:bg-white sm:w-auto sm:justify-start"
         >
-          <ListFilter className="h-[14px] w-[14px]" strokeWidth={2} />
-          {sortMode === "default"
-            ? "Sort by Date / Ammount"
-            : sortMode === "date"
-            ? "Sorted by Date"
-            : "Sorted by Amount"}
+          <ListFilter className="h-[14px] w-[14px] shrink-0" strokeWidth={2} />
+          <span className="truncate">{sortLabel}</span>
         </button>
       </div>
 
-      <div className="space-y-[14px] px-[16px] py-[20px] sm:px-[28px] sm:py-[20px]">
-        {filteredInvoices.length > 0 ? (
-          filteredInvoices.map(({ company, entry }) => (
-            <LedgerCompanyCard
-              key={`${company.id}-${entry.id}`}
-              company={company}
-              entry={entry}
-            />
+      <div className="space-y-3 px-4 py-4 sm:space-y-[14px] sm:px-5 sm:py-5 lg:px-7">
+        {filteredCompanies.length > 0 ? (
+          filteredCompanies.map((company) => (
+            <LedgerCompanyCard key={company.clientId} company={company} />
           ))
         ) : (
           <div className="rounded-[14px] border border-dashed border-[#D7DEE7] bg-[#FAFBFC] px-[18px] py-[26px] text-center text-[14px] text-[#6B7280]">
-            No invoice entries found.
+            No ledger entries found.
           </div>
         )}
       </div>

@@ -1,70 +1,114 @@
-import { HiOutlineDocumentText } from "react-icons/hi";
-import { AiOutlineClockCircle } from "react-icons/ai";
-import { BsCheckCircle } from "react-icons/bs";
-import { IoCloseCircleOutline } from "react-icons/io5";
+"use client";
 
-export default function StatsSection() {
+import {
+  HiOutlineDocumentText,
+  HiOutlineClock,
+} from "react-icons/hi";
+import { BsCheckCircle, BsXCircle } from "react-icons/bs";
+
+interface StatsData {
+  totalQuotations: number;
+  totalAmount: number;
+  pendingCount: number;
+  pendingAmount: number;
+  pendingThisWeek: number;
+  approvedCount: number;
+  rejectedCount: number;
+}
+
+interface Props {
+  stats: StatsData;
+}
+
+function formatCurrency(value: number) {
+  return `$${new Intl.NumberFormat("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(value || 0)}`;
+}
+
+export default function StatsSection({ stats }: Props) {
   return (
-    <div className="grid grid-cols-4 gap-[20px] mb-[20px]">
-
+    <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
       <StatCard
         label="Total Quotations"
-        value="0"
-        sub="$0.00"
+        value={String(stats.totalQuotations)}
+        sub={formatCurrency(stats.totalAmount)}
         icon={<HiOutlineDocumentText />}
-        bg="bg-[#F4F6F9]"
+        iconBg="bg-[#EEF2FF]"
+        iconColor="text-[#4F46E5]"
+        subColor="text-[#2563EB]"
       />
 
       <StatCard
         label="Pending Quotations"
-        value="0"
-        sub="3 this week"
-        icon={<AiOutlineClockCircle />}
-        bg="bg-[#FFF6E5]"
+        value={String(stats.pendingCount)}
+        sub={`${stats.pendingThisWeek} this week`}
+        icon={<HiOutlineClock />}
+        iconBg="bg-[#FFF7ED]"
+        iconColor="text-[#EA580C]"
+        subColor="text-[#F59E0B]"
       />
 
       <StatCard
         label="Approved Quotations"
-        value="96"
+        value={String(stats.approvedCount)}
+        sub={stats.approvedCount > 0 ? "Approved successfully" : undefined}
         icon={<BsCheckCircle />}
-        bg="bg-[#E8F7EF]"
+        iconBg="bg-[#E8F7EF]"
+        iconColor="text-[#16A34A]"
+        subColor="text-[#22C55E]"
       />
 
       <StatCard
         label="Rejected Quotations"
-        value="0"
-        icon={<IoCloseCircleOutline />}
-        bg="bg-[#FCEBEC]"
+        value={String(stats.rejectedCount)}
+        sub={stats.rejectedCount > 0 ? "Needs review" : undefined}
+        icon={<BsXCircle />}
+        iconBg="bg-[#FCEBEC]"
+        iconColor="text-[#DC2626]"
+        subColor="text-[#EF4444]"
       />
-
     </div>
   );
 }
 
-function StatCard({ label, value, sub, icon, bg }) {
+function StatCard({
+  label,
+  value,
+  sub,
+  icon,
+  iconBg,
+  iconColor,
+  subColor,
+}: {
+  label: string;
+  value: string;
+  sub?: string;
+  icon: React.ReactNode;
+  iconBg: string;
+  iconColor: string;
+  subColor: string;
+}) {
   return (
-    <div className="bg-white h-[88px] rounded-[12px] px-[20px] flex items-center justify-between shadow-sm">
-
-      <div>
+    <div className="flex h-auto min-h-[96px] items-center justify-between rounded-[14px] bg-white px-5 py-4 shadow-sm">
+      <div className="min-w-0">
         {sub && (
-          <p className="text-[12px] text-[#22C55E] mb-[2px]">
-            {sub}
-          </p>
+          <p className={`mb-1 text-[12px] font-medium ${subColor}`}>{sub}</p>
         )}
 
-        <p className="text-[22px] font-[600] text-[#111827]">
+        <p className="text-[24px] font-semibold leading-none text-[#111827]">
           {value}
         </p>
 
-        <p className="text-[13px] text-[#6B7280]">
-          {label}
-        </p>
+        <p className="mt-2 text-[13px] text-[#6B7280]">{label}</p>
       </div>
 
-      <div className={`${bg} w-[42px] h-[42px] rounded-full flex items-center justify-center text-[20px]`}>
+      <div
+        className={`flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-full text-[20px] ${iconBg} ${iconColor}`}
+      >
         {icon}
       </div>
-
     </div>
   );
 }

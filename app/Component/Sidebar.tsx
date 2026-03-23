@@ -16,6 +16,13 @@ import { PiWindowsLogo } from "react-icons/pi";
 import { BsBarChartLine } from "react-icons/bs";
 import { LuUsers } from "react-icons/lu";
 import { AiOutlineLineChart } from "react-icons/ai";
+import { LuUsersRound } from "react-icons/lu";
+import { FaBookOpen } from "react-icons/fa";
+import { IoDocumentTextSharp } from "react-icons/io5";
+import { HiOutlineClipboardDocumentList } from "react-icons/hi2";
+import { IoMdClipboard } from "react-icons/io";
+
+
 
 /* ================= TYPES ================= */
 
@@ -34,40 +41,47 @@ const ROLE_NAV_ITEMS: Record<string, NavItem[]> = {
     { label: "Reports & Analytics", href: "/super-admin/reports", icon: AiOutlineLineChart },
     { label: "System Settings", href: "/super-admin/settings", icon: SystemSetting },
   ],
-
   super_stock_manager: [
     { label: "Dashboard", href: "/stock-manager", icon: DashboardIcon },
     { label: "All Stocks", href: "/stock-manager/all-stocks", icon: BsBarChartLine },
     { label: "Aging", href: "/stock-manager/stock-aging", icon: UserManagement },
-    { label: "Reports & Analytics", href: "/stock-manager/report-anylysis", icon: AiOutlineLineChart },
+    { label: "Reports & Analytics", href: "/stock-manager/report-anylysis", icon: HiOutlineClipboardDocumentList },
   ],
   inventory_manager: [
     { label: "Dashboard", href: "/inventory-manager", icon: DashboardIcon },
     { label: "All Stocks", href: "/inventory-manager/all-stocks", icon: BsBarChartLine },
     { label: "Aging", href: "/inventory-manager/stock-aging", icon: UserManagement },
-    { label: "Ledger Management", href: "/inventory-manager/ledger", icon: AiOutlineLineChart },
-    { label: "Reports & Analytics", href: "/inventory-manager/report-anylysis", icon: AiOutlineLineChart },
-
+    { label: "Ledger Management", href: "/inventory-manager/ledger", icon: FaBookOpen },
+    { label: "Reports & Analytics", href: "/inventory-manager/report-anylysis", icon: HiOutlineClipboardDocumentList },
+  ],
+   super_inventory_manager:[
+    { label: "Dashboard", href: "/inventory-manager", icon: DashboardIcon },
+    { label: "All Stocks", href: "/inventory-manager/all-stocks", icon: BsBarChartLine },
+    { label: "Aging", href: "/inventory-manager/stock-aging", icon: UserManagement },
+    { label: "Ledger Management", href: "/inventory-manager/ledger", icon: FaBookOpen },
+    { label: "Reports & Analytics", href: "/inventory-manager/report-anylysis", icon: HiOutlineClipboardDocumentList },
   ],
   sales_manager: [
     { label: "Dashboard", href: "/sales-manager", icon: DashboardIcon },
-    { label: "Client Intake", href: "/sales-manager/client-intake", icon: AiOutlineLineChart },
-    { label: "Ledger", href: "/sales-manager/ledger", icon: AiOutlineLineChart },
-    { label: "Qutation", href: "/sales-manager/qutation", icon: AiOutlineLineChart },
-    { label: "Report & Analysis", href: "/sales-manager/report-analysis", icon: AiOutlineLineChart },
+    { label: "Client Intake", href: "/sales-manager/client-intake", icon: LuUsersRound },
+    { label: "Ledger", href: "/sales-manager/ledger", icon: FaBookOpen },
+    { label: "Qutation", href: "/sales-manager/qutation", icon: IoDocumentTextSharp },
+    { label: "Report & Analysis", href: "/sales-manager/report-analysis", icon: HiOutlineClipboardDocumentList },
+  ],
+   super_sales_manager: [
+    { label: "Dashboard", href: "/sales-manager", icon: DashboardIcon },
+    { label: "Ledger", href: "/sales-manager/ledger", icon: FaBookOpen },
+    { label: "Qutation", href: "/sales-manager/qutation", icon: IoDocumentTextSharp },
+    { label: "Report & Analysis", href: "/sales-manager/report-analysis", icon: HiOutlineClipboardDocumentList },
+    { label: "Invoice", href: "/sales-manager/invoice", icon: IoMdClipboard },
   ],
 
-  admin: [
-    { label: "Dashboard", href: "/branch-manager", icon: PiWindowsLogo },
-    { label: "Branch Overview", href: "/branch-manager/Branches", icon: BsBarChartLine },
-    { label: "User Management", href: "/branch-manager/users", icon: LuUsers },
-    { label: "Reports & Analytics", href: "/branch-manager/reports", icon: AiOutlineLineChart },
-    { label: "System Settings", href: "/branch-manager/settings", icon: SystemSetting },
-  ],
-
-  finance: [
-    { label: "Dashboard", href: "/finance", icon: DashboardIcon },
-    { label: "Reports", href: "/finance/reports", icon: Reports },
+   admin: [
+    { label: "Dashboard", href: "/super-admin", icon: PiWindowsLogo },
+    { label: "All Stocks", href: "/super-admin/all-stocks", icon: BsBarChartLine },
+    { label: "User Management", href: "/super-admin/users", icon: LuUsers },
+    { label: "Reports & Analytics", href: "/super-admin/reports", icon: HiOutlineClipboardDocumentList },
+    { label: "System Settings", href: "/super-admin/settings", icon: SystemSetting },
   ],
 };
 
@@ -104,8 +118,7 @@ export default function Sidebar() {
 
   return (
     <>
-      {/* ================= MOBILE NAV ROW ================= */}
-      {/* ================= MOBILE NAV ROW ================= */}
+      
       <div className="lg:hidden w-full px-1 mt-3">
         <div className="flex gap-2 overflow-x-auto no-scrollbar">
 
@@ -141,7 +154,6 @@ export default function Sidebar() {
             );
           })}
 
-          {/* LOGOUT BUTTON (MOBILE) */}
           <button
             onClick={logout}
             className="
@@ -161,18 +173,16 @@ export default function Sidebar() {
         </div>
       </div>
 
-      {/* ================= DESKTOP SIDEBAR ================= */}
-
       <aside
         className={cn(
           "hidden lg:block",
-          "h-screen sticky overflow-y-auto no-scrollbar top-0",
+          "h-screen sticky overflow-y-auto no-scrollbar top-[97px]",
           "bg-white rounded-[20px]",
           "border border-[#EEF2F6]",
           "shadow-[1px_1px_4px_rgba(0,0,0,0.1)]",
           "mb-4",
           collapsed ? "w-[92px]" : "w-[260px]",
-          "max-h-[791px] h-full",
+          "max-h-[601px] h-full",
           "transition-[width] duration-200 ease-out"
         )}
       >

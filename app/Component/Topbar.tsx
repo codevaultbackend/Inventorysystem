@@ -22,51 +22,33 @@ export default function TopBar() {
   return (
     <header
       className="
-      w-full
-      h-[72px]
-      bg-white
-      rounded-[12px]
-      px-4 lg:px-6
-      flex items-center
-      justify-between
-      shadow-[1px_1px_4px_rgba(0,0,0,0.1)]
-    "
+        relative z-[1]
+        flex h-[72px] w-full items-center justify-between
+        rounded-[12px] bg-white px-4 shadow-[1px_1px_4px_rgba(0,0,0,0.1)]
+        lg:px-6
+      "
     >
-      {/* LEFT */}
       <div className="flex items-center gap-4">
-        <span className="text-[16px] font-[500] text-[#0A58A6] whitespace-nowrap">
+        <span className="whitespace-nowrap text-[16px] font-[500] text-[#0A58A6]">
           Athratech Pvt Limited
         </span>
 
         <button
           onClick={handleToggle}
           className="
-            hidden lg:flex
-            h-10 w-10
-            rounded-lg
-            border border-[#E5E7EB]
-            items-center justify-center
-            bg-white
-            hover:bg-[#F3F4F6]
-            transition
+            hidden h-10 w-10 items-center justify-center rounded-lg border border-[#E5E7EB]
+            bg-white transition hover:bg-[#F3F4F6] lg:flex
           "
         >
           <ToggleNav className="h-5 w-5 text-[#374151]" />
         </button>
       </div>
 
-      {/* SEARCH */}
-      <div className="hidden lg:flex flex-1 max-w-[720px] px-6">
+      <div className="hidden max-w-[720px] flex-1 px-6 lg:flex">
         <div
           className="
-            h-[44px]
-            bg-[#F8FAFC]
-            rounded-xl
-            flex items-center
-            px-4
-            gap-2
-            w-full
-            border border-[#EEF2F6]
+            flex h-[44px] w-full items-center gap-2 rounded-xl border border-[#EEF2F6]
+            bg-[#F8FAFC] px-4
           "
         >
           <Search size={18} className="text-[#94A3B8]" />
@@ -75,38 +57,27 @@ export default function TopBar() {
             type="text"
             placeholder="Search"
             className="
-              w-full
-              bg-transparent
-              outline-none
-              text-[14px]
-              text-[#0F172A]
+              w-full bg-transparent text-[14px] text-[#0F172A] outline-none
               placeholder:text-[#94A3B8]
             "
           />
         </div>
       </div>
 
-      {/* RIGHT */}
       <div className="flex items-center gap-4">
-
-        {/* SETTINGS (MOBILE ONLY) */}
         <Link href="/profile" className="lg:hidden">
           <button
             className="
-              h-10 w-10
-              rounded-lg
-              flex items-center justify-center
-              hover:bg-[#F3F4F6]
-              transition
+              flex h-10 w-10 items-center justify-center rounded-lg
+              transition hover:bg-[#F3F4F6]
             "
           >
             <Settings size={18} className="text-[#374151]" />
           </button>
         </Link>
 
-        {/* PROFILE (DESKTOP) */}
         <Link href="/profile">
-          <div className="flex items-center gap-3 cursor-pointer">
+          <div className="flex cursor-pointer items-center gap-3">
             <Image
               src="https://i.pravatar.cc/40?img=3"
               alt="profile"
@@ -115,18 +86,17 @@ export default function TopBar() {
               className="rounded-full"
             />
 
-            <div className="hidden md:block leading-tight">
+            <div className="hidden leading-tight md:block">
               <p className="text-[14px] font-medium text-[#0F172A]">
                 {user?.name || "User"}
               </p>
 
-              <p className="text-[10px] bg-[#F2F8FF] text-[#131313] rounded-full px-2 py-[2px] text-center mt-1 capitalize">
+              <p className="mt-1 rounded-full bg-[#F2F8FF] px-2 py-[2px] text-center text-[10px] capitalize text-[#131313]">
                 {user?.role?.replaceAll("_", " ") || "Role"}
               </p>
             </div>
           </div>
         </Link>
-
       </div>
     </header>
   );

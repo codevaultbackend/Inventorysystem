@@ -55,7 +55,7 @@ type ContextType = {
 
 const SuperStockAdminContext = createContext<ContextType | null>(null);
 
-const BASE_URL = "https://ims-2gyk.onrender.com";
+const BASE_URL = "https://ims-swp9.onrender.com";
 
 const getAuthHeader = () => {
   if (typeof window === "undefined") return null;

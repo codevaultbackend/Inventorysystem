@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import {
   ResponsiveContainer,
@@ -8,39 +8,31 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend
+  Legend,
 } from "recharts";
 
-export default function WeeklyActivity() {
+type WeeklyItem = {
+  day: string;
+  quotations: number;
+  approved: number;
+  invoices: number;
+};
 
-  const data = [
-    { day: "Mon", quotations: 12, invoices: 8, dispatched: 6 },
-    { day: "Tue", quotations: 15, invoices: 10, dispatched: 8 },
-    { day: "Wed", quotations: 18, invoices: 12, dispatched: 10 },
-    { day: "Thu", quotations: 14, invoices: 11, dispatched: 9 },
-    { day: "Fri", quotations: 20, invoices: 15, dispatched: 12 },
-    { day: "Sat", quotations: 8, invoices: 5, dispatched: 4 },
-    { day: "Sun", quotations: 5, invoices: 3, dispatched: 2 }
-  ];
+type Props = {
+  data: WeeklyItem[];
+};
 
+export default function WeeklyActivity({ data }: Props) {
   return (
     <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm w-full">
-
-      {/* Title */}
       <h3 className="text-[16px] font-semibold text-gray-800 mb-4">
         Weekly Activity Trend
       </h3>
 
-      {/* Chart */}
       <div className="w-full h-[300px]">
-
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={data}>
-
-            <CartesianGrid
-              strokeDasharray="3 3"
-              stroke="#E5E7EB"
-            />
+            <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
 
             <XAxis
               dataKey="day"
@@ -57,12 +49,8 @@ export default function WeeklyActivity() {
 
             <Tooltip />
 
-            <Legend
-              iconType="circle"
-              wrapperStyle={{ fontSize: "13px" }}
-            />
+            <Legend iconType="circle" wrapperStyle={{ fontSize: "13px" }} />
 
-            {/* Quotations */}
             <Line
               type="monotone"
               dataKey="quotations"
@@ -72,29 +60,25 @@ export default function WeeklyActivity() {
               name="Quotations"
             />
 
-            {/* Invoices */}
+            <Line
+              type="monotone"
+              dataKey="approved"
+              stroke="#10B981"
+              strokeWidth={3}
+              dot={{ r: 4 }}
+              name="Approved"
+            />
+
             <Line
               type="monotone"
               dataKey="invoices"
-              stroke="#10B981"
+              stroke="#F59E0B"
               strokeWidth={3}
               dot={{ r: 4 }}
               name="Invoices"
             />
-
-            {/* Dispatched */}
-            <Line
-              type="monotone"
-              dataKey="dispatched"
-              stroke="#F59E0B"
-              strokeWidth={3}
-              dot={{ r: 4 }}
-              name="Dispatched"
-            />
-
           </LineChart>
         </ResponsiveContainer>
-
       </div>
     </div>
   );

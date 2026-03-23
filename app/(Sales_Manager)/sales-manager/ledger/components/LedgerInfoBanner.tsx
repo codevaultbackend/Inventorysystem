@@ -6,8 +6,6 @@ export default function LedgerInfoBanner() {
   return (
     <div className="w-full rounded-[16px] border border-[#C7D2FE] bg-[#EEF2FF] px-[22px] py-[18px] shadow-[0_4px_14px_rgba(15,23,42,0.04)]">
       <div className="flex items-start gap-[14px]">
-        
-        {/* Icon Circle */}
         <div className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-full bg-white shadow-sm">
           <BookOpen
             className="h-[18px] w-[18px] text-[#4F46E5]"
@@ -15,7 +13,6 @@ export default function LedgerInfoBanner() {
           />
         </div>
 
-        {/* Content */}
         <div>
           <h3 className="text-[15px] font-semibold leading-[20px] tracking-[-0.01em] text-[#2F35A6] sm:text-[16px]">
             Automated Ledger Updates

@@ -1,101 +1,76 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import { useSuperDashboard } from "@/app/context/SuperDashboardContext";
+import { useAuth } from "@/app/context/AuthContext";
 
-export default function BranchOverview() {
-  /* ================= FILTER STATE ================= */
-  const [period] = useState<"Daily" | "Weekly" | "Monthly">("Weekly");
+type BranchItem = {
+  name: string;
+  id: string;
+  stock: number;
+  purchase: number;
+  sales: number;
+  in: number;
+  out: number;
+  href?: string;
+};
 
+type Props = {
+  data?: BranchItem[];
+  loading?: boolean;
+  title?: string;
+  subtitle?: string;
+  editHref?: string;
+};
+
+function formatCurrency(value: number) {
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(Number(value || 0));
+}
+
+function formatNumber(value: number) {
+  return new Intl.NumberFormat("en-IN").format(Number(value || 0));
+}
+
+export default function BranchOverview({
+  data = [],
+  loading = false,
+  title = "Branch Overview",
+  subtitle = "Latest system branch stock and sales summary",
+  editHref,
+}: Props) {
   const { setLocation } = useSuperDashboard();
+  const { user } = useAuth();
 
-  /* ================= DATA ================= */
-  const branches = [
-    {
-      name: "Karnataka",
-      id: "Karnataka",
-      data: {
-        Daily: { stock: 120, purchase: "₹1 Lakh", sales: "₹80K", in: 120, out: 110 },
-        Weekly: { stock: 500, purchase: "₹5 Lakhs", sales: "₹5 Lakhs", in: 500, out: 500 },
-        Monthly: { stock: 2200, purchase: "₹20 Lakhs", sales: "₹18 Lakhs", in: 2100, out: 2000 },
-      },
-    },
-    {
-      name: "Maharashtra",
-      id: "Maharashtra",
-      data: {
-        Daily: { stock: 150, purchase: "₹90K", sales: "₹70K", in: 140, out: 130 },
-        Weekly: { stock: 550, purchase: "₹5 Lakhs", sales: "₹5 Lakhs", in: 550, out: 550 },
-        Monthly: { stock: 2400, purchase: "₹22 Lakhs", sales: "₹20 Lakhs", in: 2300, out: 2200 },
-      },
-    },
-    {
-      name: "Gujarat",
-      id: "Gujarat",
-      data: {
-        Daily: { stock: 90, purchase: "₹60K", sales: "₹40K", in: 90, out: 80 },
-        Weekly: { stock: 600, purchase: "₹5 Lakhs", sales: "₹5 Lakhs", in: 600, out: 600 },
-        Monthly: { stock: 2600, purchase: "₹25 Lakhs", sales: "₹21 Lakhs", in: 2500, out: 2400 },
-      },
-    },
-    {
-      name: "Bihar",
-      id: "Bihar",
-      data: {
-        Daily: { stock: 110, purchase: "₹70K", sales: "₹60K", in: 100, out: 95 },
-        Weekly: { stock: 500, purchase: "₹5 Lakhs", sales: "₹5 Lakhs", in: 500, out: 500 },
-        Monthly: { stock: 2100, purchase: "₹18 Lakhs", sales: "₹16 Lakhs", in: 2000, out: 1900 },
-      },
-    },
-    {
-      name: "West Bengal",
-      id: "West Bengal",
-      data: {
-        Daily: { stock: 200, purchase: "₹1.2 Lakhs", sales: "₹1 Lakh", in: 180, out: 170 },
-        Weekly: { stock: "1K", purchase: "₹5 Lakhs", sales: "₹5 Lakhs", in: "1K", out: "1K" },
-        Monthly: { stock: "5K", purchase: "₹50 Lakhs", sales: "₹45 Lakhs", in: "4.5K", out: "4K" },
-      },
-    },
-    {
-      name: "Telangana",
-      id: "Telangana",
-      data: {
-        Daily: { stock: 50, purchase: "₹30K", sales: "₹25K", in: 50, out: 45 },
-        Weekly: { stock: 100, purchase: "₹5 Lakhs", sales: "₹5 Lakhs", in: 100, out: 100 },
-        Monthly: { stock: 800, purchase: "₹8 Lakhs", sales: "₹7 Lakhs", in: 750, out: 700 },
-      },
-    },
-  ];
+  const isSuperAdmin = user?.role === "super_admin";
+  const baseRoute = isSuperAdmin ? "/super-admin" : "/admin";
 
-  /* ================= UI ================= */
   return (
-    <div className="bg-white rounded-2xl border border-[#EEF2F6] shadow-sm w-full overflow-hidden">
-
-      {/* HEADER */}
+    <div className="bg-white rounded-2xl shadow-[1px_1px_4px_rgba(0,0,0,0.1)] border border-[#EEF2F6]  w-full overflow-hidden">
       <div className="flex justify-between items-center px-6 py-5">
         <div>
           <h3 className="text-[18px] font-semibold text-[#0F172A]">
-            Branch Overview
+            {title}
           </h3>
-          <p className="text-[13px] text-[#64748B] mt-1">
-            Latest System Activities and updates
-          </p>
+          <p className="text-[13px] text-[#64748B] mt-1">{subtitle}</p>
         </div>
 
-        {/* EDIT BUTTON */}
         <div className="flex items-center gap-3">
-          <Link href="/super-admin/Branches/EditBranch">
-            <button className="bg-blue-600 text-white px-4 py-2 text-sm rounded-lg hover:bg-blue-700 transition">
-              Edit Branch
-            </button>
-          </Link>
+          {isSuperAdmin && (
+            <Link href={editHref || `${baseRoute}/Branches/EditBranch`}>
+              <button className="bg-blue-600 text-white px-4 py-2 text-sm rounded-lg hover:bg-blue-700 transition">
+                Edit Branch
+              </button>
+            </Link>
+          )}
         </div>
       </div>
 
-      {/* TABLE */}
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[900px]">
+      <div className="overflow-x-auto active:cursor-grabbing">
+        <table className="w-full min-w-[900px]  ">
           <thead>
             <tr className="bg-[#F8FAFC] text-left">
               {[
@@ -118,46 +93,74 @@ export default function BranchOverview() {
           </thead>
 
           <tbody>
-            {branches.map((branch) => {
-              const row = branch.data[period];
-
-              return (
-                <tr
-                  key={branch.id}
-                  className="hover:bg-[#F8FAFC] transition"
-                >
-                  <td className="px-6 py-4 font-medium text-[#0F172A] border border-[#E2E2E2]">
-                    {branch.name}
-                  </td>
-
-                  <td className="px-6 py-4 text-[#334155] border border-[#E2E2E2]">
-                    {row.stock}
-                  </td>
-                  <td className="px-6 py-4 text-[#334155] border border-[#E2E2E2]">
-                    {row.purchase}
-                  </td>
-                  <td className="px-6 py-4 text-[#334155] border border-[#E2E2E2]">
-                    {row.sales}
-                  </td>
-                  <td className="px-6 py-4 text-[#334155] border border-[#E2E2E2]">
-                    {row.in}
-                  </td>
-                  <td className="px-6 py-4 text-[#334155] border border-[#E2E2E2]">
-                    {row.out}
-                  </td>
-
-                  <td className="px-6 py-4 border border-[#E2E2E2]">
-                    <Link
-                      onClick={() => setLocation(branch.name)}
-                      href={`/super-admin/Branches/${branch.id}`}
-                      className="text-blue-600 text-sm font-medium hover:underline"
+            {loading ? (
+              Array.from({ length: 6 }).map((_, index) => (
+                <tr key={index}>
+                  {Array.from({ length: 7 }).map((__, idx) => (
+                    <td
+                      key={idx}
+                      className="px-6 py-4 border border-[#E2E2E2]"
                     >
-                      View
-                    </Link>
-                  </td>
+                      <div className="h-4 w-full rounded bg-gray-100 animate-pulse" />
+                    </td>
+                  ))}
                 </tr>
-              );
-            })}
+              ))
+            ) : data.length > 0 ? (
+              data.map((branch) => {
+                const resolvedHref =
+                  branch.href || `${baseRoute}/Branches/${encodeURIComponent(branch.id)}`;
+
+                return (
+                  <tr key={branch.id} className="hover:bg-[#F8FAFC] transition">
+                    <td className="px-6 py-4 font-medium text-[#0F172A] border border-[#E2E2E2]">
+                      {branch.name}
+                    </td>
+
+                    <td className="px-6 py-4 text-[#334155] border border-[#E2E2E2]">
+                      {formatNumber(branch.stock)}
+                    </td>
+
+                    <td className="px-6 py-4 text-[#334155] border border-[#E2E2E2]">
+                      {formatCurrency(branch.purchase)}
+                    </td>
+
+                    <td className="px-6 py-4 text-[#334155] border border-[#E2E2E2]">
+                      {formatCurrency(branch.sales)}
+                    </td>
+
+                    <td className="px-6 py-4 text-[#334155] border border-[#E2E2E2]">
+                      {formatNumber(branch.in)}
+                    </td>
+
+                    <td className="px-6 py-4 text-[#334155] border border-[#E2E2E2]">
+                      {formatNumber(branch.out)}
+                    </td>
+
+                    <td className="px-6 py-4 border border-[#E2E2E2]">
+                      <Link
+                        href={resolvedHref}
+                        onClick={() => {
+                          if (isSuperAdmin) setLocation(branch.name);
+                        }}
+                        className="text-blue-600 text-sm font-medium hover:underline"
+                      >
+                        View
+                      </Link>
+                    </td>
+                  </tr>
+                );
+              })
+            ) : (
+              <tr>
+                <td
+                  colSpan={7}
+                  className="px-6 py-10 text-center text-sm text-[#64748B]"
+                >
+                  No branch overview data found
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>

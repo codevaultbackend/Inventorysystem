@@ -1,120 +1,150 @@
 "use client";
 
-import {
-  PieChart,
-  Pie,
-  Cell,
-  ResponsiveContainer,
-} from "recharts";
+import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 
-const data = [
-  { name: "Electricals", value: 25, color: "#2563EB" },
-  { name: "Furnitures", value: 35, color: "#FF5C1B" },
-  { name: "Electronics", value: 25, color: "#22B8CF" },
-  { name: "Raw Materials", value: 5, color: "#8CD867" },
-  { name: "Furnitures 2", value: 10, color: "#C0268C" },
-];
+type StockDistributionItem = {
+  name: string;
+  value: number;
+  total: number;
+  color: string;
+};
 
-export default function StockDistribution() {
+type Props = {
+  data?: StockDistributionItem[];
+  loading?: boolean;
+};
+
+function renderCustomLabel(props: any) {
+  const { cx, cy, midAngle, outerRadius, value, fill } = props;
+
+  const RADIAN = Math.PI / 180;
+  const angle = -midAngle * RADIAN;
+  const isRight = Math.cos(angle) >= 0;
+
+  const startX = cx + (outerRadius - 6) * Math.cos(angle);
+  const startY = cy + (outerRadius - 6) * Math.sin(angle);
+
+  const midX = cx + (outerRadius + 22) * Math.cos(angle);
+  const midY = cy + (outerRadius + 22) * Math.sin(angle);
+
+  const endX = isRight ? midX + 62 : midX - 62;
+  const endY = midY;
+
+  const textX = isRight ? endX + 8 : endX - 8;
+
   return (
-    <div
-      className="
-        bg-[#F8FAFC]
-        rounded-2xl
-        border border-[#E2E8F0]
-        shadow-[0_6px_20px_rgba(0,0,0,0.03)]
-        p-6
-        w-full
-        min-h-[320px]
-      "
-    >
-      {/* Header */}
-      <div className="mb-6">
-        <h3 className="text-[18px] font-semibold text-[#0F172A]">
+    <g>
+      <line
+        x1={startX}
+        y1={startY}
+        x2={midX}
+        y2={midY}
+        stroke="#D1D5DB"
+        strokeWidth={2}
+        strokeDasharray="3 3"
+      />
+      <line
+        x1={midX}
+        y1={midY}
+        x2={endX}
+        y2={endY}
+        stroke="#D1D5DB"
+        strokeWidth={2}
+        strokeDasharray="3 3"
+      />
+      <text
+        x={textX}
+        y={endY + 5}
+        fill={fill}
+        textAnchor={isRight ? "start" : "end"}
+        fontSize="13"
+        fontWeight="700"
+      >
+        {`${Number(value).toFixed(0)}%`}
+      </text>
+    </g>
+  );
+}
+
+export default function StockDistribution({
+  data = [],
+  loading = false,
+}: Props) {
+  return (
+    <div className=" lg:max-h-[320px] max-h-[520px] h-full min-w-0 overflow-hidden rounded-[24px] border border-[#E5EAF1] bg-white px-4 py-4 shadow-[1px_1px_4px_rgba(0,0,0,0.1)] sm:px-5 sm:py-5 lg:px-6 lg:py-6">
+      <div className="">
+        <h3 className="text-[18px] font-semibold leading-none tracking-[-0.02em] text-[#111827] sm:text-[20px] lg:text-[22px]">
           Stock Distribution
         </h3>
-        <p className="text-[13px] text-[#64748B] mt-1">
+        <p className="mt-1.5 text-[12px] text-[#9CA3AF] sm:text-[13px] lg:text-[14px]">
           Category-wise Breakdown
         </p>
       </div>
 
-      {/* Content */}
-      <div className="flex flex-col xl:flex-row items-center gap-8">
-
-        {/* Donut */}
-        <div className="relative w-full xl:w-[55%] h-[260px]">
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={data}
-                innerRadius={75}
-                outerRadius={110}
-                paddingAngle={8}
-                cornerRadius={30}
-                dataKey="value"
-                stroke="none"
-              >
-                {data.map((entry, index) => (
-                  <Cell key={index} fill={entry.color} />
-                ))}
-              </Pie>
-            </PieChart>
-          </ResponsiveContainer>
-
-          {/* Outside Percentage Labels */}
-          <div className="absolute inset-0 pointer-events-none">
-            {/* 35% Top Right */}
-            <div className="absolute top-6 right-0 text-[#FF5C1B] text-[14px] font-semibold">
-              35%
+      {loading ? (
+        <div className=" rounded-[20px] bg-[#F8FAFC] sm:h-[360px] xl:h-[200px]" />
+      ) : data.length > 0 ? (
+        <div className="flex h-full min-h-[270px] min-w-0 flex-col gap-6 sm:min-h-[270px] xl:min-h-[210px] xl:flex-row xl:items-center xl:gap-4">
+          <div className="flex min-w-0 flex-1 items-center justify-center xl:basis-[38%]">
+            <div className="h-[220px] w-full max-w-[320px] sm:h-[240px] sm:max-w-[360px] md:h-[240px] md:max-w-[390px] xl:h-[240px] xl:max-w-[420px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart margin={{ top: 10, right: 26, bottom: 10, left: 26 }}>
+                  <Pie
+                    data={data}
+                    dataKey="value"
+                    nameKey="name"
+                    cx="50%"
+                    cy="50%"
+                    innerRadius="42%"
+                    outerRadius="68%"
+                    paddingAngle={8}
+                    cornerRadius={16}
+                    startAngle={110}
+                    endAngle={-250}
+                    stroke="none"
+                    labelLine={false}
+                    label={renderCustomLabel}
+                    isAnimationActive={false}
+                  >
+                    {data.map((entry, index) => (
+                      <Cell key={index} fill={entry.color} />
+                    ))}
+                  </Pie>
+                </PieChart>
+              </ResponsiveContainer>
             </div>
+          </div>
 
-            {/* 25% Bottom Right */}
-            <div className="absolute bottom-10 right-0 text-[#2563EB] text-[14px] font-semibold">
-              25%
-            </div>
+          <div className="min-w-0 xl:basis-[32%]">
+            <div className="space-y-1 sm:space-y-1">
+              {data.map((item, index) => (
+                <div
+                  key={index}
+                  className="flex min-w-0 items-center justify-between gap-3"
+                >
+                  <div className="flex min-w-0 items-center gap-3">
+                    <span
+                      className="h-[11px] w-[11px] shrink-0 rounded-full sm:h-[12px] sm:w-[12px]"
+                      style={{ backgroundColor: item.color }}
+                    />
+                    <span className="truncate text-[15px] font-medium text-[#1F2937] sm:text-[16px] lg:text-[17px]">
+                      {item.name}
+                    </span>
+                  </div>
 
-            {/* 25% Bottom Left */}
-            <div className="absolute bottom-10 left-0 text-[#22B8CF] text-[14px] font-semibold">
-              25%
-            </div>
-
-            {/* 10% Middle Left */}
-            <div className="absolute top-[50%] -translate-y-1/2 left-0 text-[#C0268C] text-[14px] font-semibold">
-              10%
-            </div>
-
-            {/* 5% Top Left */}
-            <div className="absolute top-10 left-6 text-[#8CD867] text-[14px] font-semibold">
-              5%
+                  <span className="shrink-0 text-[15px] font-semibold text-[#111827] sm:text-[16px] lg:text-[17px]">
+                    {item.value}%
+                  </span>
+                </div>
+              ))}
             </div>
           </div>
         </div>
-
-        {/* Legend */}
-        <div className="w-full xl:w-[45%] space-y-4">
-          {data.map((item, index) => (
-            <div
-              key={index}
-              className="flex items-center justify-between"
-            >
-              <div className="flex items-center gap-3">
-                <span
-                  className="w-3 h-3 rounded-full"
-                  style={{ backgroundColor: item.color }}
-                />
-                <span className="text-[14px] text-[#334155]">
-                  {item.name}
-                </span>
-              </div>
-
-              <span className="text-[14px] font-semibold text-[#0F172A]">
-                {item.value}%
-              </span>
-            </div>
-          ))}
+      ) : (
+        <div className="flex h-[320px] items-center justify-center rounded-[20px] bg-[#F8FAFC] text-sm text-[#64748B] sm:h-[360px] xl:h-[400px]">
+          No stock distribution data found
         </div>
-
-      </div>
+      )}
     </div>
   );
 }

@@ -39,7 +39,7 @@ export default function LedgerScreen() {
         if (!token) throw new Error("No token found");
 
         const res = await axios.get(
-          "https://ims-2gyk.onrender.com/combine/dashboard/complete",
+          "https://ims-swp9.onrender.com/combine/dashboard/complete",
           {
             headers: {
               Authorization: `Bearer ${token}`,

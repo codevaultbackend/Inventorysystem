@@ -19,7 +19,7 @@ export function LocationsProvider({ children }) {
           : null;
 
       const res = await fetch(
-        "https://ims-2gyk.onrender.com/stock-manager/locations",
+        "https://ims-swp9.onrender.com/stock-manager/locations",
         {
           method: "GET",
           headers: {

@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronDown } from "lucide-react";
-import type { ReactNode } from "react";
+import { ReactNode } from "react";
 
 type Option = {
   label: string;
@@ -13,120 +13,95 @@ type Props = {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
-  icon?: ReactNode;
-  error?: string;
   required?: boolean;
-  type?: string;
+  error?: string;
+  icon?: ReactNode;
   textarea?: boolean;
   select?: boolean;
   options?: Option[];
   disabled?: boolean;
-  className?: string;
 };
 
 export default function ReusableInputComponent({
   label,
   value,
   onChange,
-  placeholder = "",
-  icon,
+  placeholder,
+  required,
   error,
-  required = false,
-  type = "text",
+  icon,
   textarea = false,
   select = false,
   options = [],
   disabled = false,
-  className = "",
 }: Props) {
-  const wrapperClass = `
-    relative w-full rounded-[10px] border bg-white transition
-    ${
-      error
-        ? "border-[#EF4444] focus-within:border-[#EF4444]"
-        : "border-[#D5DBE3] focus-within:border-[#94A3B8]"
-    }
-    ${disabled ? "cursor-not-allowed bg-[#F9FAFB] opacity-80" : ""}
-  `;
-
-  const inputClass = `
-    w-full bg-transparent text-[14px] leading-[20px] text-[#111827]
-    outline-none placeholder:text-[#9CA3AF]
-    ${icon ? "pl-10 pr-4" : "px-4"}
-    ${select ? "h-[44px] appearance-none pr-10" : ""}
-    ${textarea ? "min-h-[96px] resize-none py-3" : ""}
-    ${!textarea && !select ? "h-[44px]" : ""}
-    ${className}
+  const baseFieldClass = `
+    w-full rounded-[10px] border bg-white text-[14px] text-[#111827]
+    placeholder:text-[#9CA3AF] transition outline-none
+    ${error ? "border-[#FCA5A5] focus:border-[#EF4444]" : "border-[#D1D5DB] focus:border-[#93C5FD]"}
+    ${icon ? "pl-[42px]" : "pl-3.5"} pr-3.5
+    focus:ring-4 ${error ? "focus:ring-[#FEE2E2]" : "focus:ring-[#DBEAFE]"}
+    disabled:cursor-not-allowed disabled:bg-[#F9FAFB] disabled:text-[#9CA3AF]
   `;
 
   return (
-    <div className="flex w-full flex-col gap-[6px]">
-      <label className="text-[13px] font-[500] leading-[18px] text-[#374151]">
+    <div>
+      <label className="mb-2 block text-[13px] font-medium text-[#374151]">
         {label}
-        {required ? <span className="ml-1 text-[#EF4444]">*</span> : null}
+        {required ? <span className="ml-1 text-[#2563EB]">*</span> : null}
       </label>
 
-      {select ? (
-        <div className={wrapperClass}>
-          <select
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            disabled={disabled}
-            className={inputClass}
-          >
-            <option value="" disabled>
-              {placeholder || "Select"}
-            </option>
+      <div className="relative">
+        {icon ? (
+          <span className="pointer-events-none absolute left-3 top-1/2 z-10 -translate-y-1/2 text-[#9CA3AF]">
+            {icon}
+          </span>
+        ) : null}
 
-            {options.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
+        {select ? (
+          <>
+            <select
+              value={value}
+              onChange={(e) => onChange(e.target.value)}
+              disabled={disabled}
+              className={`${baseFieldClass} h-[46px] appearance-none`}
+            >
+              <option value="">{placeholder || "Select option"}</option>
+              {options.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
 
-          <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#9CA3AF]" />
-        </div>
-      ) : textarea ? (
-        <div className={wrapperClass}>
-          {icon ? (
-            <span className="pointer-events-none absolute left-4 top-4 text-[#6B7280]">
-              {icon}
-            </span>
-          ) : null}
-
+            <ChevronDown
+              size={16}
+              className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[#9CA3AF]"
+            />
+          </>
+        ) : textarea ? (
           <textarea
             value={value}
             onChange={(e) => onChange(e.target.value)}
             placeholder={placeholder}
-            rows={4}
             disabled={disabled}
-            className={`${inputClass} ${icon ? "pl-10" : "pl-4"}`}
+            rows={4}
+            className={`${baseFieldClass} min-h-[104px] resize-none pt-3 pb-3`}
           />
-        </div>
-      ) : (
-        <div className={wrapperClass}>
-          {icon ? (
-            <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#6B7280]">
-              {icon}
-            </span>
-          ) : null}
-
+        ) : (
           <input
-            type={type}
+            type="text"
             value={value}
             onChange={(e) => onChange(e.target.value)}
             placeholder={placeholder}
             disabled={disabled}
-            className={inputClass}
+            className={`${baseFieldClass} h-[46px]`}
           />
-        </div>
-      )}
+        )}
+      </div>
 
       {error ? (
-        <span className="text-[12px] leading-[16px] text-[#DC2626]">
-          {error}
-        </span>
+        <p className="mt-1.5 text-[12px] font-medium text-[#DC2626]">{error}</p>
       ) : null}
     </div>
   );

@@ -50,13 +50,25 @@ const STEPS = [
   { id: 3, label: "Quotation" },
 ];
 
+const BaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL
+
 const CREATE_CLIENT_URL =
   process.env.NEXT_PUBLIC_CREATE_CLIENT_URL ||
-  "https://ims-2gyk.onrender.com/sales/clients-create";
+  `${BaseUrl}/sales/clients-create`;
 
 const CREATE_QUOTATION_URL =
   process.env.NEXT_PUBLIC_CREATE_QUOTATION_URL ||
-  "https://ims-2gyk.onrender.com/sales/qt-gen";
+  `${BaseUrl}/sales/qt-gen`;
+
+const STORAGE_KEYS = {
+  step: "client-intake-step",
+  clientData: "client-intake-client-data",
+  createdClient: "client-intake-created-client",
+  products: "client-intake-products",
+  workflowStage: "client-intake-workflow-stage",
+  quotationNo: "client-intake-quotation-no",
+  quotationCreatedAt: "client-intake-quotation-created-at",
+};
 
 const initialClientData: ClientFormData = {
   clientType: "",
@@ -171,6 +183,8 @@ function generateUiQuotationNo() {
 export default function ClientIntakePage() {
   const { token, user, loading: authLoading } = useAuth();
 
+  const [hydrated, setHydrated] = useState(false);
+
   const [step, setStep] = useState(1);
   const [workflowStage, setWorkflowStage] =
     useState<WorkflowStage>("builder");
@@ -201,6 +215,83 @@ export default function ClientIntakePage() {
     };
   }, [quotationPdfUrl]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const savedStep = window.sessionStorage.getItem(STORAGE_KEYS.step);
+    const savedClientData = window.sessionStorage.getItem(STORAGE_KEYS.clientData);
+    const savedCreatedClient = window.sessionStorage.getItem(STORAGE_KEYS.createdClient);
+    const savedProducts = window.sessionStorage.getItem(STORAGE_KEYS.products);
+    const savedWorkflowStage = window.sessionStorage.getItem(STORAGE_KEYS.workflowStage);
+    const savedQuotationNo = window.sessionStorage.getItem(STORAGE_KEYS.quotationNo);
+    const savedQuotationCreatedAt = window.sessionStorage.getItem(STORAGE_KEYS.quotationCreatedAt);
+
+    if (savedStep) setStep(Number(savedStep));
+    if (savedClientData) setClientData(JSON.parse(savedClientData));
+    if (savedCreatedClient) setCreatedClient(JSON.parse(savedCreatedClient));
+    if (savedProducts) setProducts(JSON.parse(savedProducts));
+    if (savedWorkflowStage) setWorkflowStage(savedWorkflowStage as WorkflowStage);
+    if (savedQuotationNo) setQuotationNo(savedQuotationNo);
+    if (savedQuotationCreatedAt) setQuotationCreatedAt(savedQuotationCreatedAt);
+
+    setHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated || typeof window === "undefined") return;
+    window.sessionStorage.setItem(STORAGE_KEYS.step, String(step));
+  }, [step, hydrated]);
+
+  useEffect(() => {
+    if (!hydrated || typeof window === "undefined") return;
+    window.sessionStorage.setItem(
+      STORAGE_KEYS.clientData,
+      JSON.stringify(clientData)
+    );
+  }, [clientData, hydrated]);
+
+  useEffect(() => {
+    if (!hydrated || typeof window === "undefined") return;
+    window.sessionStorage.setItem(
+      STORAGE_KEYS.products,
+      JSON.stringify(products)
+    );
+  }, [products, hydrated]);
+
+  useEffect(() => {
+    if (!hydrated || typeof window === "undefined") return;
+
+    if (createdClient) {
+      window.sessionStorage.setItem(
+        STORAGE_KEYS.createdClient,
+        JSON.stringify(createdClient)
+      );
+    } else {
+      window.sessionStorage.removeItem(STORAGE_KEYS.createdClient);
+    }
+  }, [createdClient, hydrated]);
+
+  useEffect(() => {
+    if (!hydrated || typeof window === "undefined") return;
+    window.sessionStorage.setItem(
+      STORAGE_KEYS.workflowStage,
+      workflowStage
+    );
+  }, [workflowStage, hydrated]);
+
+  useEffect(() => {
+    if (!hydrated || typeof window === "undefined") return;
+    window.sessionStorage.setItem(STORAGE_KEYS.quotationNo, quotationNo);
+  }, [quotationNo, hydrated]);
+
+  useEffect(() => {
+    if (!hydrated || typeof window === "undefined") return;
+    window.sessionStorage.setItem(
+      STORAGE_KEYS.quotationCreatedAt,
+      quotationCreatedAt
+    );
+  }, [quotationCreatedAt, hydrated]);
+
   const progress = useMemo(() => {
     if (step === 1) return 33;
     if (step === 2) return 67;
@@ -226,6 +317,14 @@ export default function ClientIntakePage() {
     setClientApiError("");
   };
 
+  const clearSessionData = () => {
+    if (typeof window === "undefined") return;
+
+    Object.values(STORAGE_KEYS).forEach((key) => {
+      window.sessionStorage.removeItem(key);
+    });
+  };
+
   const handleClientReset = () => {
     setClientData(initialClientData);
     setCreatedClient(null);
@@ -243,6 +342,7 @@ export default function ClientIntakePage() {
 
     setQuotationNo("");
     setQuotationCreatedAt("");
+    clearSessionData();
   };
 
   const handleCreateClient = async () => {
@@ -256,6 +356,17 @@ export default function ClientIntakePage() {
         throw new Error("No authentication token found. Please login again.");
       }
 
+      const payload = {
+        client_type: clientData.clientType.trim(),
+        company_name: clientData.companyName.trim(),
+        contact_person: clientData.contactPerson.trim(),
+        phone: clientData.phone.trim(),
+        email: clientData.email.trim(),
+        address: clientData.address.trim(),
+        city: clientData.city.trim(),
+        country: clientData.country.trim(),
+      };
+
       const response = await fetch(CREATE_CLIENT_URL, {
         method: "POST",
         credentials: "include",
@@ -263,16 +374,7 @@ export default function ClientIntakePage() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${authToken}`,
         },
-        body: JSON.stringify({
-          client_type: clientData.clientType.trim(),
-          company_name: clientData.companyName.trim(),
-          contact_person: clientData.contactPerson.trim(),
-          phone: clientData.phone.trim(),
-          email: clientData.email.trim(),
-          address: clientData.address.trim(),
-          city: clientData.city.trim(),
-          country: clientData.country.trim(),
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
@@ -280,14 +382,29 @@ export default function ClientIntakePage() {
       }
 
       const data = await response.json();
-      setCreatedClient(data?.client ?? null);
-      setStep(2);
+
+      const newClient = data?.client ?? null;
+      setCreatedClient(newClient);
+
+      if (typeof window !== "undefined" && newClient) {
+        window.sessionStorage.setItem(
+          STORAGE_KEYS.createdClient,
+          JSON.stringify(newClient)
+        );
+      }
+
+      setTimeout(() => {
+        setStep(2);
+      }, 1200);
+
+      return data?.message || "Client created successfully.";
     } catch (error: unknown) {
       setClientApiError(
         error instanceof Error
           ? error.message
           : "Failed to create client. Check authentication, CORS, or network."
       );
+      throw error;
     } finally {
       setClientLoading(false);
     }
@@ -352,13 +469,24 @@ export default function ClientIntakePage() {
       }
 
       const pdfUrl = URL.createObjectURL(blob);
+      const quotationNumber = generateUiQuotationNo();
+      const quotationDate = formatUiDateTime(new Date());
+
       setQuotationPdfUrl(pdfUrl);
-      setQuotationNo(generateUiQuotationNo());
-      setQuotationCreatedAt(formatUiDateTime(new Date()));
+      setQuotationNo(quotationNumber);
+      setQuotationCreatedAt(quotationDate);
       setStep(3);
       setWorkflowStage("decision");
 
       if (typeof window !== "undefined") {
+        window.sessionStorage.setItem(STORAGE_KEYS.step, "3");
+        window.sessionStorage.setItem(STORAGE_KEYS.workflowStage, "decision");
+        window.sessionStorage.setItem(STORAGE_KEYS.quotationNo, quotationNumber);
+        window.sessionStorage.setItem(
+          STORAGE_KEYS.quotationCreatedAt,
+          quotationDate
+        );
+
         window.open(pdfUrl, "_blank", "noopener,noreferrer");
       }
     } catch (error: unknown) {
@@ -375,14 +503,20 @@ export default function ClientIntakePage() {
   const handleConfirmDecision = () => {
     if (decisionModal === "approve") {
       setWorkflowStage("approved");
+      if (typeof window !== "undefined") {
+        window.sessionStorage.setItem(STORAGE_KEYS.workflowStage, "approved");
+      }
     } else if (decisionModal === "reject") {
       setWorkflowStage("rejected");
+      if (typeof window !== "undefined") {
+        window.sessionStorage.setItem(STORAGE_KEYS.workflowStage, "rejected");
+      }
     }
 
     setDecisionModal(null);
   };
 
-  if (authLoading) {
+  if (authLoading || !hydrated) {
     return (
       <div className="flex w-full justify-center px-4 py-10 sm:px-6 lg:px-8">
         <div className="w-full max-w-[980px] rounded-[18px] border border-[#DEE4EC] bg-white p-6 text-[14px] text-[#4B5563]">
@@ -412,6 +546,15 @@ export default function ClientIntakePage() {
   return (
     <div className="flex w-full justify-center px-4 py-6 sm:px-6 sm:py-8 lg:px-8 lg:py-10">
       <div className="w-full max-w-[980px]">
+        {createdClient?.id ? (
+          <div className="mb-4 rounded-[12px] border border-[#BBF7D0] bg-[#F0FDF4] px-4 py-3 text-[13px] text-[#166534]">
+            Client saved successfully. Client Code:{" "}
+            <span className="font-semibold">
+              {createdClient.client_code || "Generated"}
+            </span>
+          </div>
+        ) : null}
+
         <div className="mb-5 flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
           <div className="w-full max-w-[620px]">
             <h1 className="text-[28px] font-[700] leading-[34px] tracking-[-0.02em] text-[#111827]">

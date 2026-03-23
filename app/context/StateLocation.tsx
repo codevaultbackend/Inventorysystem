@@ -22,7 +22,7 @@ export function StateLocationProvider({ children }) {
           : null;
 
       const res = await fetch(
-        "https://ims-2gyk.onrender.com/stock-manager/state",
+        "https://ims-swp9.onrender.com/stock-manager/state",
         {
           headers: {
             Authorization: token ? `Bearer ${token}` : "",

@@ -35,6 +35,8 @@ export function InventoryManagerDashboard({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  const BaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL
+
   const fetchDashboard = async () => {
     try {
       setLoading(true);
@@ -52,7 +54,7 @@ export function InventoryManagerDashboard({
       }
 
       const res = await axios.get(
-        "https://ims-2gyk.onrender.com/combine/dashboard/inventory",
+        `${BaseUrl}/combine/dashboard/inventory`,
         {
           headers: {
             Authorization: `Bearer ${token}`,

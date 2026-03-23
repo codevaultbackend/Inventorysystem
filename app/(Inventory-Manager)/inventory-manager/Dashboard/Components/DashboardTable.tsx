@@ -187,14 +187,14 @@ export default function DashboardTable({ data = [] }: { data?: RowType[] }) {
                     <tbody>
 
                         {adding && (
-                            <tr className="border-t bg-[#F8FAFC]">
+                            <tr className=" bg-[#F8FAFC]">
                                 {columns.map((key) => (
                                     <td key={key} className="px-5 py-3">
                                         {key === "status" ? (
                                             <select
                                                 value={newRow.status}
                                                 onChange={(e) => handleChange(key, e.target.value)}
-                                                className="h-[34px] w-full rounded-[8px] border border-[#E5E7EB] bg-white px-2 text-[12px]"
+                                                className="h-[34px] w-full rounded-[8px]  bg-white px-2 text-[12px]"
                                             >
                                                 <option>Good</option>
                                                 <option>Damaged</option>
@@ -228,7 +228,7 @@ export default function DashboardTable({ data = [] }: { data?: RowType[] }) {
                             const isEditing = editingIndex === index;
 
                             return (
-                                <tr key={index} className="border-t hover:bg-[#F9FAFB] text-[13px]">
+                                <tr key={index} className="border-t border-[#D3D3D3] hover:bg-[#F9FAFB] text-[13px]">
                                     {columns.map((key) => (
                                         <td key={key} className="px-4 py-3">
                                             {isEditing ? (
