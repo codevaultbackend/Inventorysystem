@@ -1,6 +1,8 @@
 "use client";
 
+import { formatNumber } from "@/app/lib/formatNumber";
 import { Users, DollarSign, Settings, Calendar } from "lucide-react";
+import { FaChartLine } from "react-icons/fa6";
 
 type Props = {
   stats?: {
@@ -10,36 +12,33 @@ type Props = {
     agingItems: number;
   };
 };
-  
-const formatValue = (value: number) =>
-  new Intl.NumberFormat("en-IN").format(Number(value || 0));
 
 export default function BranchOverviewPage({ stats }: Props) {
   const cards = [
     {
       title: "Total Stock",
-      value: formatValue(stats?.totalStock || 0),
+      value: stats?.totalStock || 0,
       icon: Users,
       bg: "bg-[#EEF2FF]",
       iconColor: "text-[#2563EB]",
     },
     {
       title: "Total Stock Value",
-      value: formatValue(stats?.totalStockValue || 0),
+      value: stats?.totalStockValue || 0,
       icon: DollarSign,
       bg: "bg-[#E0F2FE]",
       iconColor: "text-[#0284C7]",
     },
     {
       title: "Total Sales",
-      value: formatValue(stats?.totalSales || 0),
+      value: stats?.totalSales || 0,
       icon: Settings,
       bg: "bg-[#EEF2FF]",
       iconColor: "text-[#2563EB]",
     },
     {
       title: "Aging Items",
-      value: formatValue(stats?.agingItems || 0),
+      value: stats?.agingItems || 0,
       icon: Calendar,
       bg: "bg-[#FEE2E2]",
       iconColor: "text-[#DC2626]",
@@ -47,15 +46,7 @@ export default function BranchOverviewPage({ stats }: Props) {
   ];
 
   return (
-    <div
-      className="
-        grid
-        grid-cols-2
-        sm:grid-cols-2
-        xl:grid-cols-4
-        gap-4 sm:gap-5 lg:gap-6
-      "
-    >
+    <div className="grid grid-cols-2 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-5 lg:gap-6">
       {cards.map((item, index) => {
         const Icon = item.icon;
 
@@ -82,9 +73,7 @@ export default function BranchOverviewPage({ stats }: Props) {
                 flex items-center justify-center
               `}
             >
-              <Icon
-                className={`${item.iconColor} w-4 h-4 sm:w-5 sm:h-5`}
-              />
+              <Icon className={`${item.iconColor} w-4 h-4 sm:w-5 sm:h-5`} />
             </div>
 
             <div className="mt-4 sm:mt-5">
@@ -92,13 +81,13 @@ export default function BranchOverviewPage({ stats }: Props) {
                 {item.title}
               </p>
 
-              <div className="flex items-center justify-between mt-2">
+              <div className="flex items-center justify-between mt-2 gap-2">
                 <h2 className="text-[22px] sm:text-[26px] lg:text-[28px] font-semibold text-[#0F172A] leading-none">
-                  {item.value}
+                  {formatNumber(item.value)}
                 </h2>
 
                 <span className="flex items-center gap-1 text-[#16A34A] text-[11px] sm:text-[13px] font-medium whitespace-nowrap">
-                  ↗ +12.5%
+                  <FaChartLine /> +12.5%
                 </span>
               </div>
             </div>

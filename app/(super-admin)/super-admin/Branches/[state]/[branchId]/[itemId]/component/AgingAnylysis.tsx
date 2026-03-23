@@ -63,7 +63,7 @@ export default function AgingAnalysis() {
     <div className="bg-white rounded-2xl shadow-sm mt-6 overflow-hidden">
       
       {/* SECTION HEADER */}
-      <div className="px-6 py-5 border-b">
+      <div className="px-6 py-5 ">
         <h3 className="text-[16px] font-semibold text-gray-900">
           Aging Analysis
         </h3>

@@ -119,59 +119,51 @@ export default function Sidebar() {
   return (
     <>
       
-      <div className="lg:hidden h-fit  w-full px-1 mt-3">
-        <div className="flex gap-2 overflow-x-auto no-scrollbar">
+      <div className="lg:hidden sticky top-[16px] z-40 w-full px-1 max-[768px]:top-0 max-[768px]:pt-[20px] bg-[#F6F8FA]">
+  <div className="flex gap-2 overflow-x-auto no-scrollbar rounded-xl bg-[#F6F8FA] py-1">
+    {NAV_ITEMS.map((item) => {
+      const Icon = item.icon;
+      const isActive = activeHref === item.href;
 
-          {NAV_ITEMS.map((item) => {
+      return (
+        <Link
+          key={item.href}
+          href={item.href}
+          className={cn(
+            "flex items-center gap-2",
+            "px-4 h-[42px] rounded-xl whitespace-nowrap",
+            "border transition shrink-0",
+            isActive
+              ? "bg-[#1D4ED8] !text-white lg:border-[#1D4ED8]"
+              : "bg-white text-[#6B7280] border-[#E5E7EB]"
+          )}
+        >
+          <Icon
+            className={cn(
+              "h-4 w-4",
+              isActive ? "!text-white" : "!text-[#6B7280]"
+            )}
+          />
 
-            const Icon = item.icon;
-            const isActive = activeHref === item.href;
+          <span className="text-[13px] font-[500]">{item.label}</span>
+        </Link>
+      );
+    })}
 
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={cn(
-                  "flex items-center gap-2",
-                  "px-4 h-[42px] rounded-xl whitespace-nowrap",
-                  "border transition",
-                  isActive
-                    ? "bg-[#1D4ED8] !text-white lg:border-[#1D4ED8]"
-                    : "bg-white text-[#6B7280] border-[#E5E7EB]"
-                )}
-              >
-                <Icon
-                  className={cn(
-                    "h-4 w-4",
-                    isActive ? "!text-white" : "!text-[#6B7280]"
-                  )}
-                />
-
-                <span className="text-[13px] font-[500]">
-                  {item.label}
-                </span>
-              </Link>
-            );
-          })}
-
-          <button
-            onClick={logout}
-            className="
+    <button
+      onClick={logout}
+      className="
         flex items-center gap-2
         px-4 h-[42px] rounded-xl whitespace-nowrap
-        border transition
+        border transition shrink-0
         bg-white text-[#6B7280] border-[#E5E7EB]
       "
-          >
-            <LogOut className="h-4 w-4 text-[#6B7280]" />
-
-            <span className="text-[13px] font-[500]">
-              Log Out
-            </span>
-          </button>
-
-        </div>
-      </div>
+    >
+      <LogOut className="h-4 w-4 text-[#6B7280]" />
+      <span className="text-[13px] font-[500]">Log Out</span>
+    </button>
+  </div>
+</div>
 
       <aside
         className={cn(

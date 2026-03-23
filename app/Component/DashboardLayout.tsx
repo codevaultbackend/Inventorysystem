@@ -43,7 +43,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   return (
     <div className="min-h-screen bg-[#F6F8FA]">
-      <div className="sticky top-0 z-50 bg-[#F6F8FA] px-4 pt-4 lg:px-6">
+      <div className="lg:sticky top-0 z-50 bg-[#F6F8FA] px-4 pt-4 lg:px-6">
         <Topbar />
       </div>
 

@@ -86,7 +86,8 @@ export default function StockDistribution({
       ) : data.length > 0 ? (
         <div className="flex h-full min-h-[270px] min-w-0 flex-col gap-6 sm:min-h-[270px] xl:min-h-[210px] xl:flex-row xl:items-center xl:gap-4">
           <div className="flex min-w-0 flex-1 items-center justify-center xl:basis-[38%]">
-            <div className="h-[220px] w-full max-w-[320px] sm:h-[240px] sm:max-w-[360px] md:h-[240px] md:max-w-[390px] xl:h-[240px] xl:max-w-[420px]">
+            <div className="h-[220px] w-full max-w-[320px] max-w-[650px]:w-[350px];
+    max-w-[650px]:h-[135px] max-w-[650px]:left-[-15px] sm:h-[240px] sm:max-w-[360px] md:h-[240px] md:max-w-[390px] xl:h-[240px] xl:max-w-[420px]">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart margin={{ top: 10, right: 26, bottom: 10, left: 26 }}>
                   <Pie
