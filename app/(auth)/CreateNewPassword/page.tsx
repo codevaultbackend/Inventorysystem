@@ -1,8 +1,8 @@
-
 "use client";
 
-import { useMemo, useState } from "react";
-import Exclmationerror from "../../svgIcons/Exclmationerror";
+import { useEffect, useMemo, useState } from "react";
+import Exclmationerror from "../.././svgIcons/Exclmationerror";
+import { useRouter } from "next/navigation";
 
 export default function CreateNewPassword() {
   const [password, setPassword] = useState("");
@@ -10,11 +10,14 @@ export default function CreateNewPassword() {
   const [touchedPassword, setTouchedPassword] = useState(false);
   const [touchedConfirm, setTouchedConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [serverError, setServerError] = useState("");
+  const [hydrated, setHydrated] = useState(false);
+  const router = useRouter();
 
-  const passwordValid = useMemo(
-    () => password.length >= 12,
-    [password]
-  );
+  const API_BASE =
+    process.env.NEXT_PUBLIC_API_BASE_URL || "https://ims-swp9.onrender.com";
+
+  const passwordValid = useMemo(() => password.trim().length >= 6, [password]);
 
   const confirmValid = useMemo(
     () => password === confirm && confirm.length > 0,
@@ -23,31 +26,88 @@ export default function CreateNewPassword() {
 
   const canSubmit = passwordValid && confirmValid && !loading;
 
+  useEffect(() => {
+    setHydrated(true);
+
+    const email = sessionStorage.getItem("reset_email");
+    const otp = sessionStorage.getItem("reset_otp");
+
+    if (!email || !otp) {
+      router.replace("/ResetPassword");
+    }
+  }, [router]);
+
+  const getErrorMessage = async (res: Response) => {
+    try {
+      const data = await res.json();
+      return (
+        data?.message ||
+        data?.error ||
+        "Something went wrong. Please try again."
+      );
+    } catch {
+      return "Something went wrong. Please try again.";
+    }
+  };
+
   async function handleReset() {
     setTouchedPassword(true);
     setTouchedConfirm(true);
+    setServerError("");
 
     if (!canSubmit) return;
 
     try {
       setLoading(true);
 
-      alert("Password reset successfully");
+      const email = sessionStorage.getItem("reset_email");
+      const otp = sessionStorage.getItem("reset_otp");
+
+      if (!email || !otp) {
+        setServerError("Reset session expired. Please try again.");
+        router.replace("/ResetPassword");
+        return;
+      }
+
+      const res = await fetch(`${API_BASE}/sql/reset-password`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: email.trim().toLowerCase(),
+          otp: otp.trim(),
+          newPassword: password.trim(),
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error(await getErrorMessage(res));
+      }
+
+      sessionStorage.removeItem("reset_email");
+      sessionStorage.removeItem("reset_otp");
+
+      router.push("/Login");
+    } catch (error: any) {
+      setServerError(
+        error?.message || "Failed to reset password. Please try again."
+      );
     } finally {
       setLoading(false);
     }
   }
 
+  if (!hydrated) return null;
+
   return (
     <section className="relative min-h-screen bg-[#F7F9FB] overflow-hidden">
-      {/* TOP DECOR */}
       <img
         src="/LoginDecordown.png"
         alt=""
         className="pointer-events-none absolute top-[-2%] left-0 w-full h-auto"
       />
 
-      {/* BOTTOM DECOR */}
       <img
         src="/LoginDecorUp.png"
         alt=""
@@ -57,25 +117,28 @@ export default function CreateNewPassword() {
           max-w-[1100px] w-full h-auto"
       />
 
-      {/* CONTENT */}
-      <div className="relative z-10 flex min-h-screen justify-center px-4
-        pt-[96px] sm:pt-[120px] lg:pt-[100px]">
-
+      <div
+        className="relative z-10 flex min-h-screen justify-center px-4
+        pt-[96px] sm:pt-[120px] lg:pt-[100px]"
+      >
         <div className="w-full max-w-[520px]">
-          {/* TITLE */}
-          <h1 className="text-center text-[28px] sm:text-[36px] lg:text-[44px]
-            font-[700] text-black leading-[1.05]">
+          <h1
+            className="text-center text-[28px] sm:text-[36px] lg:text-[44px]
+            font-[700] text-black leading-[1.05]"
+          >
             Create new password
           </h1>
 
-          <p className="mt-2 text-center text-[#6B7280]
-            text-[14px] sm:text-[16px]">
-            Enter your new password below to<br />
+          <p
+            className="mt-2 text-center text-[#6B7280]
+            text-[14px] sm:text-[16px]"
+          >
+            Enter your new password below to
+            <br />
             complete the reset process
           </p>
 
           <div className="mt-10 space-y-6">
-            {/* PASSWORD */}
             <div>
               <label className="block text-[14px] sm:text-[16px] font-[600] text-[#4B5563]">
                 Password
@@ -96,12 +159,18 @@ export default function CreateNewPassword() {
                   }`}
               />
 
-              <p className="mt-2 text-[13px] text-[#6B7280]">
-                Password contain atleast 12 characters
-              </p>
+              {touchedPassword && !passwordValid ? (
+                <div className="mt-2 flex items-center gap-2 text-[13px] text-[#E52727]">
+                  <Exclmationerror className="h-[16px] w-[16px]" />
+                  <span>Password must contain at least 6 characters</span>
+                </div>
+              ) : (
+                <p className="mt-2 text-[13px] text-[#6B7280]">
+                  Password contain atleast 6 characters
+                </p>
+              )}
             </div>
 
-            {/* CONFIRM PASSWORD */}
             <div>
               <label
                 className={`block text-[14px] sm:text-[16px] font-[600]
@@ -130,15 +199,26 @@ export default function CreateNewPassword() {
               />
 
               {touchedConfirm && !confirmValid && (
-                <div className="mt-2 flex items-center gap-2
-                  text-[13px] text-[#E52727]">
+                <div
+                  className="mt-2 flex items-center gap-2
+                  text-[13px] text-[#E52727]"
+                >
                   <Exclmationerror className="h-[16px] w-[16px]" />
                   <span>Password must be identical</span>
                 </div>
               )}
             </div>
 
-            {/* BUTTON */}
+            {serverError && (
+              <div
+                className="mt-2 flex items-center gap-2
+                text-[13px] text-[#E52727]"
+              >
+                <Exclmationerror className="h-[16px] w-[16px]" />
+                <span>{serverError}</span>
+              </div>
+            )}
+
             <button
               onClick={handleReset}
               disabled={!canSubmit}

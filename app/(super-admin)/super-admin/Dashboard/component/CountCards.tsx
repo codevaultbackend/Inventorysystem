@@ -89,21 +89,21 @@ export default function DashboardStats({
   ];
 
   return (
-    <section className="grid grid-cols-2 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <section className="grid max-[650px]:grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4 mx-auto">
       {stats.map((item, index) => (
         <div
           key={index}
           className="
-            rounded-[22px] border border-[#E8EEF4] bg-white
+            rounded-[20px] border border-[#E8EEF4] bg-white
             px-5 py-5 sm:px-6 sm:py-6
             shadow-[0px_10px_30px_rgba(15,23,42,0.05)]
             transition-all duration-200 shadow-[1px_1px_4px_rgba(0,0,0,0.1)]
-            hover:-translate-y-[1px] hover:shadow-[0px_16px_40px_rgba(15,23,42,0.07)]
+            hover:-translate-y-[1px] hover:shadow-[0px_16px_40px_rgba(15,23,42,0.07)] h-[153px] max-w-[272px]
           "
         >
           <div className="flex items-start justify-between gap-4 flex-col-reverse">
             <div className="min-w-0">
-              <p className="text-[13px] font-medium text-[#8A94A6]">
+              <p className="text-[12px] font-[400] text-[#949494]">
                 {item.title}
               </p>
 
@@ -111,7 +111,7 @@ export default function DashboardStats({
                 {loading ? (
                   <div className="h-9 w-28 animate-pulse rounded-lg bg-[#EEF2F7]" />
                 ) : (
-                  <h2 className="truncate text-[30px] font-semibold leading-none tracking-[-0.03em] text-[#111827]">
+                  <h2 className="truncate text-[28px] font-[400] leading-none tracking-[-0.03em] text-[#000000]">
                     {formatNumber(item.value, item.isCurrency)}
                   </h2>
                 )}
@@ -119,7 +119,7 @@ export default function DashboardStats({
             </div>
 
             <div
-              className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-[16px] ${item.iconWrap}`}
+              className={`flex h-[24px] w-[24px] shrink-0 items-center justify-center rounded-[16px] ${item.iconWrap}`}
             >
               <item.icon className={`h-6 w-6 ${item.iconColor}`} />
             </div>

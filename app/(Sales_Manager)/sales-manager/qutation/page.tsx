@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import { Search, SlidersHorizontal, Plus } from "lucide-react";
 import QuotationCard from "./component/QuotationCard";
@@ -59,8 +59,41 @@ type SortType =
   | "amount_high_to_low"
   | "amount_low_to_high";
 
+function getStoredToken() {
+  if (typeof window === "undefined") return null;
+
+  return (
+    localStorage.getItem("token") ||
+    localStorage.getItem("accessToken") ||
+    localStorage.getItem("authToken") ||
+    localStorage.getItem("ims_token") ||
+    localStorage.getItem("imsToken")
+  );
+}
+
+function getStoredUserRole(): string {
+  if (typeof window === "undefined") return "";
+
+  try {
+    const authRaw =
+      localStorage.getItem("auth") ||
+      localStorage.getItem("user") ||
+      localStorage.getItem("authUser");
+
+    if (authRaw) {
+      const parsed = JSON.parse(authRaw);
+
+      if (parsed?.role) return String(parsed.role).toLowerCase();
+      if (parsed?.user?.role) return String(parsed.user.role).toLowerCase();
+    }
+  } catch {}
+
+  return "";
+}
+
 export default function Page() {
   const [loading, setLoading] = useState(true);
+  const [approveLoading, setApproveLoading] = useState(false);
   const [error, setError] = useState("");
   const [selectedQuote, setSelectedQuote] = useState<Quotation | null>(null);
   const [quotations, setQuotations] = useState<Quotation[]>([]);
@@ -68,46 +101,107 @@ export default function Page() {
 
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState<SortType>("latest");
-  const BaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL
+  const [userRole, setUserRole] = useState("");
 
+  const BaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "";
   const router = useRouter();
 
+  const canApprove = useMemo(() => {
+    const role = userRole.toLowerCase();
+    return (
+      role === "sales_manager" ||
+      role === "super_admin" ||
+      role === "super_sales_manager"
+    );
+  }, [userRole]);
+
+  const fetchQuotations = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError("");
+
+      const token = getStoredToken();
+
+      const res = await axios.get<QuotationApiResponse>(`${BaseUrl}/sales/get`, {
+        headers: token
+          ? {
+              Authorization: `Bearer ${token}`,
+            }
+          : undefined,
+      });
+
+      setQuotations(res.data?.quotations || []);
+      setTotal(res.data?.total || 0);
+    } catch (err: any) {
+      console.error("Quotation fetch error:", err);
+      setError(
+        err?.response?.data?.message ||
+          err?.response?.data?.error ||
+          err?.message ||
+          "Failed to load quotations"
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, [BaseUrl]);
+
   useEffect(() => {
-    const fetchQuotations = async () => {
-      try {
-        setLoading(true);
-        setError("");
-
-        const token =
-          typeof window !== "undefined" ? localStorage.getItem("token") : null;
-
-        const res = await axios.get<QuotationApiResponse>(
-          `${BaseUrl}/sales/get`,
-          {
-            headers: token
-              ? {
-                  Authorization: `Bearer ${token}`,
-                }
-              : undefined,
-          }
-        );
-
-        setQuotations(res.data?.quotations || []);
-        setTotal(res.data?.total || 0);
-      } catch (err: any) {
-        console.error("Quotation fetch error:", err);
-        setError(
-          err?.response?.data?.message ||
-            err?.message ||
-            "Failed to load quotations"
-        );
-      } finally {
-        setLoading(false);
-      }
-    };
-
+    setUserRole(getStoredUserRole());
     fetchQuotations();
-  }, []);
+  }, [fetchQuotations]);
+
+  const handleApproveQuotation = async (quoteId: number) => {
+    try {
+      setApproveLoading(true);
+
+      const token = getStoredToken();
+
+      const res = await axios.put(
+        `${BaseUrl}/sales/approve/${quoteId}`,
+        {},
+        {
+          headers: token
+            ? {
+                Authorization: `Bearer ${token}`,
+              }
+            : undefined,
+        }
+      );
+
+      const updatedQuotation: Quotation | undefined = res?.data?.quotation;
+
+      setQuotations((prev) =>
+        prev.map((quote) =>
+          quote.id === quoteId
+            ? {
+                ...quote,
+                ...(updatedQuotation || {}),
+                status: "approved",
+              }
+            : quote
+        )
+      );
+
+      setSelectedQuote((prev) =>
+        prev && prev.id === quoteId
+          ? {
+              ...prev,
+              ...(updatedQuotation || {}),
+              status: "approved",
+            }
+          : prev
+      );
+    } catch (err: any) {
+      console.error("Approve quotation error:", err);
+      alert(
+        err?.response?.data?.message ||
+          err?.response?.data?.error ||
+          "Failed to approve quotation"
+      );
+    } finally {
+      setApproveLoading(false);
+    }
+  };
 
   const filteredAndSortedQuotations = useMemo(() => {
     const normalizedSearch = search.trim().toLowerCase();
@@ -188,6 +282,7 @@ export default function Page() {
             <div className="h-[96px] rounded-[16px] bg-white" />
             <div className="h-[96px] rounded-[16px] bg-white" />
           </div>
+
           <div className="rounded-[20px] bg-white p-4 sm:p-6">
             <div className="mb-6 h-[40px] w-[240px] rounded bg-[#F3F4F6]" />
             <div className="mb-6 flex flex-col gap-3 sm:flex-row">
@@ -227,7 +322,7 @@ export default function Page() {
 
         <div className="rounded-[20px] bg-white p-4 shadow-sm sm:p-6">
           <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div>
+            <div className="min-w-0">
               <h2 className="text-[18px] font-semibold text-[#111827] sm:text-[20px]">
                 All Quotations Entries
               </h2>
@@ -237,7 +332,7 @@ export default function Page() {
             </div>
 
             <button
-              className="inline-flex h-[42px] items-center justify-center gap-2 rounded-[10px] bg-[#111827] px-4 text-[13px] font-medium text-white transition hover:bg-[#1F2937]"
+              className="inline-flex h-[42px] w-full items-center justify-center gap-2 rounded-[10px] bg-[#111827] px-4 text-[13px] font-medium text-white transition hover:bg-[#1F2937] sm:w-auto"
               onClick={() => router.push("/sales-manager/client-intake")}
             >
               <Plus size={16} />
@@ -305,6 +400,9 @@ export default function Page() {
           <QuotationModal
             quote={selectedQuote}
             onClose={() => setSelectedQuote(null)}
+            onApprove={handleApproveQuotation}
+            approveLoading={approveLoading}
+            canApprove={canApprove}
           />
         )}
       </div>

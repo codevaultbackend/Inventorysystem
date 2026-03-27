@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useSuperDashboard } from "@/app/context/SuperDashboardContext";
+import { useSuperDashboard } from "../../../../context/SuperDashboardContext";
 import { useAuth } from "@/app/context/AuthContext";
 
 type BranchItem = {
@@ -49,7 +49,7 @@ export default function BranchOverview({
   const baseRoute = isSuperAdmin ? "/super-admin" : "/admin";
 
   return (
-    <div className="bg-white rounded-2xl shadow-[1px_1px_4px_rgba(0,0,0,0.1)] border border-[#EEF2F6]  w-full overflow-hidden">
+    <div className="bg-white rounded-2xl  shadow-[1px_1px_4px_rgba(0,0,0,0.1)]  border border-[#EEF2F6]  w-full max-h-[541px] overflow-y-scroll">
       <div className="flex justify-between items-center px-6 py-5">
         <div>
           <h3 className="text-[18px] font-semibold text-[#0F172A]">

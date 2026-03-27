@@ -29,7 +29,7 @@ function formatCurrency(value: number) {
 
 export default function StatsSection({ stats }: Props) {
   return (
-    <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div className="mb-5 grid grid-cols-2 gap-4 sm:grid-cols-2 xl:grid-cols-4">
       <StatCard
         label="Total Quotations"
         value={String(stats.totalQuotations)}

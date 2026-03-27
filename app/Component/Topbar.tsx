@@ -44,7 +44,7 @@ export default function TopBar() {
         </button>
       </div>
 
-      <div className="hidden max-w-[720px] flex-1 px-6 lg:flex">
+      <div className="hidden max-w-[920px] flex-1 px-6 lg:flex">
         <div
           className="
             flex h-[44px] w-full items-center gap-2 rounded-xl border border-[#EEF2F6]

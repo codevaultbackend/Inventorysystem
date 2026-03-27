@@ -73,7 +73,7 @@ export default function StockDistribution({
   return (
     <div className=" lg:max-h-[320px] max-h-[520px] h-full min-w-0 overflow-hidden rounded-[24px] border border-[#E5EAF1] bg-white px-4 py-4 shadow-[1px_1px_4px_rgba(0,0,0,0.1)] sm:px-5 sm:py-5 lg:px-6 lg:py-6">
       <div className="">
-        <h3 className="text-[18px] font-semibold leading-none tracking-[-0.02em] text-[#111827] sm:text-[20px] lg:text-[22px]">
+        <h3 className="text-[14px] font-[500] leading-none tracking-[-0.02em] text-[#111827] sm:text-[20px] lg:text-[18px]">
           Stock Distribution
         </h3>
         <p className="mt-1.5 text-[12px] text-[#9CA3AF] sm:text-[13px] lg:text-[14px]">
@@ -128,12 +128,12 @@ export default function StockDistribution({
                       className="h-[11px] w-[11px] shrink-0 rounded-full sm:h-[12px] sm:w-[12px]"
                       style={{ backgroundColor: item.color }}
                     />
-                    <span className="truncate text-[15px] font-medium text-[#1F2937] sm:text-[16px] lg:text-[17px]">
+                    <span className="truncate text-[13px] font-medium text-[#000000] sm:text-[16px] lg:text-[14px]">
                       {item.name}
                     </span>
                   </div>
 
-                  <span className="shrink-0 text-[15px] font-semibold text-[#111827] sm:text-[16px] lg:text-[17px]">
+                  <span className="shrink-0 text-[13px] font-semibold text-[#111827] sm:text-[16px] lg:text-[14px]">
                     {item.value}%
                   </span>
                 </div>
@@ -142,7 +142,7 @@ export default function StockDistribution({
           </div>
         </div>
       ) : (
-        <div className="flex h-[320px] items-center justify-center rounded-[20px] bg-[#F8FAFC] text-sm text-[#64748B] sm:h-[360px] xl:h-[400px]">
+        <div className="flex h-[200px] items-center justify-center rounded-[20px] bg-[#F8FAFC] text-sm text-[#64748B] sm:h-[360px] xl:h-[200px]">
           No stock distribution data found
         </div>
       )}

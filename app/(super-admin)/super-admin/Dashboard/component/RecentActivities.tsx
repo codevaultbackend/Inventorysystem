@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useMemo, useState } from "react";
 import {
   User,
   Package,
@@ -10,9 +11,13 @@ import {
 } from "lucide-react";
 
 type ActivityItem = {
-  title: string;
-  description: string;
-  time: string;
+  id?: string | number;
+  title?: string;
+  description?: string;
+  message?: string;
+  time?: string;
+  createdAt?: string;
+  created_at?: string;
   type?: string;
 };
 
@@ -28,36 +33,51 @@ function getActivityIcon(type?: string): {
 } {
   switch ((type || "").toLowerCase()) {
     case "user":
+    case "login":
+    case "signup":
       return {
         icon: User,
         bg: "bg-[#EEF2FF]",
         iconColor: "text-[#4F46E5]",
       };
+
     case "stock":
+    case "inventory":
+    case "product":
       return {
         icon: Package,
         bg: "bg-[#ECFDF5]",
         iconColor: "text-[#16A34A]",
       };
+
     case "settings":
+    case "setting":
+    case "config":
       return {
         icon: Settings,
         bg: "bg-[#F3E8FF]",
         iconColor: "text-[#9333EA]",
       };
+
     case "sale":
     case "sales":
+    case "payment":
+    case "transaction":
       return {
         icon: DollarSign,
         bg: "bg-[#FEF3C7]",
         iconColor: "text-[#D97706]",
       };
+
     case "alert":
+    case "warning":
+    case "error":
       return {
         icon: AlertTriangle,
         bg: "bg-[#FEE2E2]",
         iconColor: "text-[#DC2626]",
       };
+
     default:
       return {
         icon: Package,
@@ -86,10 +106,106 @@ function formatRelativeTime(dateString: string) {
   return `${days} day${days > 1 ? "s" : ""} ago`;
 }
 
+function normalizeActivities(payload: any): ActivityItem[] {
+  const raw =
+    (Array.isArray(payload) && payload) ||
+    payload?.data ||
+    payload?.activities ||
+    payload?.recentActivities ||
+    payload?.result ||
+    [];
+
+  if (!Array.isArray(raw)) return [];
+
+  return raw.map((item: any, index: number) => ({
+    id: item?.id ?? index,
+    title: item?.title || item?.action || item?.name || "Activity",
+    description:
+      item?.description ||
+      item?.message ||
+      item?.details ||
+      "Latest system activity and updates",
+    time:
+      item?.time ||
+      item?.createdAt ||
+      item?.created_at ||
+      item?.updatedAt ||
+      item?.updated_at ||
+      "",
+    type: item?.type || item?.category || "",
+  }));
+}
+
 export default function RecentActivities({
-  data = [],
+  data,
   loading = false,
 }: Props) {
+  const [activities, setActivities] = useState<ActivityItem[]>([]);
+  const [apiLoading, setApiLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const hasExternalData = Array.isArray(data);
+
+  useEffect(() => {
+    if (hasExternalData) return;
+
+    const fetchActivities = async () => {
+      try {
+        setApiLoading(true);
+        setError("");
+
+        const API_BASE =
+          process.env.NEXT_PUBLIC_API_BASE_URL ||
+          process.env.NEXT_PUBLIC_API_URL ||
+          "https://ims-swp9.onrender.com";
+
+        const token =
+          (typeof window !== "undefined" &&
+            (localStorage.getItem("accessToken") ||
+              localStorage.getItem("token") ||
+              localStorage.getItem("authToken") ||
+              localStorage.getItem("ims_token") ||
+              localStorage.getItem("imsToken") ||
+              localStorage.getItem("jwt"))) ||
+          "";
+
+        const res = await fetch(`${API_BASE}/sql/recent-activities`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+        });
+
+        const json = await res.json().catch(() => null);
+
+        if (!res.ok) {
+          throw new Error(
+            json?.message || json?.error || "Failed to fetch recent activities"
+          );
+        }
+
+        setActivities(normalizeActivities(json));
+      } catch (err: any) {
+        setError(err?.message || "Failed to fetch recent activities");
+        setActivities([]);
+      } finally {
+        setApiLoading(false);
+      }
+    };
+
+    fetchActivities();
+  }, [hasExternalData]);
+
+  const finalLoading = loading || apiLoading;
+
+  const finalData = useMemo(() => {
+    if (hasExternalData) {
+      return normalizeActivities(data);
+    }
+    return activities;
+  }, [hasExternalData, data, activities]);
+
   return (
     <div className="h-fit rounded-[22px] border border-[#E6EDF5] bg-white p-6 shadow-[1px_1px_4px_rgba(0,0,0,0.1)]">
       <div className="mb-5">
@@ -102,7 +218,7 @@ export default function RecentActivities({
       </div>
 
       <div className="space-y-3">
-        {loading ? (
+        {finalLoading ? (
           Array.from({ length: 5 }).map((_, index) => (
             <div
               key={index}
@@ -118,14 +234,18 @@ export default function RecentActivities({
               <div className="h-3 w-16 animate-pulse rounded bg-[#EEF2F7]" />
             </div>
           ))
-        ) : data.length > 0 ? (
-          data.map((item, index) => {
+        ) : error ? (
+          <div className="flex h-[240px] items-center justify-center rounded-[16px] border border-dashed border-[#E5EAF1] bg-[#FAFCFE] text-sm text-[#8A94A6]">
+            {error}
+          </div>
+        ) : finalData.length > 0 ? (
+          finalData.map((item, index) => {
             const IconData = getActivityIcon(item.type);
             const Icon = IconData.icon;
 
             return (
               <div
-                key={index}
+                key={item.id ?? index}
                 className="
                   flex items-start justify-between gap-3 rounded-[16px]
                   border border-[#EEF2F7] bg-[#FAFCFE]
@@ -150,7 +270,7 @@ export default function RecentActivities({
                 </div>
 
                 <span className="shrink-0 whitespace-nowrap text-[12px] font-medium text-[#9AA4B2]">
-                  {formatRelativeTime(item.time)}
+                  {formatRelativeTime(item.time || "")}
                 </span>
               </div>
             );

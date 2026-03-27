@@ -101,18 +101,18 @@ export default function LedgerTable({ columns, data, onView }: Props) {
 
                 {columns.map((col) => {
 
-                  if (col.key === "action") {
-                    return (
-                      <td key={col.key} className="px-6 py-4">
-                        <button
-                          onClick={() => onView?.(row)}
-                          className="text-blue-600 hover:underline"
-                        >
-                          View
-                        </button>
-                      </td>
-                    );
-                  }
+                  // if (col.key === "action") {
+                  //   return (
+                  //     <td key={col.key} className="px-6 py-4">
+                  //       <button
+                  //         onClick={() => onView?.(row)}
+                  //         className="text-blue-600 hover:underline"
+                  //       >
+                  //         View
+                  //       </button>
+                  //     </td>
+                  //   );
+                  // }
 
                   return (
                     <td key={col.key} className="px-6 py-4 text-gray-700">

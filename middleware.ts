@@ -14,15 +14,18 @@ export function middleware(req: NextRequest) {
   /* ================= ROLE BASED ACCESS ================= */
   const roleAccess: Record<string, string[]> = {
     super_admin: ["/super-admin"],
-    admin: ["/super-admin"],
+    admin: ["/admin", "/super-admin"],
     hr_admin: ["/hr-admin"],
 
+    inventory_manager: ["/inventory-manager"],
+    super_inventory_manager: ["/inventory-manager"],
 
     stock_manager: ["/stock-manager"],
     super_stock_manager: ["/stock-manager"],
 
     sales_manager: ["/sales-manager"],
     super_sales_manager: ["/sales-manager"],
+
     purchase_manager: ["/purchase-manager"],
     finance: ["/finance"],
   };
@@ -51,6 +54,7 @@ export const config = {
     "/super-admin/:path*",
     "/admin/:path*",
     "/hr-admin/:path*",
+    "/inventory-manager/:path*",
     "/stock-manager/:path*",
     "/sales-manager/:path*",
     "/purchase-manager/:path*",

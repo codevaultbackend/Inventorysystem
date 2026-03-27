@@ -12,8 +12,6 @@ import {
 import axios from "axios";
 import { useAuth } from "./AuthContext";
 
-/* ================= TYPES ================= */
-
 type Stats = {
   totalUsers: number;
   totalStock: number;
@@ -65,7 +63,12 @@ type UserData = {
   id: number;
   name: string;
   email: string;
+  phone?: string;
   role?: string;
+  profile?: string;
+  branch?: string;
+  status?: "Active" | "Inactive";
+  lastLogin?: string;
 };
 
 type Branch = {
@@ -123,7 +126,9 @@ const emptyDashboard: DashboardData = {
 
 const getStoredToken = () =>
   typeof window !== "undefined"
-    ? localStorage.getItem("token") || localStorage.getItem("accessToken")
+    ? localStorage.getItem("token") ||
+      localStorage.getItem("accessToken") ||
+      localStorage.getItem("authToken")
     : null;
 
 const getAuthHeader = () => {
@@ -135,15 +140,32 @@ const getAuthHeader = () => {
   };
 };
 
+const toNumber = (value: unknown, fallback = 0) => {
+  if (typeof value === "number" && !Number.isNaN(value)) return value;
+  if (typeof value === "string") {
+    const cleaned = value.replace(/[₹,\s]/g, "");
+    const parsed = Number(cleaned);
+    return Number.isNaN(parsed) ? fallback : parsed;
+  }
+  return fallback;
+};
+
 const getUserBranchId = (user: any): number | null => {
   if (!user) return null;
 
   if (Array.isArray(user.branches) && user.branches.length > 0) {
-    return Number(user.branches[0]);
+    const firstBranch = Number(user.branches[0]);
+    return Number.isNaN(firstBranch) ? null : firstBranch;
   }
 
   if (user.branch_id !== undefined && user.branch_id !== null) {
-    return Number(user.branch_id);
+    const parsed = Number(user.branch_id);
+    return Number.isNaN(parsed) ? null : parsed;
+  }
+
+  if (user.branchId !== undefined && user.branchId !== null) {
+    const parsed = Number(user.branchId);
+    return Number.isNaN(parsed) ? null : parsed;
   }
 
   return null;
@@ -153,54 +175,97 @@ const normalizeDashboard = (
   payload: any,
   isBranchUser = false
 ): DashboardData => {
+  const raw = payload?.data ?? payload;
+
   const stats: Stats = {
-    totalUsers: Number(payload?.stats?.totalUsers ?? payload?.totalUsers ?? 0),
-    totalStock: Number(payload?.stats?.totalStock ?? payload?.totalStock ?? 0),
-    totalBranches: Number(
-      payload?.stats?.totalBranches ??
-        payload?.totalBranches ??
-        (isBranchUser ? 1 : 0)
+    totalUsers: toNumber(raw?.stats?.totalUsers ?? raw?.totalUsers),
+    totalStock: toNumber(raw?.stats?.totalStock ?? raw?.totalStock),
+    totalBranches: toNumber(
+      raw?.stats?.totalBranches ?? raw?.totalBranches ?? (isBranchUser ? 1 : 0)
     ),
-    totalStockValue: Number(
-      payload?.stats?.totalStockValue ?? payload?.totalStockValue ?? 0
+    totalStockValue: toNumber(
+      raw?.stats?.totalStockValue ?? raw?.totalStockValue
     ),
   };
 
   return {
     stats,
     salesAnalytics: {
-      sales: Array.isArray(payload?.salesAnalytics?.sales)
-        ? payload.salesAnalytics.sales
+      sales: Array.isArray(raw?.salesAnalytics?.sales)
+        ? raw.salesAnalytics.sales
         : [],
-      purchase: Array.isArray(payload?.salesAnalytics?.purchase)
-        ? payload.salesAnalytics.purchase
+      purchase: Array.isArray(raw?.salesAnalytics?.purchase)
+        ? raw.salesAnalytics.purchase
         : [],
     },
-    stockDistribution: Array.isArray(payload?.stockDistribution)
-      ? payload.stockDistribution
+    stockDistribution: Array.isArray(raw?.stockDistribution)
+      ? raw.stockDistribution
       : [],
-    branchOverview: Array.isArray(payload?.branchOverview)
-      ? payload.branchOverview
-      : Array.isArray(payload?.branches)
-      ? payload.branches
+    branchOverview: Array.isArray(raw?.branchOverview)
+      ? raw.branchOverview
+      : Array.isArray(raw?.branches)
+      ? raw.branches
       : [],
-    recentActivities: Array.isArray(payload?.recentActivities)
-      ? payload.recentActivities
+    recentActivities: Array.isArray(raw?.recentActivities)
+      ? raw.recentActivities
+      : Array.isArray(raw?.recentActivity)
+      ? raw.recentActivity
       : [],
   };
 };
 
 const normalizeUsers = (payload: any): UserData[] => {
-  if (Array.isArray(payload)) return payload;
-  if (Array.isArray(payload?.users)) return payload.users;
-  return [];
+  const rawUsers = Array.isArray(payload)
+    ? payload
+    : Array.isArray(payload?.users)
+    ? payload.users
+    : Array.isArray(payload?.data)
+    ? payload.data
+    : [];
+
+  return rawUsers.map((user: any, index: number) => ({
+    id: Number(user?.id ?? index + 1),
+    name: String(user?.name ?? user?.fullName ?? "Unknown User"),
+    email: String(user?.email ?? ""),
+    phone: user?.phone ?? user?.contact_number ?? "",
+    role: String(user?.role ?? ""),
+    profile: user?.profile ?? user?.designation ?? "",
+    branch:
+      user?.branch ??
+      user?.branchName ??
+      user?.branch_name ??
+      user?.location ??
+      "",
+    status:
+      user?.status === "Inactive" || user?.status === "inactive"
+        ? "Inactive"
+        : "Active",
+    lastLogin: user?.lastLogin ?? user?.last_login ?? "",
+  }));
 };
 
 const normalizeBranches = (payload: any): Branch[] => {
-  if (Array.isArray(payload)) return payload;
-  if (Array.isArray(payload?.branches)) return payload.branches;
-  if (Array.isArray(payload?.data)) return payload.data;
-  return [];
+  const rawBranches = Array.isArray(payload)
+    ? payload
+    : Array.isArray(payload?.branches)
+    ? payload.branches
+    : Array.isArray(payload?.data)
+    ? payload.data
+    : [];
+
+  return rawBranches.map((branch: any, index: number) => ({
+    id: Number(branch?.id ?? index + 1),
+    name: String(branch?.name ?? branch?.branchName ?? "Unknown Branch"),
+    code: branch?.code ?? "",
+    state: branch?.state ?? "",
+    type: branch?.type ?? "",
+    status: branch?.status ?? "",
+    location: branch?.location ?? "",
+    contact_number: branch?.contact_number ?? null,
+    email: branch?.email ?? null,
+    stock_items: branch?.stock_items ?? branch?.stockItems ?? 0,
+    stock_value: toNumber(branch?.stock_value ?? branch?.stockValue ?? 0),
+  }));
 };
 
 /* ================= PROVIDER ================= */
@@ -236,8 +301,16 @@ export function SuperDashboardProvider({
   }, []);
 
   const getDashboardEndpoint = useCallback(() => {
+    if (isSuperAdmin) {
       return "/api/sqlbranch/super-dashboard";
-  }, [user?.role, branchId]);
+    }
+
+    if (user?.role === "admin" && branchId) {
+      return `/api/sqlbranch/branch/${branchId}`;
+    }
+
+    return null;
+  }, [isSuperAdmin, user?.role, branchId]);
 
   const fetchDashboard = useCallback(async () => {
     if (!user || !isAllowedRole) return;
@@ -271,11 +344,6 @@ export function SuperDashboardProvider({
   const fetchUsers = useCallback(async () => {
     if (!user || !isAllowedRole) return;
 
-    if (!isSuperAdmin) {
-      setUsers([]);
-      return;
-    }
-
     const headers = getAuthHeader();
     if (!headers) {
       setError("Authentication token not found");
@@ -286,14 +354,46 @@ export function SuperDashboardProvider({
       const res = await axios.get("/api/sqlbranch/get-users", { headers });
       setUsers(normalizeUsers(res.data));
     } catch (err: any) {
-      if (err?.response?.status === 401 || err?.response?.status === 403) return;
+      if (err?.response?.status === 401 || err?.response?.status === 403) {
+        setUsers([]);
+        return;
+      }
+
       setError(
         (prev) => prev || err?.response?.data?.message || "Failed to fetch users"
       );
     }
   }, [user, isAllowedRole, isSuperAdmin]);
 
+  const fetchBranches = useCallback(async () => {
+    if (!user || !isAllowedRole) return;
 
+    const headers = getAuthHeader();
+    if (!headers) {
+      setError("Authentication token not found");
+      return;
+    }
+
+    if (!isSuperAdmin) {
+      setBranches([]);
+      return;
+    }
+
+    try {
+      const res = await axios.get("/api/sqlbranch/branches", { headers });
+      setBranches(normalizeBranches(res.data));
+    } catch (err: any) {
+      if (err?.response?.status === 401 || err?.response?.status === 403) {
+        setBranches([]);
+        return;
+      }
+
+      setError(
+        (prev) =>
+          prev || err?.response?.data?.message || "Failed to fetch branches"
+      );
+    }
+  }, [user, isAllowedRole, isSuperAdmin]);
 
   const fetchByLocation = useCallback(async () => {
     if (!user || !isAllowedRole || !location) return;
@@ -315,6 +415,7 @@ export function SuperDashboardProvider({
       setData(dashboardData);
     } catch (err: any) {
       if (err?.response?.status === 401 || err?.response?.status === 403) return;
+
       setError(
         (prev) =>
           prev || err?.response?.data?.message || "Failed to load location data"
@@ -322,6 +423,32 @@ export function SuperDashboardProvider({
     }
   }, [user, isAllowedRole, location, isSuperAdmin]);
 
+  const refreshDashboard = useCallback(async () => {
+    if (!user || !token || !isAllowedRole) return;
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      if (location && isSuperAdmin) {
+        await Promise.all([fetchByLocation(), fetchUsers(), fetchBranches()]);
+      } else {
+        await Promise.all([fetchDashboard(), fetchUsers(), fetchBranches()]);
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [
+    user,
+    token,
+    isAllowedRole,
+    location,
+    isSuperAdmin,
+    fetchByLocation,
+    fetchDashboard,
+    fetchUsers,
+    fetchBranches,
+  ]);
 
   /* ================= INITIAL LOAD ================= */
 
@@ -343,34 +470,29 @@ export function SuperDashboardProvider({
       return;
     }
 
-    const loadAll = async () => {
-      setLoading(true);
-      setError(null);
+    refreshDashboard();
+  }, [authLoading, user, token, isAllowedRole, clearState, refreshDashboard]);
 
-      try {
-        await Promise.all([fetchDashboard(), fetchUsers(), ]);
-      } finally {
-        setLoading(false);
-      }
-    };
+  /* ================= LOCATION CHANGE ================= */
 
-    loadAll();
+  useEffect(() => {
+    if (authLoading || !user || !token || !isAllowedRole) return;
+
+    if (!location) {
+      fetchDashboard();
+      return;
+    }
+
+    fetchByLocation();
   }, [
     authLoading,
     user,
     token,
     isAllowedRole,
+    location,
     fetchDashboard,
-    fetchUsers,
-    clearState,
+    fetchByLocation,
   ]);
-
-  /* ================= LOCATION CHANGE ================= */
-
-  useEffect(() => {
-    if (authLoading || !user || !token || !isAllowedRole || !location) return;
-    fetchByLocation();
-  }, [authLoading, user, token, isAllowedRole, location, fetchByLocation]);
 
   return (
     <SuperDashboardContext.Provider
@@ -382,6 +504,7 @@ export function SuperDashboardProvider({
         setLocation,
         loading,
         error,
+        refreshDashboard,
       }}
     >
       {children}

@@ -209,7 +209,7 @@ export default function SalesAnalytics({
           </ResponsiveContainer>
         </div>
       ) : (
-        <div className="flex h-[300px] items-center justify-center rounded-[18px] border border-dashed border-[#E5EAF1] bg-[#FAFCFE]">
+        <div className="flex h-[200px] items-center justify-center rounded-[18px] border border-dashed border-[#E5EAF1] bg-[#FAFCFE]">
           <p className="text-sm text-[#8A94A6]">No analytics data available</p>
         </div>
       )}

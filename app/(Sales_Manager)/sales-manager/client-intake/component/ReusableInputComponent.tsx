@@ -20,6 +20,7 @@ type Props = {
   select?: boolean;
   options?: Option[];
   disabled?: boolean;
+  type?: string;
 };
 
 export default function ReusableInputComponent({
@@ -34,6 +35,7 @@ export default function ReusableInputComponent({
   select = false,
   options = [],
   disabled = false,
+  type = "text",
 }: Props) {
   const baseFieldClass = `
     w-full rounded-[10px] border bg-white text-[14px] text-[#111827]
@@ -53,7 +55,11 @@ export default function ReusableInputComponent({
 
       <div className="relative">
         {icon ? (
-          <span className="pointer-events-none absolute left-3 top-1/2 z-10 -translate-y-1/2 text-[#9CA3AF]">
+          <span
+            className={`pointer-events-none absolute left-3 z-10 text-[#9CA3AF] ${
+              textarea ? "top-3.5" : "top-1/2 -translate-y-1/2"
+            }`}
+          >
             {icon}
           </span>
         ) : null}
@@ -90,7 +96,7 @@ export default function ReusableInputComponent({
           />
         ) : (
           <input
-            type="text"
+            type={type}
             value={value}
             onChange={(e) => onChange(e.target.value)}
             placeholder={placeholder}

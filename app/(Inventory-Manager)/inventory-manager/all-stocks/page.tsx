@@ -1,70 +1,215 @@
 "use client";
 
-import { useApp } from "../../../context/InventoryManagerDashboard";
-import DashboardTable from "../Dashboard/Components/DashboardTable";
+import { useEffect, useMemo, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import InventoryOverviewCards from "../../Components/InventoryOverviewCards";
+import StockCategoryBarChart from "../../Components/StockCategoryBarChart";
+import HierarchyTable from "../../Components/HierarchyTable";
+import { useAuth } from "@/app/context/AuthContext";
+import {
+  inventoryDashboardApi,
+  formatCurrency,
+  formatNumber,
+  toNumber,
+  slugifyText,
+} from "@/app/lib/inventoryDashboardApi";
 
-export default function AllStocksPage() {
-  const { dashboard, loading, error } = useApp();
+export default function InventoryBranchPage() {
+  const params = useParams();
+  const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
 
-  const num = (v: any) => Number(v || 0);
+  const stateName = decodeURIComponent((params?.state as string) || "");
 
-  /* ================= FIXED TABLE DATA ================= */
-  const tableData =
-    dashboard?.inventoryTable?.map((item: any, index: number) => ({
-      id: index,
+  const branchId = String(
+    user?.branch_id ||
+      user?.branchId ||
+      user?.branch?.id ||
+      user?.branches?.[0] ||
+      ""
+  );
 
-      itemName: item.itemName || "NA",
-      category: item.categories || "NA",
-      hsn: item.hsnCode || "-",
-      grn: item.grnNo || "-",
-      po: item.poNumber || "-",
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-      stock: num(item.currentStock),
-      stockIn: num(item.stockIn),
-      stockOut: num(item.stockOut),
-      scrap: num(item.scrap),
+  useEffect(() => {
+    const fetchBranchDetails = async () => {
+      try {
+        setLoading(true);
+        setError("");
 
-      dispatch: item.dispatchDate?.split("T")[0] || "-",
-      delivery: item.deliveryDate?.split("T")[0] || "-",
+        if (!branchId) {
+          throw new Error("Branch ID not found in auth context");
+        }
 
-      status:
-        item.status === "GOOD"
-          ? "Good"
-          : item.status === "DAMAGED"
-          ? "Damaged"
-          : "Repairable",
-    })) || [];
+        const res = await inventoryDashboardApi.get(
+          `/combine/dashboard/branch-id/${encodeURIComponent(branchId)}`
+        );
 
-  /* ================= LOADING ================= */
-  if (loading) {
+        if (res.data?.success) {
+          setData(res.data);
+        } else {
+          throw new Error(res.data?.message || "Invalid API response");
+        }
+      } catch (err: any) {
+        if (err?.response?.status === 401) {
+          localStorage.clear();
+          router.replace("/login");
+          return;
+        }
+
+        setError(
+          err?.response?.data?.message ||
+            err?.message ||
+            "Failed to load branch details"
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (!authLoading) {
+      fetchBranchDetails();
+    }
+  }, [branchId, authLoading, router]);
+
+  const summary = {
+    currentStock:
+      toNumber(data?.summary?.currentStock) ||
+      toNumber(data?.stats?.totalStock) ||
+      0,
+    totalStockValue:
+      toNumber(data?.summary?.totalStockValue) ||
+      toNumber(data?.stats?.totalStockValue) ||
+      0,
+    totalItems:
+      toNumber(data?.summary?.totalItems) ||
+      toNumber(data?.stats?.totalItems) ||
+      toNumber(data?.allItems?.length) ||
+      0,
+    stockIn:
+      toNumber(data?.summary?.stockIn) ||
+      toNumber(data?.stats?.stockIn) ||
+      0,
+    stockOut:
+      toNumber(data?.summary?.stockOut) ||
+      toNumber(data?.stats?.stockOut) ||
+      0,
+  };
+
+  const categoryChartData = useMemo(() => {
+    const raw =
+      data?.charts?.categoryDistribution ||
+      data?.categoryDistribution ||
+      [];
+
+    return raw.map((item: any) => ({
+      name: item.category || item.name || "NA",
+      current: toNumber(item.total || item.value || item.qty),
+      in: 0,
+      out: 0,
+      aging: 0,
+    }));
+  }, [data]);
+
+  const itemRows = useMemo(() => {
+    const raw = data?.allItems || data?.items || [];
+
+    return raw.map((item: any) => ({
+      itemName: item.item || item.itemName || item.name || "NA",
+      slugItemName: slugifyText(item.item || item.itemName || item.name || ""),
+      totalQty: toNumber(item.totalQty || item.qty || item.totalStock),
+      totalValue: toNumber(item.totalValue || item.value || item.stockValue),
+    }));
+  }, [data]);
+
+  if (loading || authLoading) {
     return (
-      <div className="h-[400px] flex items-center justify-center text-gray-500">
-        Loading stocks...
+      <div className="min-h-screen bg-[#F7F9FB]">
+        <div className="mx-auto w-full max-w-[1440px] space-y-6 px-4 py-5 sm:px-5 lg:px-6 animate-pulse">
+          <div className="rounded-[24px] border border-[#E5E7EB] bg-white px-5 py-5 shadow-sm sm:px-6">
+            <div className="h-8 w-[220px] rounded-md bg-[#E5E7EB]" />
+            <div className="mt-2 h-4 w-[240px] rounded-md bg-[#E5E7EB]" />
+          </div>
+
+        
+
+          <div className="rounded-[24px] border border-[#E5E7EB] bg-white p-5 shadow-sm">
+            
+            <div className="w-full overflow-x-auto">
+              <table className="min-w-[900px] w-full">
+                <thead className="bg-[#F3F6F9]">
+                  <tr>
+                    {[...Array(4)].map((_, index) => (
+                      <th key={index} className="px-6 py-4 text-left">
+                        <div className="h-4 w-24 rounded bg-[#E5E7EB]" />
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {[...Array(5)].map((_, rowIndex) => (
+                    <tr
+                      key={rowIndex}
+                      className="border-t border-[#EDF2F7]"
+                    >
+                      {[...Array(4)].map((_, colIndex) => (
+                        <td key={colIndex} className="px-6 py-4">
+                          <div className="h-4 w-full max-w-[120px] rounded bg-[#E5E7EB]" />
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
 
-  /* ================= ERROR ================= */
   if (error) {
     return (
-      <div className="h-[400px] flex items-center justify-center text-red-500">
+      <div className="rounded-[24px] border border-red-200 bg-red-50 px-5 py-4 text-sm font-medium text-red-600 shadow-sm">
         {error}
       </div>
     );
   }
 
-  /* ================= UI ================= */
   return (
-    <div className="min-h-screen w-full bg-[#F7F9FB]">
-      <div className="mx-auto w-full max-w-[1320px] px-4 py-6">
-
-        <DashboardTable
-          title="Complete Stock Inventory"
-          data={tableData}
-          onExport={() => console.log("Export clicked")}
+    <div className="min-h-screen bg-[#F7F9FB]">
+        <HierarchyTable
+          title="Inventory Items"
+          subtitle="Item wise inventory summary"
+          data={itemRows}
+          getViewHref={(row) =>
+            `/inventory-manager/Branches/${encodeURIComponent(
+              stateName
+            )}/${encodeURIComponent(branchId)}/${encodeURIComponent(
+              row.slugItemName
+            )}`
+          }
+          columns={[
+            {
+              key: "itemName",
+              title: "Item Name",
+              render: (row) => row.itemName || "-",
+            },
+            {
+              key: "totalQty",
+              title: "Total Qty",
+              render: (row) => formatNumber(toNumber(row.totalQty)),
+            },
+            {
+              key: "totalValue",
+              title: "Total Value",
+              render: (row) => formatCurrency(toNumber(row.totalValue)),
+            },
+          ]}
         />
-
-      </div>
     </div>
   );
 }

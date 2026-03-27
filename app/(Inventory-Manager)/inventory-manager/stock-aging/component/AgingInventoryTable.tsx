@@ -1,7 +1,7 @@
 "use client";
 
 import { Download, Search, ChevronDown } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 
 type Row = {
   po: string;
@@ -23,9 +23,14 @@ const statusStyles: Record<Row["status"], string> = {
   Repairable: "bg-[#FFFAEB] text-[#EAB308]",
 };
 
+const INITIAL_ROWS = 20;
+const LOAD_MORE_ROWS = 20;
+
 export default function AgingInventoryTable({ data }: Props) {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("All Categories");
+  const [visibleCount, setVisibleCount] = useState(INITIAL_ROWS);
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
 
   const categories = useMemo(
     () => ["All Categories", ...new Set(data.map((item) => item.category))],
@@ -50,6 +55,41 @@ export default function AgingInventoryTable({ data }: Props) {
 
     return rows;
   }, [data, search, category]);
+
+  useEffect(() => {
+    setVisibleCount(INITIAL_ROWS);
+  }, [search, category, data]);
+
+  useEffect(() => {
+    const target = loadMoreRef.current;
+    if (!target) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const first = entries[0];
+        if (first?.isIntersecting) {
+          setVisibleCount((prev) =>
+            Math.min(prev + LOAD_MORE_ROWS, filteredData.length)
+          );
+        }
+      },
+      {
+        root: null,
+        rootMargin: "120px",
+        threshold: 0,
+      }
+    );
+
+    observer.observe(target);
+
+    return () => observer.disconnect();
+  }, [filteredData.length]);
+
+  const visibleData = useMemo(() => {
+    return filteredData.slice(0, visibleCount);
+  }, [filteredData, visibleCount]);
+
+  const hasMoreRows = visibleCount < filteredData.length;
 
   const handleExportCSV = () => {
     const headers = [
@@ -164,8 +204,8 @@ export default function AgingInventoryTable({ data }: Props) {
           </thead>
 
           <tbody>
-            {filteredData.length > 0 ? (
-              filteredData.map((item, index) => (
+            {visibleData.length > 0 ? (
+              visibleData.map((item, index) => (
                 <tr
                   key={`${item.po}-${item.item}-${index}`}
                   className="hover:bg-[#FCFCFD]"
@@ -210,6 +250,33 @@ export default function AgingInventoryTable({ data }: Props) {
           </tbody>
         </table>
       </div>
+
+      {filteredData.length > 0 && (
+        <div className="px-4 pb-4 pt-3 sm:px-5">
+          <div className="flex items-center justify-between gap-3 text-[12px] text-[#64748B]">
+            <span>
+              Showing {Math.min(visibleCount, filteredData.length)} of{" "}
+              {filteredData.length}
+            </span>
+
+            {hasMoreRows && (
+              <button
+                type="button"
+                onClick={() =>
+                  setVisibleCount((prev) =>
+                    Math.min(prev + LOAD_MORE_ROWS, filteredData.length)
+                  )
+                }
+                className="rounded-lg border border-[#D0D5DD] px-3 py-1.5 font-medium text-[#344054] transition hover:bg-[#F9FAFB]"
+              >
+                Load more
+              </button>
+            )}
+          </div>
+
+          {hasMoreRows && <div ref={loadMoreRef} className="h-2 w-full" />}
+        </div>
+      )}
     </div>
   );
 }

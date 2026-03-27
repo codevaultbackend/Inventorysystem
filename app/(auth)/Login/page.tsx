@@ -54,7 +54,7 @@ export default function Login() {
       <img
         src="/LoginDecordown.png"
         alt=""
-        className="absolute top-[-2%] left-0 w-full h-auto z-[1]"
+        className="absolute top-[0%] left-0 w-full h-auto z-[1]"
       />
 
       {/* LOGIN CARD */}
@@ -177,8 +177,8 @@ export default function Login() {
             className={`max-w-[476px] w-full h-16 rounded-xl shadow-[2px_2px_4px_0px_rgba(0,0,0,0.24)]
               ${
                 emailValid || passwordValid
-                  ? "bg-[#B9B9B9]"
-                  : "bg-blue-800 hover:bg-blue-700"
+                  ? "bg-[#0D4CBA]"
+                  : "bg-[#0D4CBA] hover:bg-blue-700"
               }`}
           >
             <button
@@ -200,12 +200,6 @@ export default function Login() {
             </button>
           </div>
 
-          <p className="text-center text-black">
-            Don’t have an account?{" "}
-            <a href="#" className="text-[#2563EB]">
-              Sign up
-            </a>
-          </p>
         </form>
       </div>
 
@@ -213,7 +207,7 @@ export default function Login() {
       <img
         src="/LoginDecorUp.png"
         alt=""
-        className="absolute bottom-[-40%] max-w-[1100px] h-auto z-[1]"
+        className="absolute bottom-[-40%] max-w-[1100px] h-auto z-[1] max-[768px]:bottom-[-158px]"
       />
     </section>
   );

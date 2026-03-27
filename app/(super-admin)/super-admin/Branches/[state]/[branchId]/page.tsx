@@ -72,6 +72,82 @@ const INVENTORY_ENDPOINTS = [
   "/inventory/dashboard",
 ];
 
+function HeaderSkeleton() {
+  return (
+    <div className="bg-white border border-[#EEF2F6] rounded-2xl shadow-sm p-6 animate-pulse">
+      <div className="h-8 w-56 rounded-md bg-[#E9EEF5]" />
+      <div className="mt-3 h-4 w-72 max-w-full rounded-md bg-[#E9EEF5]" />
+    </div>
+  );
+}
+
+function OverviewCardsSkeleton() {
+  return (
+    <div className="bg-white border border-[#EEF2F6] max-[768px]:bg-transparent max-[768px]:border-[0] max-[768px]:shadow-[0] max-[768px]:p-0 rounded-2xl shadow-sm p-6">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4 animate-pulse">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div
+            key={i}
+            className="rounded-[24px] border border-[#E6EDF5] bg-white p-5 shadow-sm"
+          >
+            <div className="h-4 w-24 rounded bg-[#E9EEF5]" />
+            <div className="mt-4 h-8 w-28 rounded bg-[#E9EEF5]" />
+            <div className="mt-3 h-3 w-20 rounded bg-[#E9EEF5]" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ChartSkeleton() {
+  return (
+    <div className="bg-white border border-[#EEF2F6] max-[768px]:bg-transparent max-[768px]:border-[0] max-[768px]:shadow-[0] max-[768px]:p-0 rounded-2xl shadow-sm p-6 animate-pulse">
+      <div className="mb-5 flex items-center justify-between gap-3">
+        <div className="h-5 w-36 rounded bg-[#E9EEF5]" />
+        <div className="h-8 w-20 rounded-xl bg-[#E9EEF5]" />
+      </div>
+
+      <div className="flex h-[260px] items-end gap-3">
+        {Array.from({ length: 8 }).map((_, i) => (
+          <div key={i} className="flex flex-1 items-end justify-center">
+            <div
+              className="w-full rounded-t-xl bg-[#E9EEF5]"
+              style={{ height: `${40 + (i % 5) * 30}px` }}
+            />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function InventoryItemsSkeleton() {
+  return (
+    <div className="bg-white border border-[#EEF2F6] max-[768px]:bg-transparent max-[768px]:border-[0] max-[768px]:shadow-[0] max-[768px]:p-0 rounded-2xl shadow-sm p-6 animate-pulse">
+      <div className="h-5 w-32 rounded bg-[#E9EEF5] mb-4" />
+
+      <div className="overflow-hidden rounded-[20px] border border-[#EEF2F6] bg-white">
+        <div className="grid grid-cols-7 gap-3 border-b border-[#EEF2F6] bg-[#F8FAFC] px-4 py-4">
+          {Array.from({ length: 7 }).map((_, i) => (
+            <div key={i} className="h-4 rounded bg-[#E9EEF5]" />
+          ))}
+        </div>
+
+        <div className="divide-y divide-[#EEF2F6]">
+          {Array.from({ length: 6 }).map((_, rowIndex) => (
+            <div key={rowIndex} className="grid grid-cols-7 gap-3 px-4 py-5">
+              {Array.from({ length: 7 }).map((_, colIndex) => (
+                <div key={colIndex} className="h-4 rounded bg-[#E9EEF5]" />
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function BranchDetailsPage() {
   const params = useParams();
   const stateName = decodeURIComponent((params?.state as string) || "");
@@ -138,17 +214,14 @@ export default function BranchDetailsPage() {
         } catch (err: any) {
           const status = err?.response?.status;
 
-          // Ignore missing/forbidden endpoints and keep trying others
           if (status === 403 || status === 404) {
             continue;
           }
 
-          // Ignore network-style failures for inventory only
           if (err?.code === "ECONNABORTED" || err?.message === "Network Error") {
             continue;
           }
 
-          // Any other unexpected issue: stop inventory fetch but do not break page
           return {
             rows: makeFallbackRowsFromTopItems(branchPayload),
             reason:
@@ -299,12 +372,24 @@ export default function BranchDetailsPage() {
     );
   }
 
-  if (loading) {
-    return <div className="p-6">Loading...</div>;
-  }
-
   if (error) {
     return <div className="p-6 text-red-600">{error}</div>;
+  }
+
+  if (loading) {
+    return (
+      <div className="space-y-8">
+        <HeaderSkeleton />
+        <OverviewCardsSkeleton />
+
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+          <ChartSkeleton />
+          <ChartSkeleton />
+        </div>
+
+        <InventoryItemsSkeleton />
+      </div>
+    );
   }
 
   return (

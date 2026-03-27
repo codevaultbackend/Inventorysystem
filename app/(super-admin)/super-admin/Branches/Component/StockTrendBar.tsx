@@ -23,7 +23,7 @@ type Props = {
 
 export function StockTrendBar({ data = [] }: Props) {
   return (
-    <div className="bg-white rounded-2xl border border-[#EEF2F6] shadow-[0_6px_20px_rgba(0,0,0,0.04)] p-6 w-full">
+    <div className="bg-white rounded-2xl border border-[#EEF2F6] shadow-[1px_1px_4px_rgba(0,0,0,0.1)] p-6 w-full">
       <div className="flex items-start justify-between mb-6">
         <div>
           <h3 className="text-[16px] font-semibold text-[#0F172A]">

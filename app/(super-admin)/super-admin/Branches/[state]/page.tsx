@@ -8,7 +8,6 @@ import { SalesTrendLine } from "../Component/SalesTrendLine";
 import { StockTrendBar } from "../Component/StockTrendBar";
 import { combineApi, toNumber } from "../../../../lib/combineDashboardApi";
 
-
 type BranchApiRow = {
   branchId?: number | string;
   id?: number | string;
@@ -42,6 +41,92 @@ type StateDashboardPayload = {
     }>;
   };
 };
+
+function HeaderSkeleton() {
+  return (
+    <div className="bg-white rounded-2xl border border-[#EEF2F6] shadow-sm p-6 animate-pulse">
+      <div className="h-8 w-52 rounded-md bg-[#E9EEF5]" />
+      <div className="mt-3 h-4 w-72 max-w-full rounded-md bg-[#E9EEF5]" />
+    </div>
+  );
+}
+
+function OverviewCardsSkeleton() {
+  return (
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4 animate-pulse">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <div
+          key={i}
+          className="rounded-[24px] border border-[#E6EDF5] bg-white p-5 shadow-sm"
+        >
+          <div className="h-4 w-24 rounded bg-[#E9EEF5]" />
+          <div className="mt-4 h-8 w-28 rounded bg-[#E9EEF5]" />
+          <div className="mt-3 h-3 w-20 rounded bg-[#E9EEF5]" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ChartSkeleton() {
+  return (
+    <div className="rounded-[24px] border border-[#E6EDF5] bg-white p-5 shadow-sm animate-pulse">
+      <div className="mb-5 flex items-center justify-between gap-3">
+        <div className="h-5 w-36 rounded bg-[#E9EEF5]" />
+        <div className="h-8 w-20 rounded-xl bg-[#E9EEF5]" />
+      </div>
+      <div className="flex h-[260px] items-end gap-3">
+        {Array.from({ length: 8 }).map((_, i) => (
+          <div key={i} className="flex flex-1 items-end justify-center">
+            <div
+              className="w-full rounded-t-xl bg-[#E9EEF5]"
+              style={{ height: `${40 + (i % 5) * 30}px` }}
+            />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function BranchOverviewSkeleton() {
+  return (
+    <div className="w-full rounded-[24px] border border-[#E6EDF5] bg-white p-4 sm:p-5 lg:p-6 shadow-sm animate-pulse">
+      <div className="flex flex-col gap-4">
+        <div className="flex items-center justify-between gap-3">
+          <div className="h-7 w-44 rounded-md bg-[#E9EEF5]" />
+          <div className="h-10 w-28 rounded-xl bg-[#E9EEF5]" />
+        </div>
+
+        <div className="overflow-hidden rounded-[20px] border border-[#EEF2F6]">
+          <div className="min-w-full">
+            <div className="grid grid-cols-7 gap-3 border-b border-[#EEF2F6] bg-[#F8FAFC] px-4 py-4">
+              {Array.from({ length: 7 }).map((_, i) => (
+                <div key={i} className="h-4 rounded bg-[#E9EEF5]" />
+              ))}
+            </div>
+
+            <div className="divide-y divide-[#EEF2F6]">
+              {Array.from({ length: 6 }).map((_, rowIndex) => (
+                <div
+                  key={rowIndex}
+                  className="grid grid-cols-7 gap-3 px-4 py-5"
+                >
+                  {Array.from({ length: 7 }).map((_, colIndex) => (
+                    <div
+                      key={colIndex}
+                      className="h-4 rounded bg-[#E9EEF5]"
+                    />
+                  ))}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function StatePage() {
   const params = useParams();
@@ -175,43 +260,61 @@ export default function StatePage() {
     });
   }, [branches, stateName]);
 
-  if (loading) return <div className="p-6">Loading...</div>;
   if (error) return <div className="p-6 text-red-600">{error}</div>;
 
   return (
     <div className="space-y-6 mb-[16px]">
-      <div className="bg-white rounded-2xl border border-[#EEF2F6] shadow-sm p-6">
-        <h1 className="text-[24px] md:text-[28px] font-semibold text-[#0F172A]">
-          {stateName}
-        </h1>
-        <p className="text-[13px] text-[#64748B] mt-1">
-          State level dashboard and branch analytics
-        </p>
-      </div>
+      {loading ? (
+        <>
+          <HeaderSkeleton />
 
-      {!tableData.length && emptyReason ? (
-        <div className="bg-white rounded-2xl border border-[#FDE68A] shadow-sm p-6">
-          <h3 className="text-[18px] font-semibold text-[#92400E]">
-            No data available
-          </h3>
-          <p className="text-sm text-[#78350F] mt-2">{emptyReason}</p>
-        </div>
-      ) : null}
+          <OverviewCardsSkeleton />
 
-      <BranchoverwiewPage
-        stats={statsData}
-        stockStatus={stockStatusData}
-        branchSummary={branchSummary}
-      />
+          <div className="grid xl:grid-cols-2 sm:grid-cols-1 max-[768px]:grid-cols-1 justify-between gap-[16px]">
+            <ChartSkeleton />
+            <ChartSkeleton />
+          </div>
 
-      <div className="grid xl:grid-cols-2 sm:grid-cols-1 max-[768px]:grid-cols-1 justify-between gap-[16px]">
-        <StockTrendBar data={stockTrendData} />
-        <SalesTrendLine data={salesTrendData} />
-      </div>
+          <div className="flex xl:grid-cols-2 sm:grid-cols-1 justify-between gap-[16px]">
+            <BranchOverviewSkeleton />
+          </div>
+        </>
+      ) : (
+        <>
+          <div className="bg-white rounded-2xl border border-[#EEF2F6] shadow-sm p-6">
+            <h1 className="text-[24px] md:text-[28px] font-semibold text-[#0F172A]">
+              {stateName}
+            </h1>
+            <p className="text-[13px] text-[#64748B] mt-1">
+              State level dashboard and branch analytics
+            </p>
+          </div>
 
-      <div className="flex xl:grid-cols-2 sm:grid-cols-1 justify-between gap-[16px]">
-        <BranchOverview data={tableData} />
-      </div>
+          {!tableData.length && emptyReason ? (
+            <div className="bg-white rounded-2xl border border-[#FDE68A] shadow-sm p-6">
+              <h3 className="text-[18px] font-semibold text-[#92400E]">
+                No data available
+              </h3>
+              <p className="text-sm text-[#78350F] mt-2">{emptyReason}</p>
+            </div>
+          ) : null}
+
+          <BranchoverwiewPage
+            stats={statsData}
+            stockStatus={stockStatusData}
+            branchSummary={branchSummary}
+          />
+
+          <div className="grid xl:grid-cols-2 sm:grid-cols-1 max-[768px]:grid-cols-1 justify-between gap-[16px]">
+            <StockTrendBar data={stockTrendData} />
+            <SalesTrendLine data={salesTrendData} />
+          </div>
+
+          <div className="flex xl:grid-cols-2 sm:grid-cols-1 justify-between gap-[16px]">
+            <BranchOverview data={tableData} />
+          </div>
+        </>
+      )}
     </div>
   );
 }

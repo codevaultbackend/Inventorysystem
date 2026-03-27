@@ -57,12 +57,12 @@ export default function BranchOverviewPage({ stats }: Props) {
               bg-white
               rounded-2xl
               border border-[#EEF2F6]
-              shadow-[0_6px_20px_rgba(0,0,0,0.04)]
+              shadow-[1px_1px_4px_rgba(0,0,0,0.1)]
               p-4 sm:p-5 lg:p-6
               flex flex-col justify-between
               min-h-[130px] sm:min-h-[140px]
               transition-all duration-200
-              hover:shadow-[0_8px_24px_rgba(0,0,0,0.06)]
+              hover:shadow-[1px_1px_4px_rgba(0,0,0,0.1)]
             "
           >
             <div

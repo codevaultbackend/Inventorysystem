@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LogOut } from "lucide-react";
@@ -22,8 +22,6 @@ import { IoDocumentTextSharp } from "react-icons/io5";
 import { HiOutlineClipboardDocumentList } from "react-icons/hi2";
 import { IoMdClipboard } from "react-icons/io";
 
-
-
 /* ================= TYPES ================= */
 
 type NavItem = {
@@ -33,55 +31,156 @@ type NavItem = {
 };
 
 const ROLE_NAV_ITEMS: Record<string, NavItem[]> = {
-
   super_admin: [
     { label: "Dashboard", href: "/super-admin", icon: PiWindowsLogo },
-    { label: "Branch Overview", href: "/super-admin/Branches", icon: BsBarChartLine },
+    {
+      label: "Branch Overview",
+      href: "/super-admin/Branches",
+      icon: BsBarChartLine,
+    },
     { label: "User Management", href: "/super-admin/users", icon: LuUsers },
-    { label: "Reports & Analytics", href: "/super-admin/reports", icon: AiOutlineLineChart },
-    { label: "System Settings", href: "/super-admin/settings", icon: SystemSetting },
+    {
+      label: "Reports & Analytics",
+      href: "/super-admin/reports",
+      icon: AiOutlineLineChart,
+    },
+    {
+      label: "System Settings",
+      href: "/super-admin/settings",
+      icon: SystemSetting,
+    },
   ],
   super_stock_manager: [
     { label: "Dashboard", href: "/stock-manager", icon: DashboardIcon },
-    { label: "All Stocks", href: "/stock-manager/all-stocks", icon: BsBarChartLine },
-    { label: "Aging", href: "/stock-manager/stock-aging", icon: UserManagement },
-    { label: "Reports & Analytics", href: "/stock-manager/report-anylysis", icon: HiOutlineClipboardDocumentList },
+    {
+      label: "All Stocks",
+      href: "/stock-manager/all-stocks",
+      icon: BsBarChartLine,
+    },
+    {
+      label: "Aging",
+      href: "/stock-manager/stock-aging",
+      icon: UserManagement,
+    },
+    {
+      label: "Reports & Analytics",
+      href: "/stock-manager/report-anylysis",
+      icon: HiOutlineClipboardDocumentList,
+    },
   ],
   inventory_manager: [
-    { label: "Dashboard", href: "/inventory-manager", icon: DashboardIcon },
-    { label: "All Stocks", href: "/inventory-manager/all-stocks", icon: BsBarChartLine },
-    { label: "Aging", href: "/inventory-manager/stock-aging", icon: UserManagement },
-    { label: "Ledger Management", href: "/inventory-manager/ledger", icon: FaBookOpen },
-    { label: "Reports & Analytics", href: "/inventory-manager/report-anylysis", icon: HiOutlineClipboardDocumentList },
+    { label: "Dashboard", href: "/inventory-manager/admin-dashboard", icon: DashboardIcon },
+    {
+      label: "All Stocks",
+      href: "/inventory-manager/all-stocks",
+      icon: BsBarChartLine,
+    },
+    {
+      label: "Aging",
+      href: "/inventory-manager/stock-aging",
+      icon: UserManagement,
+    },
+    {
+      label: "Ledger Management",
+      href: "/inventory-manager/ledger",
+      icon: FaBookOpen,
+    },
+    {
+      label: "Reports & Analytics",
+      href: "/inventory-manager/report-anylysis",
+      icon: HiOutlineClipboardDocumentList,
+    },
   ],
-   super_inventory_manager:[
-    { label: "Dashboard", href: "/inventory-manager", icon: DashboardIcon },
-    { label: "All Stocks", href: "/inventory-manager/all-stocks", icon: BsBarChartLine },
-    { label: "Aging", href: "/inventory-manager/stock-aging", icon: UserManagement },
-    { label: "Ledger Management", href: "/inventory-manager/ledger", icon: FaBookOpen },
-    { label: "Reports & Analytics", href: "/inventory-manager/report-anylysis", icon: HiOutlineClipboardDocumentList },
+  super_inventory_manager: [
+    {
+      label: "Dashboard",
+      href: "/inventory-manager/admin-dashboard",
+      icon: DashboardIcon,
+    },
+    {
+      label: "All Stocks",
+      href: "/inventory-manager/Branches",
+      icon: BsBarChartLine,
+    },
+    {
+      label: "Aging",
+      href: "/inventory-manager/stock-aging",
+      icon: UserManagement,
+    },
+    {
+      label: "Ledger Management",
+      href: "/inventory-manager/ledger",
+      icon: FaBookOpen,
+    },
+    {
+      label: "Reports & Analytics",
+      href: "/inventory-manager/report-anylysis",
+      icon: HiOutlineClipboardDocumentList,
+    },
   ],
   sales_manager: [
     { label: "Dashboard", href: "/sales-manager", icon: DashboardIcon },
-    { label: "Client Intake", href: "/sales-manager/client-intake", icon: LuUsersRound },
+    {
+      label: "All Sales",
+      href: "/sales-manager/Branches",
+      icon: BsBarChartLine,
+    },
+    {
+      label: "Client Intake",
+      href: "/sales-manager/client-intake",
+      icon: LuUsersRound,
+    },
     { label: "Ledger", href: "/sales-manager/ledger", icon: FaBookOpen },
-    { label: "Qutation", href: "/sales-manager/qutation", icon: IoDocumentTextSharp },
-    { label: "Report & Analysis", href: "/sales-manager/report-analysis", icon: HiOutlineClipboardDocumentList },
+    {
+      label: "Qutation",
+      href: "/sales-manager/qutation",
+      icon: IoDocumentTextSharp,
+    },
+    {
+      label: "Report & Analysis",
+      href: "/sales-manager/report-analysis",
+      icon: HiOutlineClipboardDocumentList,
+    },
   ],
-   super_sales_manager: [
+  super_sales_manager: [
     { label: "Dashboard", href: "/sales-manager", icon: DashboardIcon },
+    {
+      label: "All Sales",
+      href: "/sales-manager/Branches",
+      icon: BsBarChartLine,
+    },
     { label: "Ledger", href: "/sales-manager/ledger", icon: FaBookOpen },
-    { label: "Qutation", href: "/sales-manager/qutation", icon: IoDocumentTextSharp },
-    { label: "Report & Analysis", href: "/sales-manager/report-analysis", icon: HiOutlineClipboardDocumentList },
+    {
+      label: "Qutation",
+      href: "/sales-manager/qutation",
+      icon: IoDocumentTextSharp,
+    },
+    {
+      label: "Report & Analysis",
+      href: "/sales-manager/report-analysis",
+      icon: HiOutlineClipboardDocumentList,
+    },
     { label: "Invoice", href: "/sales-manager/invoice", icon: IoMdClipboard },
   ],
 
-   admin: [
-    { label: "Dashboard", href: "/super-admin", icon: PiWindowsLogo },
-    { label: "All Stocks", href: "/super-admin/all-stocks", icon: BsBarChartLine },
+  admin: [
+    { label: "Dashboard", href: "/super-admin/admin_dash", icon: PiWindowsLogo },
+    {
+      label: "All Stocks",
+      href: "/super-admin/all-stocks",
+      icon: BsBarChartLine,
+    },
     { label: "User Management", href: "/super-admin/users", icon: LuUsers },
-    { label: "Reports & Analytics", href: "/super-admin/reports", icon: HiOutlineClipboardDocumentList },
-    { label: "System Settings", href: "/super-admin/settings", icon: SystemSetting },
+    {
+      label: "Reports & Analytics",
+      href: "/super-admin/reports",
+      icon: HiOutlineClipboardDocumentList,
+    },
+    {
+      label: "System Settings",
+      href: "/super-admin/settings",
+      icon: SystemSetting,
+    },
   ],
 };
 
@@ -90,80 +189,102 @@ function cn(...classes: Array<string | false | null | undefined>) {
 }
 
 export default function Sidebar() {
-
   const pathname = usePathname();
   const { collapsed } = useApp();
   const { role, logout } = useAuth();
 
   const NAV_ITEMS = ROLE_NAV_ITEMS[role || ""] || [];
+  const stickyTriggerRef = useRef<HTMLDivElement | null>(null);
+  const [isSticky, setIsSticky] = useState(false);
 
   /* ================= ACTIVE ROUTE DETECTION ================= */
 
   const activeHref = useMemo(() => {
-
     if (!pathname) return "";
 
-    // Sort routes by length (longest first)
     const sortedRoutes = [...NAV_ITEMS].sort(
       (a, b) => b.href.length - a.href.length
     );
 
-    const match = sortedRoutes.find((item) =>
-      pathname === item.href || pathname.startsWith(item.href + "/")
+    const match = sortedRoutes.find(
+      (item) => pathname === item.href || pathname.startsWith(item.href + "/")
     );
 
     return match?.href || "";
-
   }, [pathname, NAV_ITEMS]);
+
+  useEffect(() => {
+    const target = stickyTriggerRef.current;
+    if (!target) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsSticky(!entry.isIntersecting);
+      },
+      {
+        threshold: 1,
+      }
+    );
+
+    observer.observe(target);
+
+    return () => observer.disconnect();
+  }, []);
 
   return (
     <>
-      
-      <div className="lg:hidden sticky top-[16px] z-40 w-full px-1 max-[768px]:top-0 max-[768px]:pt-[20px] bg-[#F6F8FA]">
-  <div className="flex gap-2 overflow-x-auto no-scrollbar rounded-xl bg-[#F6F8FA] py-1">
-    {NAV_ITEMS.map((item) => {
-      const Icon = item.icon;
-      const isActive = activeHref === item.href;
+      <div ref={stickyTriggerRef} className="h-px w-full lg:hidden" />
 
-      return (
-        <Link
-          key={item.href}
-          href={item.href}
-          className={cn(
-            "flex items-center gap-2",
-            "px-4 h-[42px] rounded-xl whitespace-nowrap",
-            "border transition shrink-0",
-            isActive
-              ? "bg-[#1D4ED8] !text-white lg:border-[#1D4ED8]"
-              : "bg-white text-[#6B7280] border-[#E5E7EB]"
-          )}
-        >
-          <Icon
-            className={cn(
-              "h-4 w-4",
-              isActive ? "!text-white" : "!text-[#6B7280]"
-            )}
-          />
+      <div
+        className={cn(
+          "lg:hidden sticky top-[1px] z-40 w-full px-1 bg-[#F6F8FA] transition-all duration-200",
+          isSticky ? "pt-[15px]" : "pt-0"
+        )}
+      >
+        <div className="flex gap-2 overflow-x-auto no-scrollbar rounded-xl bg-[#F6F8FA] py-1">
+          {NAV_ITEMS.map((item) => {
+            const Icon = item.icon;
+            const isActive = activeHref === item.href;
 
-          <span className="text-[13px] font-[500]">{item.label}</span>
-        </Link>
-      );
-    })}
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  "flex items-center gap-2",
+                  "px-4 h-[42px] rounded-xl whitespace-nowrap",
+                  "border transition shrink-0",
+                  isActive
+                    ? "bg-[#1D4ED8] !text-white lg:border-[#1D4ED8]"
+                    : "bg-white text-[#6B7280] border-[#E5E7EB]"
+                )}
+              >
+                <Icon
+                  className={cn(
+                    "h-4 w-4",
+                    isActive ? "!text-white" : "!text-[#6B7280]"
+                  )}
+                />
 
-    <button
-      onClick={logout}
-      className="
-        flex items-center gap-2
-        px-4 h-[42px] rounded-xl whitespace-nowrap
-        border transition shrink-0
-        bg-white text-[#6B7280] border-[#E5E7EB]
-      "
-    >
-      <LogOut className="h-4 w-4 text-[#6B7280]" />
-      <span className="text-[13px] font-[500]">Log Out</span>
-    </button>
-  </div>
-</div>
+                <span className="text-[13px] font-[500]">{item.label}</span>
+              </Link>
+            );
+          })}
+
+          <button
+            onClick={logout}
+            className="
+              flex items-center gap-2
+              px-4 h-[42px] rounded-xl whitespace-nowrap
+              border transition shrink-0
+              bg-white text-[#6B7280] border-[#E5E7EB]
+            "
+          >
+            <LogOut className="h-4 w-4 text-[#6B7280]" />
+            <span className="text-[13px] font-[500]">Log Out</span>
+          </button>
+        </div>
+      </div>
 
       <aside
         className={cn(
@@ -178,13 +299,9 @@ export default function Sidebar() {
           "transition-[width] duration-200 ease-out"
         )}
       >
-
-        {/* NAV */}
         <nav className="mt-4 px-3">
           <div className="space-y-2">
-
             {NAV_ITEMS.map((item) => {
-
               const Icon = item.icon;
               const isActive = activeHref === item.href;
 
@@ -225,13 +342,10 @@ export default function Sidebar() {
                 </Link>
               );
             })}
-
           </div>
         </nav>
 
-        {/* FOOTER */}
         <div className="absolute left-0 right-0 bottom-0 p-3">
-
           <div className="h-px bg-[#EEF2F6] mb-3" />
 
           <button
@@ -253,9 +367,7 @@ export default function Sidebar() {
               </span>
             )}
           </button>
-
         </div>
-
       </aside>
     </>
   );

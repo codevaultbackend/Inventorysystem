@@ -66,8 +66,69 @@ export default function ReportsAnalyticsPage() {
   /* ================= LOADING ================= */
   if (loading) {
     return (
-      <div className="flex h-[400px] items-center justify-center">
-        <p className="text-gray-500">Loading analytics...</p>
+      <div className="min-h-screen w-full bg-[#F5F7FB]">
+        <div className="mx-auto w-full max-w-[1328px]">
+          <div className="space-y-4 sm:space-y-5 animate-pulse">
+            <div>
+              <div className="h-7 w-[220px] rounded-md bg-[#E5E7EB]" />
+              <div className="mt-2 h-4 w-[320px] rounded-md bg-[#E5E7EB]" />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              {[...Array(4)].map((_, index) => (
+                <div
+                  key={index}
+                  className="rounded-[24px] border border-[#E5E7EB] bg-white p-5 shadow-sm"
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="space-y-3">
+                      <div className="h-4 w-24 rounded bg-[#E5E7EB]" />
+                      <div className="h-8 w-20 rounded bg-[#E5E7EB]" />
+                      <div className="h-3 w-16 rounded bg-[#E5E7EB]" />
+                    </div>
+                    <div className="h-12 w-12 rounded-xl bg-[#E5E7EB]" />
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+              <div className="rounded-[24px] border border-[#E5E7EB] bg-white p-5 shadow-sm">
+                <div className="mb-4 space-y-2">
+                  <div className="h-5 w-40 rounded bg-[#E5E7EB]" />
+                  <div className="h-4 w-56 rounded bg-[#E5E7EB]" />
+                </div>
+                <div className="h-[320px] w-full rounded-[18px] bg-[#E5E7EB]" />
+              </div>
+
+              <div className="rounded-[24px] border border-[#E5E7EB] bg-white p-5 shadow-sm">
+                <div className="mb-4 space-y-2">
+                  <div className="h-5 w-40 rounded bg-[#E5E7EB]" />
+                  <div className="h-4 w-56 rounded bg-[#E5E7EB]" />
+                </div>
+                <div className="h-[320px] w-full rounded-[18px] bg-[#E5E7EB]" />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+              <div className="rounded-[24px] border border-[#E5E7EB] bg-white p-5 shadow-sm">
+                <div className="mb-4 space-y-2">
+                  <div className="h-5 w-40 rounded bg-[#E5E7EB]" />
+                  <div className="h-4 w-56 rounded bg-[#E5E7EB]" />
+                </div>
+                <div className="h-[320px] w-full rounded-[18px] bg-[#E5E7EB]" />
+              </div>
+
+              <div className="rounded-[24px] border border-[#E5E7EB] bg-white p-5 shadow-sm">
+                <div className="mb-4 space-y-2">
+                  <div className="h-5 w-40 rounded bg-[#E5E7EB]" />
+                  <div className="h-4 w-56 rounded bg-[#E5E7EB]" />
+                </div>
+                <div className="h-[320px] w-full rounded-[18px] bg-[#E5E7EB]" />
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
@@ -83,9 +144,6 @@ export default function ReportsAnalyticsPage() {
 
   if (!data) return null;
 
-  /* ================= DATA MAPPING ================= */
-
-  /* ---- STAT CARDS ---- */
   const statCards = [
     {
       title: "Total Spend (YTD)",
@@ -125,14 +183,12 @@ export default function ReportsAnalyticsPage() {
     },
   ];
 
-  /* ---- MONTHLY SPEND ---- */
   const monthlySpendBudgetData = data.monthlySpend.map((item: any) => ({
     month: item.month,
-    actual: Number((item.spend / 10000000).toFixed(2)), // convert to Cr
-    budget: Number((item.spend / 10000000).toFixed(2)), // no budget API → mirror
+    actual: Number((item.spend / 10000000).toFixed(2)),
+    budget: Number((item.spend / 10000000).toFixed(2)),
   }));
 
-  /* ---- STOCK MOVEMENT ---- */
   const stockMovementData = data.stockMovement.map((item: any) => ({
     month: item.month,
     stockIn: item.stockIn,
@@ -167,7 +223,7 @@ export default function ReportsAnalyticsPage() {
 
   return (
     <div className="min-h-screen w-full bg-[#F5F7FB]">
-      <div className="mx-auto w-full max-w-[1328px] px-3 py-4 sm:px-4 sm:py-5 md:px-6 md:py-6">
+      <div className="mx-auto w-full max-w-[1328px] ">
         <div className="space-y-4 sm:space-y-5">
           <div>
             <h1 className="text-[20px] font-[600] leading-[28px] text-[#111827] sm:text-[22px] sm:leading-[30px]">

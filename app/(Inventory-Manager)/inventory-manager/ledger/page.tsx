@@ -71,8 +71,81 @@ export default function LedgerScreen() {
   /* ================= FALLBACK ================= */
   if (loading) {
     return (
-      <div className="flex h-[400px] items-center justify-center">
-        <p className="text-gray-500">Loading...</p>
+      <div className="min-h-screen bg-[#F4F6F9] max-w-[1440px] w-full">
+        <div className="space-y-6 animate-pulse">
+          {/* KPI CARDS SKELETON */}
+          <div className="grid grid-cols-2 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {[...Array(4)].map((_, index) => (
+              <div
+                key={index}
+                className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm"
+              >
+                <div className="flex items-start justify-between">
+                  <div className="space-y-3">
+                    <div className="h-4 w-28 rounded bg-[#E5E7EB]" />
+                    <div className="h-8 w-20 rounded bg-[#E5E7EB]" />
+                    <div className="h-3 w-16 rounded bg-[#E5E7EB]" />
+                  </div>
+                  <div className="h-12 w-12 rounded-xl bg-[#E5E7EB]" />
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* CHART SKELETON */}
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-[7fr_3fr]">
+            <div className="h-[442px] w-full rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+              <div className="mb-4 space-y-2">
+                <div className="h-5 w-40 rounded bg-[#E5E7EB]" />
+                <div className="h-4 w-56 rounded bg-[#E5E7EB]" />
+              </div>
+              <div className="h-[340px] w-full rounded-[18px] bg-[#E5E7EB]" />
+            </div>
+
+            <div className="h-[442px] w-full rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+              <div className="mb-4 space-y-2">
+                <div className="h-5 w-32 rounded bg-[#E5E7EB]" />
+                <div className="h-4 w-44 rounded bg-[#E5E7EB]" />
+              </div>
+              <div className="h-[340px] w-full rounded-[18px] bg-[#E5E7EB]" />
+            </div>
+          </div>
+
+          {/* TABLE SKELETON */}
+          <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+            <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+              <div className="mb-6 h-5 w-40 rounded bg-[#E5E7EB]" />
+
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[900px]">
+                  <thead>
+                    <tr className="border-b border-[#E5E7EB]">
+                      {[...Array(7)].map((_, index) => (
+                        <th key={index} className="px-4 py-3 text-left">
+                          <div className="h-4 w-24 rounded bg-[#E5E7EB]" />
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[...Array(5)].map((_, rowIndex) => (
+                      <tr
+                        key={rowIndex}
+                        className="border-b border-[#F1F5F9] last:border-b-0"
+                      >
+                        {[...Array(7)].map((_, colIndex) => (
+                          <td key={colIndex} className="px-4 py-4">
+                            <div className="h-4 w-full max-w-[120px] rounded bg-[#E5E7EB]" />
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
@@ -106,12 +179,10 @@ export default function LedgerScreen() {
     0
   );
 
-  const branchShareData = dashboard.categoryDistribution.map(
-    (item: any) => ({
-      name: item.category,
-      value: Math.round((item.total / total) * 100),
-    })
-  );
+  const branchShareData = dashboard.categoryDistribution.map((item: any) => ({
+    name: item.category,
+    value: Math.round((item.total / total) * 100),
+  }));
 
   const tableData = dashboard.clients.map((item: any) => ({
     vendor: item.vendorName,
@@ -126,26 +197,7 @@ export default function LedgerScreen() {
 
   return (
     <div className="min-h-screen bg-[#F4F6F9] max-w-[1440px] w-full">
-      <div className=" py-8 space-y-6">
-        {/* HEADER */}
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => router.back()}
-            className="w-10 h-10 rounded-xl bg-white border border-gray-200 flex items-center justify-center shadow-sm hover:bg-gray-50"
-          >
-            <FaChevronLeft className="text-gray-600 text-sm" />
-          </button>
-
-          <div>
-            <h1 className="text-[22px] font-semibold text-gray-800">
-              {formatState(stateId)} Cities
-            </h1>
-            <p className="text-sm text-gray-500">
-              Detailed city analytics
-            </p>
-          </div>
-        </div>
-
+      <div className=" space-y-6">
         {/* KPI CARDS */}
         <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           <StockCount title="Total Stock Items" value={counts.total} icon={Boxes} />
@@ -181,7 +233,6 @@ export default function LedgerScreen() {
                 { key: "amount", label: "Total Amount" },
                 { key: "pending", label: "Pending Amount" },
                 { key: "gst", label: "GST Number" },
-                { key: "action", label: "Action" },
               ]}
               data={tableData}
               onView={(row) => console.log(row)}

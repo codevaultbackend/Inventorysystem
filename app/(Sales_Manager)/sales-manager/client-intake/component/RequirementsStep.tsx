@@ -1,16 +1,7 @@
 "use client";
 
 import { Dispatch, SetStateAction, useMemo, useState } from "react";
-import {
-  ArrowRight,
-  Box,
-  CalendarDays,
-  FileText,
-  IndianRupee,
-  PackagePlus,
-  Percent,
-  Trash2,
-} from "lucide-react";
+import { ArrowRight, Box, PackagePlus, Trash2 } from "lucide-react";
 import type { Product } from "./ClientIntakePage";
 
 type Props = {
@@ -38,12 +29,12 @@ const createProduct = (): Product => ({
   quantity: "1",
   price: "0",
   specs: "",
-  unit: "pcs",
+  unit: "",
   hsn: "",
 });
 
 const currency = (value: number) =>
-  new Intl.NumberFormat("en-IN", {
+  new Intl.NumberFormat("en-US", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(value);
@@ -57,19 +48,8 @@ export default function RequirementsStep({
   loading,
   apiError,
 }: Props) {
-  const [gstPercent, setGstPercent] = useState("18");
-  const [validTill, setValidTill] = useState("");
   const [errors, setErrors] = useState<Record<string, ProductErrors>>({});
   const [formError, setFormError] = useState("");
-
-  const subtotal = useMemo(() => total, [total]);
-
-  const gstAmount = useMemo(() => {
-    const gst = Number(gstPercent || 0);
-    return subtotal * (gst / 100);
-  }, [subtotal, gstPercent]);
-
-  const grandTotal = useMemo(() => subtotal + gstAmount, [subtotal, gstAmount]);
 
   const handleProductChange = (
     id: string,
@@ -102,7 +82,6 @@ export default function RequirementsStep({
     if (products.length === 1) return;
 
     setProducts((prev) => prev.filter((item) => item.id !== id));
-
     setErrors((prev) => {
       const next = { ...prev };
       delete next[id];
@@ -148,14 +127,11 @@ export default function RequirementsStep({
       }
     });
 
-    if (Number(gstPercent) < 0 || Number.isNaN(Number(gstPercent))) {
-      setFormError("GST percent must be a valid number.");
-      hasError = true;
-    }
-
     setErrors(nextErrors);
 
-    if (!hasError) {
+    if (hasError) {
+      setFormError("Please fill all required product details correctly.");
+    } else {
       setFormError("");
     }
 
@@ -173,53 +149,13 @@ export default function RequirementsStep({
     }
   };
 
+  const totalAmount = useMemo(() => total, [total]);
+
   return (
-    <div className="rounded-[20px] border border-[#E5E7EB] bg-white shadow-[0_8px_30px_rgba(15,23,42,0.04)]">
-      <div className="flex flex-col gap-4 border-b border-[#EEF2F6] px-4 py-4 sm:px-5 lg:flex-row lg:items-start lg:justify-between lg:px-6">
-        <div>
-          <h3 className="text-[20px] font-semibold leading-none text-[#111827]">
-            Product Requirements
-          </h3>
-          <p className="mt-1 text-[13px] font-normal text-[#6B7280]">
-            Add products, quantities, pricing, and quotation details.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:w-auto">
-          <div className="min-w-[170px]">
-            <label className="mb-1.5 flex items-center gap-2 text-[12px] font-medium text-[#374151]">
-              <Percent size={14} />
-              GST %
-            </label>
-            <input
-              type="number"
-              min="0"
-              step="0.01"
-              value={gstPercent}
-              onChange={(e) => setGstPercent(e.target.value)}
-              className="h-[42px] w-full rounded-[12px] border border-[#D1D5DB] bg-white px-3 text-[14px] text-[#111827] outline-none transition focus:border-[#2563EB] focus:ring-4 focus:ring-[#DBEAFE]"
-              placeholder="18"
-            />
-          </div>
-
-          <div className="min-w-[170px]">
-            <label className="mb-1.5 flex items-center gap-2 text-[12px] font-medium text-[#374151]">
-              <CalendarDays size={14} />
-              Valid Till
-            </label>
-            <input
-              type="date"
-              value={validTill}
-              onChange={(e) => setValidTill(e.target.value)}
-              className="h-[42px] w-full rounded-[12px] border border-[#D1D5DB] bg-white px-3 text-[14px] text-[#111827] outline-none transition focus:border-[#2563EB] focus:ring-4 focus:ring-[#DBEAFE]"
-            />
-          </div>
-        </div>
-      </div>
-
-      <div className="px-4 py-4 sm:px-5 sm:py-5 lg:px-6 lg:py-6">
+    <div className="rounded-[18px] border border-[#E5E7EB] bg-white">
+      <div className="px-4 py-4 sm:px-5 sm:py-5">
         <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="text-[14px] font-medium text-[#111827]">
+          <div className="text-[20px] font-semibold text-[#111827]">
             Product Requirements
           </div>
 
@@ -238,16 +174,14 @@ export default function RequirementsStep({
             const qty = Number(item.quantity || 0);
             const price = Number(item.price || 0);
             const itemSubtotal = qty * price;
-            const itemGst = itemSubtotal * (Number(gstPercent || 0) / 100);
-            const itemTotal = itemSubtotal + itemGst;
             const itemErrors = errors[item.id] || {};
 
             return (
               <div
                 key={item.id}
-                className="rounded-[16px] border border-[#E5E7EB] bg-white p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04)] sm:p-5"
+                className="rounded-[14px] border border-[#E5E7EB] bg-white p-4"
               >
-                <div className="mb-4 flex flex-col gap-3 border-b border-[#EEF2F6] pb-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex items-center gap-2">
                     <Box size={18} className="text-[#6B7280]" />
                     <h4 className="text-[18px] font-semibold text-[#111827]">
@@ -320,7 +254,7 @@ export default function RequirementsStep({
 
                     <div>
                       <label className="mb-1.5 block text-[13px] font-medium text-[#374151]">
-                        Unit Price (₹) <span className="text-[#DC2626]">*</span>
+                        Unit Price ($) <span className="text-[#DC2626]">*</span>
                       </label>
                       <input
                         type="number"
@@ -344,38 +278,6 @@ export default function RequirementsStep({
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <div>
-                      <label className="mb-1.5 block text-[13px] font-medium text-[#374151]">
-                        Unit
-                      </label>
-                      <input
-                        type="text"
-                        value={item.unit ?? ""}
-                        onChange={(e) =>
-                          handleProductChange(item.id, "unit", e.target.value)
-                        }
-                        placeholder="pcs"
-                        className="h-[44px] w-full rounded-[12px] border border-[#D1D5DB] bg-white px-3 text-[14px] text-[#111827] outline-none transition focus:border-[#2563EB] focus:ring-4 focus:ring-[#DBEAFE]"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="mb-1.5 block text-[13px] font-medium text-[#374151]">
-                        HSN Code
-                      </label>
-                      <input
-                        type="text"
-                        value={item.hsn ?? ""}
-                        onChange={(e) =>
-                          handleProductChange(item.id, "hsn", e.target.value)
-                        }
-                        placeholder="8471"
-                        className="h-[44px] w-full rounded-[12px] border border-[#D1D5DB] bg-white px-3 text-[14px] text-[#111827] outline-none transition focus:border-[#2563EB] focus:ring-4 focus:ring-[#DBEAFE]"
-                      />
-                    </div>
-                  </div>
-
                   <div>
                     <label className="mb-1.5 block text-[13px] font-medium text-[#374151]">
                       Specifications
@@ -392,27 +294,11 @@ export default function RequirementsStep({
                   </div>
                 </div>
 
-                <div className="mt-4 rounded-[12px] bg-[#F9FAFB] p-3">
-                  <div className="grid grid-cols-1 gap-2 text-[13px] text-[#4B5563] sm:grid-cols-3">
-                    <div>
-                      Subtotal:{" "}
-                      <span className="font-semibold text-[#111827]">
-                        ₹{currency(itemSubtotal)}
-                      </span>
-                    </div>
-                    <div>
-                      GST:{" "}
-                      <span className="font-semibold text-[#111827]">
-                        ₹{currency(itemGst)}
-                      </span>
-                    </div>
-                    <div>
-                      Amount:{" "}
-                      <span className="font-semibold text-[#111827]">
-                        ₹{currency(itemTotal)}
-                      </span>
-                    </div>
-                  </div>
+                <div className="mt-4 rounded-[10px] bg-[#F9FAFB] px-3 py-3 text-[13px] text-[#4B5563]">
+                  Subtotal:{" "}
+                  <span className="font-semibold text-[#111827]">
+                    ${currency(itemSubtotal)}
+                  </span>
                 </div>
               </div>
             );
@@ -431,70 +317,41 @@ export default function RequirementsStep({
           </div>
         ) : null}
 
-        <div className="mt-5 rounded-[14px] border border-[#DBEAFE] bg-[#EFF6FF] p-4 sm:p-5">
-          <div className="flex items-center gap-2 text-[15px] font-semibold text-[#111827]">
-            <FileText size={18} className="text-[#2563EB]" />
-            Quotation Summary
-          </div>
-
-          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="rounded-[12px] bg-white px-4 py-3">
-              <div className="text-[12px] text-[#6B7280]">Subtotal</div>
-              <div className="mt-1 text-[18px] font-semibold text-[#111827]">
-                ₹{currency(subtotal)}
-              </div>
-            </div>
-
-            <div className="rounded-[12px] bg-white px-4 py-3">
-              <div className="text-[12px] text-[#6B7280]">GST ({gstPercent || 0}%)</div>
-              <div className="mt-1 text-[18px] font-semibold text-[#111827]">
-                ₹{currency(gstAmount)}
-              </div>
-            </div>
-
-            <div className="rounded-[12px] bg-white px-4 py-3">
-              <div className="text-[12px] text-[#6B7280]">Valid Till</div>
-              <div className="mt-1 text-[16px] font-semibold text-[#111827]">
-                {validTill || "Not set"}
-              </div>
-            </div>
-
-            <div className="rounded-[12px] bg-[#2563EB] px-4 py-3 text-white">
-              <div className="flex items-center gap-1 text-[12px] text-white/80">
-                <IndianRupee size={14} />
-                Total Amount
-              </div>
-              <div className="mt-1 text-[22px] font-semibold">
-                ₹{currency(grandTotal)}
-              </div>
-            </div>
+        <div className="mt-5 rounded-[12px] bg-[#F4F8FF] px-4 py-4">
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-[15px] font-semibold text-[#111827]">
+              Total Amount:
+            </span>
+            <span className="text-[20px] font-bold text-[#2563EB]">
+              ${currency(totalAmount)}
+            </span>
           </div>
         </div>
-      </div>
 
-      <div className="flex flex-col-reverse gap-3 border-t border-[#EEF2F6] px-4 py-4 sm:px-5 sm:flex-row sm:items-center sm:justify-end lg:px-6">
-        <button
-          type="button"
-          onClick={back}
-          disabled={loading}
-          className="h-[44px] rounded-[10px] border border-[#D1D5DB] bg-white px-5 text-[14px] font-medium text-[#374151] transition hover:bg-[#F9FAFB] disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          Cancel
-        </button>
+        <div className="mt-5 flex flex-col-reverse gap-3 border-t border-[#EEF2F6] pt-4 sm:flex-row sm:items-center sm:justify-end">
+          <button
+            type="button"
+            onClick={back}
+            disabled={loading}
+            className="h-[44px] rounded-[10px] border border-[#D1D5DB] bg-white px-5 text-[14px] font-medium text-[#374151] transition hover:bg-[#F9FAFB] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            Cancel
+          </button>
 
-        <button
-          type="button"
-          onClick={handleCreate}
-          disabled={loading || products.length === 0}
-          className={`inline-flex h-[44px] items-center justify-center gap-2 rounded-[10px] px-5 text-[14px] font-medium text-white transition ${
-            loading || products.length === 0
-              ? "cursor-not-allowed bg-[#BFD0FB]"
-              : "bg-[#2563EB] hover:bg-[#1D4ED8]"
-          }`}
-        >
-          {loading ? "Creating Quotation..." : "Create Quotation"}
-          {!loading && <ArrowRight size={16} />}
-        </button>
+          <button
+            type="button"
+            onClick={handleCreate}
+            disabled={loading || products.length === 0}
+            className={`inline-flex h-[44px] items-center justify-center gap-2 rounded-[10px] px-5 text-[14px] font-medium text-white transition ${
+              loading || products.length === 0
+                ? "cursor-not-allowed bg-[#BFD0FB]"
+                : "bg-[#2563EB] hover:bg-[#1D4ED8]"
+            }`}
+          >
+            {loading ? "Creating Quotation..." : "Create Quotation"}
+            {!loading && <ArrowRight size={16} />}
+          </button>
+        </div>
       </div>
     </div>
   );

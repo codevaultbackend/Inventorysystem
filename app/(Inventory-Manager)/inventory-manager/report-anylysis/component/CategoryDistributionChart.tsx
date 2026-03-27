@@ -56,9 +56,11 @@ export default function CategoryDistributionChart({ data }: Props) {
             </ResponsiveContainer>
           </div>
 
-          <div className="absolute right-[8%] top-[8%] rounded-[10px] border border-[#D0D5DD] bg-white px-3 py-2 text-[12px] font-[600] text-[#344054] shadow-[0px_1px_2px_rgba(16,24,40,0.06)] sm:text-[14px]">
-            {firstItem.name} : {firstItem.value}
-          </div>
+          {firstItem && (
+            <div className="absolute right-[8%] top-[8%] rounded-[10px] border border-[#D0D5DD] bg-white px-3 py-2 text-[12px] font-[600] text-[#344054] shadow-[0px_1px_2px_rgba(16,24,40,0.06)] sm:text-[14px]">
+              {firstItem.name} : {firstItem.value}
+            </div>
+          )}
         </div>
 
         <div className="space-y-[6px] lg:pl-2">

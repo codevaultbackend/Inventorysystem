@@ -9,7 +9,7 @@ export default function Profile() {
 
   return (
     <DashboardLayout>
-      <div className="w-full min-h-screen bg-[#F3F4F6] px-4 sm:px-6 lg:px-8 py-6">
+      <div className="w-full min-h-screen bg-[#F6F8FA] px-4 sm:px-3 py-6">
 
         <div className="max-w-[1200px] mx-auto">
 
