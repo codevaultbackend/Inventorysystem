@@ -2,22 +2,21 @@
 
 import { createContext, useContext, useState } from "react";
 
-/* ================= TYPE ================= */
 type AppContextType = {
   collapsed: boolean;
   setCollapsed: React.Dispatch<React.SetStateAction<boolean>>;
-
   mobileOpen: boolean;
   setMobileOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  globalSearch: string;
+  setGlobalSearch: React.Dispatch<React.SetStateAction<string>>;
 };
 
-/* ================= CONTEXT ================= */
 const AppContext = createContext<AppContextType | null>(null);
 
-/* ================= PROVIDER ================= */
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [globalSearch, setGlobalSearch] = useState("");
 
   return (
     <AppContext.Provider
@@ -26,6 +25,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setCollapsed,
         mobileOpen,
         setMobileOpen,
+        globalSearch,
+        setGlobalSearch,
       }}
     >
       {children}
@@ -33,7 +34,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-/* ================= HOOK ================= */
 export function useApp() {
   const context = useContext(AppContext);
 

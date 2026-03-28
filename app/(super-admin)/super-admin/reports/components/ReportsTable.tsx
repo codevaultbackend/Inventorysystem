@@ -1,11 +1,16 @@
 "use client";
 
+import { useState } from "react";
+
 type ReportItem = {
   name: string;
   type: string;
   date: string;
   generatedBy: string;
   format: string;
+  downloadType?: string;
+  downloadFormat?: string;
+  downloadUrl?: string;
 };
 
 type Props = {
@@ -16,22 +21,140 @@ type Props = {
 function formatBadge(type: string) {
   switch ((type || "").toLowerCase()) {
     case "sale":
+    case "sales":
       return "bg-blue-50 text-blue-700";
     case "inventory":
       return "bg-amber-50 text-amber-700";
     case "financial":
+    case "reports":
       return "bg-emerald-50 text-emerald-700";
     case "users":
       return "bg-violet-50 text-violet-700";
+    case "clients":
+    case "ledger":
+      return "bg-cyan-50 text-cyan-700";
     default:
       return "bg-slate-100 text-slate-700";
   }
+}
+
+function getStoredToken() {
+  if (typeof window === "undefined") return null;
+
+  return (
+    localStorage.getItem("accessToken") ||
+    localStorage.getItem("token") ||
+    localStorage.getItem("authToken") ||
+    localStorage.getItem("ims_token") ||
+    localStorage.getItem("imsToken") ||
+    localStorage.getItem("jwt")
+  );
+}
+
+function getApiBase() {
+  return (
+    process.env.NEXT_PUBLIC_API_URL?.replace(/\/+$/, "") ||
+    "https://ims-swp9.onrender.com"
+  );
+}
+
+function getFileNameFromHeaders(
+  contentDisposition: string | null,
+  fallbackName: string
+) {
+  if (!contentDisposition) return fallbackName;
+
+  const utfMatch = contentDisposition.match(/filename\*=UTF-8''([^;]+)/i);
+  if (utfMatch?.[1]) {
+    return decodeURIComponent(utfMatch[1]);
+  }
+
+  const basicMatch = contentDisposition.match(/filename="?([^"]+)"?/i);
+  if (basicMatch?.[1]) {
+    return basicMatch[1];
+  }
+
+  return fallbackName;
+}
+
+function fallbackExtension(format?: string) {
+  const value = (format || "").toLowerCase();
+  if (value === "csv") return "csv";
+  if (value === "excel" || value === "xlsx") return "xlsx";
+  if (value === "pdf") return "pdf";
+  return "xlsx";
 }
 
 export default function ReportsTable({
   data = [],
   loading = false,
 }: Props) {
+  const [downloadingIndex, setDownloadingIndex] = useState<number | null>(null);
+  const [downloadError, setDownloadError] = useState("");
+
+  const handleDownload = async (report: ReportItem, index: number) => {
+    try {
+      if (!report?.downloadUrl) {
+        throw new Error("Download URL not available for this report");
+      }
+
+      setDownloadError("");
+      setDownloadingIndex(index);
+
+      const token = getStoredToken();
+      const apiBase = getApiBase();
+
+      const url = report.downloadUrl.startsWith("http")
+        ? report.downloadUrl
+        : `${apiBase}${report.downloadUrl}`;
+
+      const response = await fetch(url, {
+        method: "GET",
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      });
+
+      if (!response.ok) {
+        let message = "Failed to download report";
+
+        try {
+          const json = await response.json();
+          message = json?.message || message;
+        } catch {
+          //
+        }
+
+        throw new Error(message);
+      }
+
+      const blob = await response.blob();
+      const objectUrl = window.URL.createObjectURL(blob);
+
+      const safeName = (report?.name || "report")
+        .replace(/[^\w\s-]/g, "")
+        .replace(/\s+/g, "-")
+        .toLowerCase();
+
+      const fileName = getFileNameFromHeaders(
+        response.headers.get("content-disposition"),
+        `${safeName || "report"}.${fallbackExtension(report?.downloadFormat || report?.format)}`
+      );
+
+      const a = document.createElement("a");
+      a.href = objectUrl;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(objectUrl);
+    } catch (err: any) {
+      setDownloadError(err?.message || "Unable to download report");
+    } finally {
+      setDownloadingIndex(null);
+    }
+  };
+
   return (
     <div className="overflow-hidden rounded-2xl border border-[#EEF2F6] bg-white shadow-sm">
       <div className="border-b border-[#F1F5F9] px-4 py-4 sm:px-6">
@@ -42,6 +165,12 @@ export default function ReportsTable({
           Download and review generated reports
         </p>
       </div>
+
+      {downloadError ? (
+        <div className="border-b border-[#FEE2E2] bg-[#FEF2F2] px-4 py-3 text-[13px] text-[#B91C1C] sm:px-6">
+          {downloadError}
+        </div>
+      ) : null}
 
       <div className="overflow-x-auto">
         <table className="w-full min-w-[820px]">
@@ -104,13 +233,18 @@ export default function ReportsTable({
                     {r.generatedBy}
                   </td>
 
-                  <td className="px-4 py-4 text-[14px] text-[#64748B] sm:px-6">
+                  <td className="px-4 py-4 text-[14px] uppercase text-[#64748B] sm:px-6">
                     {r.format}
                   </td>
 
                   <td className="px-4 py-4 sm:px-6">
-                    <button className="text-[14px] font-medium text-[#2563EB] hover:underline">
-                      Download
+                    <button
+                      type="button"
+                      onClick={() => handleDownload(r, i)}
+                      disabled={!r.downloadUrl || downloadingIndex === i}
+                      className="text-[14px] font-medium text-[#2563EB] hover:underline disabled:cursor-not-allowed disabled:text-[#94A3B8] disabled:no-underline"
+                    >
+                      {downloadingIndex === i ? "Downloading..." : "Download"}
                     </button>
                   </td>
                 </tr>

@@ -119,23 +119,46 @@ function QuickStatCard({
   iconColor,
 }: QuickStatCardProps) {
   return (
-    <div className="relative overflow-hidden rounded-[16px] bg-white px-5 py-5 shadow-[0_10px_28px_rgba(15,23,42,0.06)]">
-      <div
-        className={`absolute right-[-28px] top-[-22px] h-[112px] w-[112px] rounded-full ${circleBg}`}
-      />
-      <div className="relative z-10 flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-[14px] font-medium text-[#22C55E]">{topText}</p>
-          <h3 className="mt-2 text-[24px] font-semibold leading-none tracking-[-0.03em] text-[#1F2937] sm:text-[28px]">
-            {bigValue}
-          </h3>
-          <p className="mt-2 text-[14px] font-medium text-[#667085]">
-            {bottomLabel}
-          </p>
+    <div
+      className="
+        group relative min-h-[154px] overflow-hidden
+        rounded-[26px] border border-[#E7ECF2] bg-white
+        px-[16px] pb-[14px] pt-[16px]
+        shadow-[0_1px_2px_rgba(16,24,40,0.04),0_8px_18px_rgba(16,24,40,0.06)]
+        transition-all duration-200
+        hover:shadow-[0_2px_6px_rgba(16,24,40,0.06),0_14px_28px_rgba(16,24,40,0.08)]
+        sm:px-[18px] sm:pb-[16px] sm:pt-[16px]
+        xl:min-h-[156px]
+      "
+      style={{ borderRadius: "24px" }}
+    >
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-[1px] bg-[linear-gradient(90deg,rgba(255,255,255,0),rgba(255,255,255,0.95),rgba(255,255,255,0))]" />
+
+      <div className="flex h-full flex-col">
+        <div
+          className="
+            mb-[18px] flex h-[50px] w-[50px] items-center justify-center
+            rounded-[14px] border border-[#EEF2F6] bg-[#F4F7FB]
+            shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]
+          "
+        >
+          <span className={iconColor}>{icon}</span>
         </div>
 
-        <div className="flex h-[48px] w-[48px] shrink-0 items-center justify-center rounded-full bg-white shadow-[0_6px_18px_rgba(15,23,42,0.08)]">
-          <span className={iconColor}>{icon}</span>
+        <div className="mt-auto">
+          <p className="mb-[6px] line-clamp-1 text-[13px] font-medium leading-[20px] tracking-[-0.01em] text-[#98A2B3]">
+            {topText}
+          </p>
+
+          <div className="min-w-0">
+            <h3 className="truncate text-[28px] font-semibold leading-[1.05] tracking-[-0.03em] text-[#111827] sm:text-[30px] xl:text-[29px]">
+              {bigValue}
+            </h3>
+
+            <p className="mt-[8px] line-clamp-1 text-[14px] font-medium leading-[20px] tracking-[-0.01em] text-[#98A2B3]">
+              {bottomLabel}
+            </p>
+          </div>
         </div>
       </div>
     </div>
@@ -163,14 +186,24 @@ function CustomLineTooltip({ active, payload, label }: any) {
 
 function SkeletonCard() {
   return (
-    <div className="relative overflow-hidden rounded-[16px] bg-white px-5 py-5 shadow-[0_10px_28px_rgba(15,23,42,0.06)]">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          <div className="h-4 w-24 rounded bg-[#E5E7EB]" />
-          <div className="mt-3 h-8 w-28 rounded bg-[#E5E7EB]" />
-          <div className="mt-3 h-4 w-24 rounded bg-[#E5E7EB]" />
+    <div
+      className="
+        relative min-h-[154px] overflow-hidden rounded-[26px]
+        border border-[#E7ECF2] bg-white
+        px-[16px] pb-[14px] pt-[16px]
+        shadow-[0_1px_2px_rgba(16,24,40,0.04),0_8px_18px_rgba(16,24,40,0.06)]
+        sm:px-[18px] sm:pb-[16px] sm:pt-[16px]
+      "
+      style={{ borderRadius: "24px" }}
+    >
+      <div className="flex h-full flex-col">
+        <div className="mb-[18px] h-[50px] w-[50px] rounded-[14px] border border-[#EEF2F6] bg-[#F4F7FB]" />
+
+        <div className="mt-auto">
+          <div className="mb-[6px] h-[18px] w-[84px] rounded bg-[#E5E7EB]" />
+          <div className="h-[32px] w-[132px] rounded bg-[#E5E7EB]" />
+          <div className="mt-[8px] h-[18px] w-[110px] rounded bg-[#E5E7EB]" />
         </div>
-        <div className="h-[48px] w-[48px] rounded-full bg-[#E5E7EB]" />
       </div>
     </div>
   );
@@ -215,7 +248,7 @@ function SkeletonPieCard() {
       <div className="flex flex-col items-center justify-center pt-2">
         <div className="relative h-[220px] w-[220px]">
           <div className="absolute inset-0 rounded-full border-[24px] border-[#E5E7EB]" />
-          <div className="absolute inset-[52px] rounded-full bg-white border border-[#E5E7EB]" />
+          <div className="absolute inset-[52px] rounded-full border border-[#E5E7EB] bg-white" />
         </div>
 
         <div className="mt-3 grid w-full grid-cols-1 gap-2 sm:grid-cols-2">
@@ -238,7 +271,7 @@ function SkeletonRecentActivity() {
         <div className="h-6 w-36 rounded bg-[#E5E7EB]" />
       </div>
 
-      <div className="px-3 py-3 space-y-3">
+      <div className="space-y-3 px-3 py-3">
         {Array.from({ length: 5 }).map((_, i) => (
           <div
             key={i}
@@ -423,8 +456,12 @@ export default function SalesManagerDashboardPage() {
   return (
     <div className="min-h-screen px-1">
       <div className="mx-auto max-w-[1380px]">
-        <section className={`rounded-[18px] p-1 shadow-[0_8px_24px_rgba(15,23,42,0.04)] ${loading ? "animate-pulse" : ""}`}>
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <section
+          className={`rounded-[18px] p-1 shadow-[0_8px_24px_rgba(15,23,42,0.04)] ${
+            loading ? "animate-pulse" : ""
+          }`}
+        >
+          <div className="grid grid-cols-1 gap-[14px] sm:grid-cols-2 xl:grid-cols-4">
             {loading
               ? Array.from({ length: 4 }).map((_, index) => (
                   <SkeletonCard key={index} />
@@ -443,10 +480,17 @@ export default function SalesManagerDashboardPage() {
           </div>
         </section>
 
-        <section className={`mt-4 grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_320px] ${loading ? "animate-pulse" : ""}`}>
+        <section
+          className={`mt-4 grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_320px] ${
+            loading ? "animate-pulse" : ""
+          }`}
+        >
           {loading ? (
             <>
-              <SkeletonChartCard title="Sales Analytics" height="h-[280px] sm:h-[305px]" />
+              <SkeletonChartCard
+                title="Sales Analytics"
+                height="h-[280px] sm:h-[305px]"
+              />
               <SkeletonPieCard />
             </>
           ) : (
@@ -565,9 +609,10 @@ export default function SalesManagerDashboardPage() {
                           cornerRadius={2}
                           stroke="none"
                         >
-                          {(quoteChartData.length
-                            ? quoteChartData
-                            : [{ name: "Empty", value: 1, color: "#E5E7EB" }]
+                          {(
+                            quoteChartData.length
+                              ? quoteChartData
+                              : [{ name: "Empty", value: 1, color: "#E5E7EB" }]
                           ).map((entry, index) => (
                             <Cell key={index} fill={entry.color} />
                           ))}
@@ -608,10 +653,17 @@ export default function SalesManagerDashboardPage() {
           )}
         </section>
 
-        <section className={`mt-4 grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_320px] ${loading ? "animate-pulse" : ""}`}>
+        <section
+          className={`mt-4 grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_320px] ${
+            loading ? "animate-pulse" : ""
+          }`}
+        >
           {loading ? (
             <>
-              <SkeletonChartCard title="Sales by Category ( Units Sold )" height="h-[360px]" />
+              <SkeletonChartCard
+                title="Sales by Category ( Units Sold )"
+                height="h-[360px]"
+              />
               <SkeletonRecentActivity />
             </>
           ) : (

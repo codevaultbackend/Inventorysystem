@@ -366,7 +366,7 @@ export default function SystemSettingsPage() {
 
         <div className="p-4 sm:p-6 lg:p-8">
           {activeTab === "general" && (
-            <div className="space-y-5 sm:space-y-6 max-w-[720px]">
+            <div className="space-y-5 sm:space-y-6 max-w-full">
               <FormField label="Company Name">
                 <input
                   type="text"
@@ -451,7 +451,7 @@ export default function SystemSettingsPage() {
           )}
 
           {activeTab === "security" && (
-            <div className="space-y-6 sm:space-y-8 max-w-[900px]">
+            <div className="space-y-6 sm:space-y-8 max-w-full">
               <SectionTitle title="Recent Security Activity" />
 
               <SimpleCard

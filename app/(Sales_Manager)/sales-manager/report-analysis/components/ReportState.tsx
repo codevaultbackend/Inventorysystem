@@ -26,8 +26,8 @@ export default function ReportState({ cards }: Props) {
       trendColor: "text-green-600",
       label: "Total Revenue",
       value: formatCurrency(cards.revenue),
-      bg: "bg-blue-50",
-      iconColor: "text-blue-600",
+      bg: "bg-[#EEF4FF]",
+      iconColor: "text-[#3B82F6]",
     },
     {
       icon: Target,
@@ -35,8 +35,8 @@ export default function ReportState({ cards }: Props) {
       trendColor: "text-red-500",
       label: "Avg. Order Value",
       value: formatCurrency(cards.avgOrderValue),
-      bg: "bg-orange-50",
-      iconColor: "text-orange-500",
+      bg: "bg-[#FFF7ED]",
+      iconColor: "text-[#F97316]",
     },
     {
       icon: ShoppingCart,
@@ -44,8 +44,8 @@ export default function ReportState({ cards }: Props) {
       trendColor: "text-green-600",
       label: "Total Orders",
       value: String(cards.totalOrders),
-      bg: "bg-green-50",
-      iconColor: "text-green-600",
+      bg: "bg-[#ECFDF3]",
+      iconColor: "text-[#16A34A]",
     },
     {
       icon: Users,
@@ -53,37 +53,62 @@ export default function ReportState({ cards }: Props) {
       trendColor: "text-green-600",
       label: "Active Clients",
       value: String(cards.activeClients),
-      bg: "bg-purple-50",
-      iconColor: "text-purple-600",
+      bg: "bg-[#F5F3FF]",
+      iconColor: "text-[#9333EA]",
     },
   ];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 mt-6">
+    <div className="mt-6 grid grid-cols-1 gap-[14px] sm:grid-cols-2 xl:grid-cols-4">
       {stateData.map((state, index) => {
         const Icon = state.icon;
 
         return (
           <div
             key={index}
-            className="bg-white rounded-xl p-6 flex justify-between items-center shadow-sm border border-gray-100 hover:shadow-md transition"
+            className="
+              group relative max-h-[153px] overflow-hidden
+              rounded-[26px] border border-[#E7ECF2] bg-white
+              px-[16px] pb-[14px] pt-[16px]
+              shadow-[0_1px_2px_rgba(16,24,40,0.04),0_8px_18px_rgba(16,24,40,0.06)]
+              transition-all duration-200
+              hover:shadow-[0_2px_6px_rgba(16,24,40,0.06),0_14px_28px_rgba(16,24,40,0.08)]
+              sm:px-[18px] sm:pb-[16px] sm:pt-[16px]
+              xl:max-h-[153px]
+            "
+            style={{ borderRadius: "24px" }}
           >
-            <div className="space-y-1">
-              <span className={`text-sm font-semibold ${state.trendColor}`}>
-                {state.trend || " "}
-              </span>
+            <div className="pointer-events-none absolute inset-x-0 top-0 h-[1px] bg-[linear-gradient(90deg,rgba(255,255,255,0),rgba(255,255,255,0.95),rgba(255,255,255,0))]" />
 
-              <h3 className="text-2xl font-bold text-gray-900 tracking-tight break-words">
-                {state.value}
-              </h3>
+            <div className="flex h-full flex-col">
+              <div
+                className={`mb-[18px] flex h-[50px] w-[50px] items-center justify-center rounded-[14px] border border-[#EEF2F6] shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] ${state.bg}`}
+              >
+                <Icon
+                  className={`h-[22px] w-[22px] ${state.iconColor}`}
+                  strokeWidth={2}
+                />
+              </div>
 
-              <p className="text-sm text-gray-500 font-medium">{state.label}</p>
-            </div>
+              <div className="mt-auto">
+                <div className="min-h-[20px]">
+                  {state.trend ? (
+                    <span
+                      className={`line-clamp-1 text-[13px] font-medium leading-[20px] tracking-[-0.01em] ${state.trendColor}`}
+                    >
+                      {state.trend}
+                    </span>
+                  ) : null}
+                </div>
 
-            <div
-              className={`w-12 h-12 rounded-full flex items-center justify-center ${state.bg}`}
-            >
-              <Icon className={`w-6 h-6 ${state.iconColor}`} />
+                <h3 className="mt-[6px] break-words text-[28px] font-semibold leading-[1.05] tracking-[-0.03em] text-[#111827] sm:text-[30px] xl:text-[29px]">
+                  {state.value}
+                </h3>
+
+                <p className="mt-[8px] line-clamp-1 text-[14px] font-medium leading-[20px] tracking-[-0.01em] text-[#98A2B3]">
+                  {state.label}
+                </p>
+              </div>
             </div>
           </div>
         );

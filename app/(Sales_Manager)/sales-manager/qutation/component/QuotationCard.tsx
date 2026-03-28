@@ -1,7 +1,46 @@
 "use client";
 
 import { Eye } from "lucide-react";
-import { Quotation } from "../page";
+
+export type QuotationStatus = "pending" | "approved" | "rejected" | "invoiced";
+
+export interface QuotationItem {
+  id: number;
+  product_name: string;
+  quantity: number;
+  unit_price: number;
+  cgst: number;
+  sgst: number;
+  amount: number;
+}
+
+export interface QuotationClient {
+  id: number;
+  name: string | null;
+  phone: string | null;
+  email: string | null;
+}
+
+export interface QuotationBranch {
+  id: number;
+  name: string;
+  location: string;
+}
+
+export interface Quotation {
+  id: number;
+  quotation_no: string;
+  client_id: number;
+  branch_id: number;
+  total_amount: number;
+  gst_amount: number;
+  valid_till: string | null;
+  status: QuotationStatus;
+  createdAt: string;
+  client: QuotationClient | null;
+  branch: QuotationBranch | null;
+  items: QuotationItem[];
+}
 
 interface Props {
   data: Quotation;
@@ -16,7 +55,13 @@ function formatCurrency(value: number) {
 }
 
 function formatDate(date: string) {
-  return new Date(date).toLocaleString("en-IN", {
+  if (!date) return "-";
+
+  const parsed = new Date(date);
+
+  if (Number.isNaN(parsed.getTime())) return date;
+
+  return parsed.toLocaleString("en-IN", {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
@@ -45,12 +90,16 @@ function getStatusStyle(status: string) {
 }
 
 function formatStatus(status: string) {
+  if (!status) return "Pending";
   return status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
 }
 
 export default function QuotationCard({ data, onView }: Props) {
   const clientName =
-    data.client?.name || data.client?.email || data.client?.phone || "Walk-in Client";
+    data.client?.name ||
+    data.client?.email ||
+    data.client?.phone ||
+    "Walk-in Client";
 
   return (
     <div className="rounded-[14px] border border-[#EEF2F7] bg-white p-4 transition hover:shadow-sm">
@@ -92,6 +141,7 @@ export default function QuotationCard({ data, onView }: Props) {
           </div>
 
           <button
+            type="button"
             onClick={onView}
             className="inline-flex h-[36px] items-center justify-center gap-2 rounded-[8px] bg-[#2563EB] px-4 text-[12px] font-medium text-white transition hover:bg-[#1D4ED8]"
           >

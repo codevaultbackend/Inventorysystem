@@ -13,6 +13,10 @@ export type ClientLedgerEntry = {
   amount: number;
   receivedAmount: number;
   pendingAmount: number;
+  quotationId?: number | null;
+  quotation_id?: number | null;
+  invoiceId?: number | null;
+  invoice_id?: number | null;
 };
 
 export type ClientLedgerResponse = {
@@ -28,6 +32,42 @@ export type LedgerClientDetails = {
   entries: ClientLedgerEntry[];
 };
 
+type ActionType = "view" | "download";
+
+function getStoredToken() {
+  if (typeof window === "undefined") return "";
+
+  return (
+    localStorage.getItem("accessToken") ||
+    localStorage.getItem("token") ||
+    localStorage.getItem("authToken") ||
+    localStorage.getItem("ims_token") ||
+    localStorage.getItem("imsToken") ||
+    localStorage.getItem("jwt") ||
+    ""
+  );
+}
+
+function getApiBaseUrl() {
+  return (
+    process.env.NEXT_PUBLIC_API_BASE_URL ||
+    process.env.NEXT_PUBLIC_API_URL ||
+    "https://ims-swp9.onrender.com"
+  ).replace(/\/+$/, "");
+}
+
+function getInvoiceActionId(entry: ClientLedgerEntry) {
+  const quotationId = Number(entry.quotationId ?? entry.quotation_id ?? 0);
+  const invoiceId = Number(entry.invoiceId ?? entry.invoice_id ?? 0);
+  const entryId = Number(entry.entryId ?? 0);
+
+  if (quotationId > 0) return quotationId;
+  if (invoiceId > 0) return invoiceId;
+  if (entryId > 0) return entryId;
+
+  return null;
+}
+
 export default function CompanyLedgerEntriesPage() {
   const params = useParams();
   const companyId = String(params?.companyId || "");
@@ -36,8 +76,13 @@ export default function CompanyLedgerEntriesPage() {
   const [error, setError] = useState("");
   const [company, setCompany] = useState<LedgerClientDetails | null>(null);
   const [notFoundState, setNotFoundState] = useState(false);
+  const [actionMessage, setActionMessage] = useState("");
+  const [busyAction, setBusyAction] = useState<{
+    entryId: number;
+    type: ActionType;
+  } | null>(null);
 
-  const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "";
+  const baseUrl = getApiBaseUrl();
 
   useEffect(() => {
     if (!companyId) return;
@@ -48,31 +93,54 @@ export default function CompanyLedgerEntriesPage() {
         setError("");
         setNotFoundState(false);
 
-        const token =
-          typeof window !== "undefined"
-            ? localStorage.getItem("accessToken") ||
-              localStorage.getItem("token") ||
-              localStorage.getItem("authToken")
-            : null;
+        const token = getStoredToken();
 
-        const res = await axios.get<ClientLedgerResponse>(
+        const endpoints = [
           `${baseUrl}/sales/get-ladger/${companyId}`,
-          {
-            headers: token
-              ? {
-                  Authorization: `Bearer ${token}`,
-                }
-              : undefined,
-          }
-        );
+          `${baseUrl}/sales/get-ledger/${companyId}`,
+        ];
 
-        const ledgerEntries = res.data?.ledger || [];
+        let responseData: ClientLedgerResponse | null = null;
+        let lastError: any = null;
+
+        for (const endpoint of endpoints) {
+          try {
+            const res = await axios.get<ClientLedgerResponse>(endpoint, {
+              headers: token
+                ? {
+                    Authorization: `Bearer ${token}`,
+                  }
+                : undefined,
+              withCredentials: true,
+            });
+
+            responseData = res.data;
+            break;
+          } catch (err: any) {
+            lastError = err;
+            const status = err?.response?.status;
+
+            if (status === 404) continue;
+            throw err;
+          }
+        }
+
+        if (!responseData) {
+          if (lastError?.response?.status === 404) {
+            setNotFoundState(true);
+            return;
+          }
+
+          throw lastError || new Error("Failed to load client ledger.");
+        }
+
+        const ledgerEntries = responseData?.ledger || [];
         const firstEntry = ledgerEntries[0];
 
         setCompany({
           id: Number(companyId),
           companyName: firstEntry?.client || `Client ${companyId}`,
-          totalEntries: Number(res.data?.totalEntries || 0),
+          totalEntries: Number(responseData?.totalEntries || ledgerEntries.length || 0),
           entries: ledgerEntries,
         });
       } catch (err: any) {
@@ -93,18 +161,114 @@ export default function CompanyLedgerEntriesPage() {
       }
     };
 
-    if (baseUrl) {
-      fetchClientLedger();
-    } else {
-      setLoading(false);
-      setError("API base URL is missing.");
-    }
+    fetchClientLedger();
   }, [companyId, baseUrl]);
 
   const pageTitle = useMemo(() => {
     if (!company) return "Ledger Entries";
     return `${company.companyName} Ledger Entries`;
   }, [company]);
+
+  const handleInvoiceAction = async (
+    entry: ClientLedgerEntry,
+    type: ActionType
+  ) => {
+    try {
+      setActionMessage("");
+
+      const actionId = getInvoiceActionId(entry);
+
+      if (!actionId) {
+        setActionMessage("No invoice found.");
+        return;
+      }
+
+      const token = getStoredToken();
+
+      setBusyAction({
+        entryId: Number(entry.entryId),
+        type,
+      });
+
+      const response = await axios.post(
+        `${baseUrl}/gt/${actionId}/convert-invoice`,
+        {},
+        {
+          responseType: "blob",
+          headers: token
+            ? {
+                Authorization: `Bearer ${token}`,
+              }
+            : undefined,
+          validateStatus: () => true,
+          withCredentials: true,
+        }
+      );
+
+      const contentType = response.headers["content-type"] || "";
+      const isPdf = contentType.includes("application/pdf");
+
+      if (!isPdf) {
+        let parsed: any = null;
+
+        try {
+          const text = await response.data.text();
+          parsed = text ? JSON.parse(text) : null;
+        } catch {
+          parsed = null;
+        }
+
+        const message =
+          parsed?.error ||
+          parsed?.message ||
+          (response.status === 404
+            ? "No invoice found."
+            : "Invoice PDF is not available.");
+
+        setActionMessage(message);
+        return;
+      }
+
+      const blob = new Blob([response.data], { type: "application/pdf" });
+      const blobUrl = URL.createObjectURL(blob);
+      const fileName = `${entry.transactionId || `invoice-${entry.entryId}`}.pdf`;
+
+      if (type === "view") {
+        const opened = window.open(blobUrl, "_blank", "noopener,noreferrer");
+
+        if (!opened) {
+          setActionMessage("Popup blocked. Please allow popups to view invoice.");
+        }
+
+        setTimeout(() => {
+          URL.revokeObjectURL(blobUrl);
+        }, 60000);
+
+        return;
+      }
+
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+
+      setTimeout(() => {
+        URL.revokeObjectURL(blobUrl);
+      }, 2000);
+    } catch (err: any) {
+      console.error("Invoice action error:", err);
+      setActionMessage(
+        err?.response?.data?.error ||
+          err?.response?.data?.message ||
+          err?.message ||
+          "Unable to fetch invoice."
+      );
+    } finally {
+      setBusyAction(null);
+    }
+  };
 
   if (notFoundState) return notFound();
 
@@ -151,7 +315,18 @@ export default function CompanyLedgerEntriesPage() {
           </p>
         </div>
 
-        <LedgerEntriesTable company={company} />
+        {actionMessage ? (
+          <div className="mb-4 rounded-[10px] border border-[#FCD34D] bg-[#FFF7ED] px-4 py-3 text-[13px] font-medium text-[#B45309]">
+            {actionMessage}
+          </div>
+        ) : null}
+
+        <LedgerEntriesTable
+          company={company}
+          onViewInvoice={(entry) => handleInvoiceAction(entry, "view")}
+          onDownloadInvoice={(entry) => handleInvoiceAction(entry, "download")}
+          busyAction={busyAction}
+        />
       </div>
     </div>
   );

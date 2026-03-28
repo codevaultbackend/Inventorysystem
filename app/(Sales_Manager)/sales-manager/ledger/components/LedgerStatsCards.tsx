@@ -84,54 +84,68 @@ export default function LedgerStatsCards({ stats }: Props) {
   ];
 
   return (
-    <div className="grid grid-cols-1 gap-[14px] sm:grid-cols-2 xl:grid-cols-4">
+    <div className="grid grid-cols-2 gap-[14px]  xl:grid-cols-4">
       {cards.map((card) => {
         const Icon = card.icon;
 
         return (
           <div
             key={card.id}
-            className="relative h-[112px] overflow-hidden rounded-[16px] border border-[#E9EEF5] bg-white px-[20px] pt-[16px] pb-[15px] shadow-[0_6px_18px_rgba(15,23,42,0.05)]"
+            className="
+              group relative max-h-[154px] overflow-hidden
+              rounded-[26px] border border-[#E7ECF2] bg-white
+              px-[16px] pb-[14px] pt-[16px]
+              shadow-[0_1px_2px_rgba(16,24,40,0.04),0_8px_18px_rgba(16,24,40,0.06)]
+              transition-all duration-200
+              hover:shadow-[0_2px_6px_rgba(16,24,40,0.06),0_14px_28px_rgba(16,24,40,0.08)]
+              sm:px-[18px] sm:pb-[16px] sm:pt-[16px]
+              xl:min-h-[156px]
+            "
+            style={{ borderRadius: "24px" }}
           >
-            <div
-              className="absolute -top-[30px] right-[-4px] h-[118px] w-[118px] rounded-full"
-              style={{ backgroundColor: card.accentBg }}
-            />
+            <div className="pointer-events-none absolute inset-x-0 top-0 h-[1px] bg-[linear-gradient(90deg,rgba(255,255,255,0),rgba(255,255,255,0.95),rgba(255,255,255,0))]" />
 
-            <div className="absolute right-[24px] top-[21px] flex h-[40px] w-[40px] items-center justify-center rounded-full bg-white shadow-[0_1px_2px_rgba(15,23,42,0.06)]">
-              <Icon
-                className="h-[18px] w-[18px]"
-                style={{ color: card.iconColor }}
-                strokeWidth={2}
-              />
-            </div>
-
-            <div className="relative z-10 flex h-full flex-col">
-              <div className="min-h-[18px]">
-                {card.top ? (
-                  card.showTrend ? (
-                    <div className="flex items-center gap-[4px] text-[13px] font-medium leading-[16px] text-[#16A34A]">
-                      <TrendingUp className="h-[13px] w-[13px]" strokeWidth={2.2} />
-                      <span>{card.top}</span>
-                    </div>
-                  ) : (
-                    <p
-                      className="text-[13px] font-medium leading-[16px]"
-                      style={{ color: card.topColor }}
-                    >
-                      {card.top}
-                    </p>
-                  )
-                ) : null}
+            <div className="flex h-full flex-col">
+              <div
+                className="mb-[18px] flex h-[50px] w-[50px] items-center justify-center rounded-[14px] border border-[#EEF2F6] bg-[#F4F7FB] shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]"
+              >
+                <Icon
+                  className="h-[22px] w-[22px]"
+                  style={{ color: card.iconColor }}
+                  strokeWidth={2}
+                />
               </div>
 
-              <h2 className="mt-[6px] text-[18px] font-semibold leading-[24px] tracking-[-0.02em] text-[#202124]">
-                {card.value}
-              </h2>
+              <div className="mt-auto">
+                <div className="min-h-[20px]">
+                  {card.top ? (
+                    card.showTrend ? (
+                      <div className="inline-flex items-center gap-[6px] text-[13px] font-medium leading-[20px] text-[#16A34A] tracking-[-0.01em]">
+                        <TrendingUp
+                          className="h-[14px] w-[14px]"
+                          strokeWidth={2.2}
+                        />
+                        <span className="line-clamp-1">{card.top}</span>
+                      </div>
+                    ) : (
+                      <p
+                        className="line-clamp-1 text-[13px] font-medium leading-[20px] tracking-[-0.01em]"
+                        style={{ color: card.topColor }}
+                      >
+                        {card.top}
+                      </p>
+                    )
+                  ) : null}
+                </div>
 
-              <p className="mt-[4px] text-[13px] font-medium leading-[18px] text-[#5F6368]">
-                {card.label}
-              </p>
+                <h2 className="mt-[6px] truncate text-[28px] font-semibold leading-[1.05] tracking-[-0.03em] text-[#111827] sm:text-[30px] xl:text-[29px]">
+                  {card.value}
+                </h2>
+
+                <p className="mt-[8px] line-clamp-1 text-[14px] font-medium leading-[20px] tracking-[-0.01em] text-[#98A2B3]">
+                  {card.label}
+                </p>
+              </div>
             </div>
           </div>
         );

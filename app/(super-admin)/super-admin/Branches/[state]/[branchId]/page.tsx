@@ -6,7 +6,48 @@ import BranchOverviewCounts from "../../Component/BranchOverviewPage";
 import { StockTrendBar } from "../../Component/StockTrendBar";
 import { SalesTrendLine } from "../../Component/SalesTrendLine";
 import InventoryItems from "../../Component/InventoryItems";
-import { combineApi, toNumber } from "../../../../../lib/combineDashboardApi";
+import {
+  combineApi,
+  extractApiArray,
+  extractApiData,
+  toNumber,
+} from "../../../../../lib/combineDashboardApi";
+
+type RawItem = {
+  id?: number | string;
+  itemId?: number | string;
+  item_id?: number | string;
+  itemName?: string;
+  item_name?: string;
+  name?: string;
+  item?: string;
+  productName?: string;
+  product_name?: string;
+  category?: string;
+  categoryName?: string;
+  category_name?: string;
+  quantity?: number | string;
+  qty?: number | string;
+  totalQty?: number | string;
+  stock?: number | string;
+  current_stock?: number | string;
+  currentStock?: number | string;
+  hsn?: string;
+  hsnCode?: string;
+  hsn_code?: string;
+  grn?: string;
+  grnNo?: string;
+  grn_no?: string;
+  batchNo?: string;
+  batch_no?: string;
+  aging?: number | string;
+  status?: string;
+  stockIn?: number | string;
+  stock_in?: number | string;
+  stockOut?: number | string;
+  stock_out?: number | string;
+  totalValue?: number | string;
+};
 
 type BranchDetailsPayload = {
   success?: boolean;
@@ -28,53 +69,50 @@ type BranchDetailsPayload = {
     salesStockValue?: number | string;
   };
   charts?: {
-    categoryDistribution?: Array<{ category: string; total: number | string }>;
-    monthlyTrend?: Array<{ month: string; amount: number | string }>;
+    categoryDistribution?: Array<{ category?: string; total?: number | string }>;
+    monthlyTrend?: Array<{ month?: string; amount?: number | string }>;
+    stockTrend?: Array<{
+      month?: string;
+      week?: string;
+      in?: number | string;
+      out?: number | string;
+      stockIn?: number | string;
+      stockOut?: number | string;
+    }>;
+    salesTrend?: Array<{
+      month?: string;
+      week?: string;
+      purchase?: number | string;
+      sales?: number | string;
+      amount?: number | string;
+    }>;
   };
-  clients?: any[];
-  topItems?: Array<{
-    id?: number | string;
-    item?: string;
-    totalQty?: number | string;
-    totalValue?: number | string;
-    category?: string;
-    status?: string;
-  }>;
-};
-
-type InventoryApiItem = {
-  id: number | string;
-  item: string;
-  category: string;
-  current_stock: number | string;
-  stock_in: number | string;
-  stock_out: number | string;
-  branch_id: number | string;
-  status?: string;
 };
 
 type InventoryRow = {
   id: string;
   itemName: string;
   name: string;
+  item: string;
   category: string;
-  quantity: number;
-  stock: number;
-  stockIn: number;
-  stockOut: number;
+  quantity: number | string;
+  stock: number | string;
+  current_stock: number | string;
+  hsn: string;
+  grn: string;
+  batchNo: string;
+  batch_no: string;
+  aging: number | string;
   status: string;
-  href: string;
+  stockIn: number | string;
+  stockOut: number | string;
+  branchId: string;
+  branch_id: string;
 };
-
-const INVENTORY_ENDPOINTS = [
-  "/stock/inventory/dashboard",
-  "/combine/dashboard/inventory",
-  "/inventory/dashboard",
-];
 
 function HeaderSkeleton() {
   return (
-    <div className="bg-white border border-[#EEF2F6] rounded-2xl shadow-sm p-6 animate-pulse">
+    <div className="animate-pulse rounded-2xl border border-[#EEF2F6] bg-white p-6 shadow-sm">
       <div className="h-8 w-56 rounded-md bg-[#E9EEF5]" />
       <div className="mt-3 h-4 w-72 max-w-full rounded-md bg-[#E9EEF5]" />
     </div>
@@ -83,8 +121,8 @@ function HeaderSkeleton() {
 
 function OverviewCardsSkeleton() {
   return (
-    <div className="bg-white border border-[#EEF2F6] max-[768px]:bg-transparent max-[768px]:border-[0] max-[768px]:shadow-[0] max-[768px]:p-0 rounded-2xl shadow-sm p-6">
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4 animate-pulse">
+    <div className="rounded-2xl border border-[#EEF2F6] bg-white p-6 shadow-sm">
+      <div className="grid grid-cols-1 gap-4 animate-pulse sm:grid-cols-2 xl:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
           <div
             key={i}
@@ -102,7 +140,7 @@ function OverviewCardsSkeleton() {
 
 function ChartSkeleton() {
   return (
-    <div className="bg-white border border-[#EEF2F6] max-[768px]:bg-transparent max-[768px]:border-[0] max-[768px]:shadow-[0] max-[768px]:p-0 rounded-2xl shadow-sm p-6 animate-pulse">
+    <div className="animate-pulse rounded-2xl border border-[#EEF2F6] bg-white p-6 shadow-sm">
       <div className="mb-5 flex items-center justify-between gap-3">
         <div className="h-5 w-36 rounded bg-[#E9EEF5]" />
         <div className="h-8 w-20 rounded-xl bg-[#E9EEF5]" />
@@ -122,30 +160,57 @@ function ChartSkeleton() {
   );
 }
 
-function InventoryItemsSkeleton() {
-  return (
-    <div className="bg-white border border-[#EEF2F6] max-[768px]:bg-transparent max-[768px]:border-[0] max-[768px]:shadow-[0] max-[768px]:p-0 rounded-2xl shadow-sm p-6 animate-pulse">
-      <div className="h-5 w-32 rounded bg-[#E9EEF5] mb-4" />
+function normalizeItems(items: RawItem[], branchId: string): InventoryRow[] {
+  return (Array.isArray(items) ? items : [])
+    .map((item, index) => {
+      const resolvedName =
+        item?.itemName ||
+        item?.item_name ||
+        item?.name ||
+        item?.item ||
+        item?.productName ||
+        item?.product_name ||
+        `Item ${index + 1}`;
 
-      <div className="overflow-hidden rounded-[20px] border border-[#EEF2F6] bg-white">
-        <div className="grid grid-cols-7 gap-3 border-b border-[#EEF2F6] bg-[#F8FAFC] px-4 py-4">
-          {Array.from({ length: 7 }).map((_, i) => (
-            <div key={i} className="h-4 rounded bg-[#E9EEF5]" />
-          ))}
-        </div>
+      const resolvedQty =
+        item?.quantity ??
+        item?.qty ??
+        item?.totalQty ??
+        item?.stock ??
+        item?.current_stock ??
+        item?.currentStock ??
+        0;
 
-        <div className="divide-y divide-[#EEF2F6]">
-          {Array.from({ length: 6 }).map((_, rowIndex) => (
-            <div key={rowIndex} className="grid grid-cols-7 gap-3 px-4 py-5">
-              {Array.from({ length: 7 }).map((_, colIndex) => (
-                <div key={colIndex} className="h-4 rounded bg-[#E9EEF5]" />
-              ))}
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
+      return {
+        id: String(
+          item?.id ??
+            item?.itemId ??
+            item?.item_id ??
+            item?.item ??
+            `${branchId}-${index + 1}`
+        ),
+        itemName: String(resolvedName),
+        name: String(resolvedName),
+        item: String(resolvedName),
+        category: String(
+          item?.category || item?.categoryName || item?.category_name || "General"
+        ),
+        quantity: resolvedQty,
+        stock: resolvedQty,
+        current_stock: resolvedQty,
+        hsn: String(item?.hsn || item?.hsnCode || item?.hsn_code || "-"),
+        grn: String(item?.grn || item?.grnNo || item?.grn_no || "-"),
+        batchNo: String(item?.batchNo || item?.batch_no || "-"),
+        batch_no: String(item?.batchNo || item?.batch_no || "-"),
+        aging: item?.aging ?? "-",
+        status: String(item?.status || "GOOD"),
+        stockIn: item?.stockIn ?? item?.stock_in ?? 0,
+        stockOut: item?.stockOut ?? item?.stock_out ?? 0,
+        branchId: String(branchId),
+        branch_id: String(branchId),
+      };
+    })
+    .filter((row) => row.itemName.trim() !== "");
 }
 
 export default function BranchDetailsPage() {
@@ -153,164 +218,98 @@ export default function BranchDetailsPage() {
   const stateName = decodeURIComponent((params?.state as string) || "");
   const branchId = decodeURIComponent((params?.branchId as string) || "");
 
-  const [data, setData] = useState<BranchDetailsPayload | null>(null);
-  const [inventory, setInventory] = useState<InventoryApiItem[]>([]);
+  const [dashboardData, setDashboardData] = useState<BranchDetailsPayload | null>(
+    null
+  );
+  const [inventoryRows, setInventoryRows] = useState<InventoryRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [inventoryReason, setInventoryReason] = useState("");
 
   useEffect(() => {
-    if (!stateName || !branchId) return;
+    if (!branchId) {
+      setLoading(false);
+      return;
+    }
 
-    const makeFallbackRowsFromTopItems = (
-      payload: BranchDetailsPayload
-    ): InventoryApiItem[] => {
-      const topItems = Array.isArray(payload?.topItems) ? payload.topItems : [];
-
-      return topItems.map((item, index) => ({
-        id: item.id ?? `top-${index + 1}`,
-        item: item.item || `Item ${index + 1}`,
-        category: item.category || "General",
-        current_stock: item.totalQty ?? 0,
-        stock_in: 0,
-        stock_out: 0,
-        branch_id: branchId,
-        status: item.status || "GOOD",
-      }));
-    };
-
-    const extractRows = (payload: any): any[] => {
-      if (Array.isArray(payload?.data)) return payload.data;
-      if (Array.isArray(payload?.items)) return payload.items;
-      if (Array.isArray(payload?.inventory)) return payload.inventory;
-      if (Array.isArray(payload)) return payload;
-      return [];
-    };
-
-    const fetchInventory = async (
-      branchPayload: BranchDetailsPayload
-    ): Promise<{
-      rows: InventoryApiItem[];
-      reason: string;
-    }> => {
-      for (const endpoint of INVENTORY_ENDPOINTS) {
-        try {
-          const res = await combineApi.get(endpoint);
-          const payload = res?.data?.data || res?.data || {};
-          const rows = extractRows(payload);
-
-          if (!rows.length) continue;
-
-          const filtered = rows.filter(
-            (item: any) => String(item?.branch_id) === String(branchId)
-          );
-
-          if (filtered.length) {
-            return {
-              rows: filtered,
-              reason: "",
-            };
-          }
-        } catch (err: any) {
-          const status = err?.response?.status;
-
-          if (status === 403 || status === 404) {
-            continue;
-          }
-
-          if (err?.code === "ECONNABORTED" || err?.message === "Network Error") {
-            continue;
-          }
-
-          return {
-            rows: makeFallbackRowsFromTopItems(branchPayload),
-            reason:
-              "Inventory API could not be loaded, so fallback item data is being shown.",
-          };
-        }
-      }
-
-      const fallbackRows = makeFallbackRowsFromTopItems(branchPayload);
-
-      if (fallbackRows.length) {
-        return {
-          rows: fallbackRows,
-          reason:
-            "Inventory endpoint is unavailable or restricted for this role, so fallback item data is being shown.",
-        };
-      }
-
-      return {
-        rows: [],
-        reason:
-          "Inventory endpoint is unavailable or restricted for this role.",
-      };
-    };
-
-    const fetchBranchDetails = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
         setError("");
-        setInventoryReason("");
 
-        const branchRes = await combineApi.get(
+        const combineRes = await combineApi.get(
           `/combine/dashboard/branch-id/${encodeURIComponent(branchId)}`
         );
 
-        const branchPayload: BranchDetailsPayload =
-          branchRes?.data?.data || branchRes?.data || {};
+        let sqlBranchRes: any = null;
 
-        const inventoryResult = await fetchInventory(branchPayload);
-
-        setData(branchPayload);
-        setInventory(inventoryResult.rows);
-        setInventoryReason(inventoryResult.reason);
-      } catch (err: any) {
-        const status = err?.response?.status;
-
-        if (status === 403) {
-          setError("You are not authorized to view this branch.");
-        } else if (status === 404) {
-          setError("Branch details endpoint was not found.");
-        } else {
-          setError(
-            err?.response?.data?.message ||
-              err?.message ||
-              "Failed to load branch details"
+        try {
+          sqlBranchRes = await combineApi.get(
+            `/sqlbranch/branch/${encodeURIComponent(branchId)}`
           );
+        } catch {
+          sqlBranchRes = null;
         }
+
+        const combinePayload =
+          extractApiData<BranchDetailsPayload>(combineRes) || {};
+
+        const sqlItems = sqlBranchRes
+          ? extractApiArray<RawItem>(sqlBranchRes)
+          : [];
+
+        const combineItems = extractApiArray<RawItem>(combineRes);
+
+        const finalItems = sqlItems.length ? sqlItems : combineItems;
+        const normalizedItems = normalizeItems(finalItems, branchId);
+
+        setDashboardData(combinePayload);
+        setInventoryRows(normalizedItems);
+
+        console.log("combine response =>", combineRes?.data);
+        console.log("sql response =>", sqlBranchRes?.data);
+        console.log("combine items =>", combineItems);
+        console.log("sql items =>", sqlItems);
+        console.log("normalized items =>", normalizedItems);
+      } catch (err: any) {
+        setError(
+          err?.response?.data?.message ||
+            err?.message ||
+            "Failed to load branch details"
+        );
       } finally {
         setLoading(false);
       }
     };
 
-    fetchBranchDetails();
-  }, [stateName, branchId]);
+    fetchData();
+  }, [branchId]);
 
   const statsData = useMemo(() => {
     return {
-      totalStock: toNumber(data?.summary?.currentStock),
-      totalStockValue: toNumber(data?.summary?.totalStockValue),
-      totalSales: toNumber(data?.summary?.salesStockQty),
-      agingItems: 0,
+      totalStock:
+        toNumber(dashboardData?.summary?.currentStock) ||
+        inventoryRows.reduce((sum, item) => sum + Number(item.quantity || 0), 0),
+      totalStockValue: toNumber(dashboardData?.summary?.totalStockValue),
+      totalSales: toNumber(dashboardData?.summary?.salesStockQty),
+      agingItems: inventoryRows.filter((item) => Number(item.aging) > 0).length,
     };
-  }, [data]);
+  }, [dashboardData, inventoryRows]);
 
   const stockStatusData = useMemo(() => {
-    const good = inventory.filter(
+    const good = inventoryRows.filter(
       (item) => String(item.status || "").toUpperCase() === "GOOD"
     ).length;
 
-    const damaged = inventory.filter(
+    const damaged = inventoryRows.filter(
       (item) => String(item.status || "").toUpperCase() === "DAMAGED"
     ).length;
 
-    const repairable = inventory.filter(
+    const repairable = inventoryRows.filter(
       (item) => String(item.status || "").toUpperCase() === "REPAIRABLE"
     ).length;
 
     return { good, damaged, repairable };
-  }, [inventory]);
+  }, [inventoryRows]);
 
   const branchSummary = useMemo(() => {
     return {
@@ -321,55 +320,55 @@ export default function BranchDetailsPage() {
   }, []);
 
   const stockTrendData = useMemo(() => {
-    const monthly = data?.charts?.monthlyTrend || [];
+    const stockTrend = Array.isArray(dashboardData?.charts?.stockTrend)
+      ? dashboardData?.charts?.stockTrend
+      : [];
+
+    const monthly = Array.isArray(dashboardData?.charts?.monthlyTrend)
+      ? dashboardData?.charts?.monthlyTrend
+      : [];
+
+    if (stockTrend.length > 0) {
+      return stockTrend.map((row) => ({
+        week: row.week || row.month || "-",
+        in: toNumber(row.in ?? row.stockIn),
+        out: toNumber(row.out ?? row.stockOut),
+      }));
+    }
 
     return monthly.map((row) => ({
-      week: row.month,
+      week: row.month || "-",
       in: toNumber(row.amount),
       out: 0,
     }));
-  }, [data]);
+  }, [dashboardData]);
 
   const salesTrendData = useMemo(() => {
-    const monthly = data?.charts?.monthlyTrend || [];
+    const salesTrend = Array.isArray(dashboardData?.charts?.salesTrend)
+      ? dashboardData?.charts?.salesTrend
+      : [];
+
+    const monthly = Array.isArray(dashboardData?.charts?.monthlyTrend)
+      ? dashboardData?.charts?.monthlyTrend
+      : [];
+
+    if (salesTrend.length > 0) {
+      return salesTrend.map((row) => ({
+        week: row.week || row.month || "-",
+        purchase: toNumber(row.purchase),
+        sales: toNumber(row.sales ?? row.amount),
+      }));
+    }
 
     return monthly.map((row) => ({
-      week: row.month,
+      week: row.month || "-",
       purchase: toNumber(row.amount),
       sales: 0,
     }));
-  }, [data]);
-
-  const itemRows: InventoryRow[] = useMemo(() => {
-    return inventory.map((item) => ({
-      id: String(item.id),
-      itemName: item.item || "-",
-      name: item.item || "-",
-      category: item.category || "General",
-      quantity: toNumber(item.current_stock),
-      stock: toNumber(item.current_stock),
-      stockIn: toNumber(item.stock_in),
-      stockOut: toNumber(item.stock_out),
-      status: item.status || "-",
-      href: `/super-admin/Branches/${encodeURIComponent(
-        stateName
-      )}/${encodeURIComponent(branchId)}/${encodeURIComponent(String(item.id))}`,
-    }));
-  }, [inventory, stateName, branchId]);
+  }, [dashboardData]);
 
   if (!branchId) {
-    return (
-      <div className="flex items-center justify-center h-[400px]">
-        <div className="bg-white border border-[#EEF2F6] rounded-2xl shadow-sm p-8 text-center">
-          <h2 className="text-lg font-semibold text-[#0F172A]">
-            Branch not found
-          </h2>
-          <p className="text-sm text-[#64748B] mt-2">
-            The branch you are looking for does not exist.
-          </p>
-        </div>
-      </div>
-    );
+    return <div className="p-6 text-red-600">Branch ID missing</div>;
   }
 
   if (error) {
@@ -381,29 +380,27 @@ export default function BranchDetailsPage() {
       <div className="space-y-8">
         <HeaderSkeleton />
         <OverviewCardsSkeleton />
-
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
           <ChartSkeleton />
           <ChartSkeleton />
         </div>
-
-        <InventoryItemsSkeleton />
+        <InventoryItems data={[]} loading />
       </div>
     );
   }
 
   return (
     <div className="space-y-8">
-      <div className="bg-white border border-[#EEF2F6] rounded-2xl shadow-sm p-6">
-        <h1 className="text-[24px] md:text-[28px] font-semibold text-[#0F172A]">
-          {data?.branch?.name || branchId}
+      <div className="rounded-2xl border border-[#EEF2F6] bg-white p-6 shadow-sm">
+        <h1 className="text-[24px] font-semibold text-[#0F172A] md:text-[28px]">
+          {dashboardData?.branch?.name || `Branch ${branchId}`}
         </h1>
-        <p className="text-[13px] text-[#64748B] mt-1">
+        <p className="mt-1 text-[13px] text-[#64748B]">
           Detailed branch analytics and inventory overview
         </p>
       </div>
 
-      <div className="bg-white border border-[#EEF2F6] max-[768px]:bg-transparent max-[768px]:border-[0] max-[768px]:shadow-[0] max-[768px]:p-0 rounded-2xl shadow-sm p-6">
+      <div className="rounded-2xl border border-[#EEF2F6] bg-white p-6 shadow-sm">
         <BranchOverviewCounts
           stats={statsData}
           stockStatus={stockStatusData}
@@ -411,31 +408,27 @@ export default function BranchDetailsPage() {
         />
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        <div className="bg-white border border-[#EEF2F6] max-[768px]:bg-transparent max-[768px]:border-[0] max-[768px]:shadow-[0] max-[768px]:p-0 rounded-2xl shadow-sm p-6">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+        <div className="rounded-2xl border border-[#EEF2F6] bg-white p-6 shadow-sm">
           <StockTrendBar data={stockTrendData} />
         </div>
 
-        <div className="bg-white border border-[#EEF2F6] max-[768px]:bg-transparent max-[768px]:border-[0] max-[768px]:shadow-[0] max-[768px]:p-0 rounded-2xl shadow-sm p-6">
+        <div className="rounded-2xl border border-[#EEF2F6] bg-white p-6 shadow-sm">
           <SalesTrendLine data={salesTrendData} />
         </div>
       </div>
 
-      <div className="bg-white border border-[#EEF2F6] max-[768px]:bg-transparent max-[768px]:border-[0] max-[768px]:shadow-[0] max-[768px]:p-0 rounded-2xl shadow-sm p-6">
-        <h3 className="text-[16px] font-semibold text-[#0F172A] mb-4">
+      <div className="rounded-2xl border border-[#EEF2F6] bg-white p-6 shadow-sm">
+        <h3 className="mb-4 text-[16px] font-semibold text-[#0F172A]">
           Inventory Items
         </h3>
 
-        {inventoryReason ? (
-          <div className="rounded-xl border border-[#FDE68A] bg-[#FFFBEB] px-4 py-3 text-sm text-[#92400E] mb-4">
-            {inventoryReason}
-          </div>
-        ) : null}
-
         <InventoryItems
-          data={itemRows}
+          data={inventoryRows}
           branchId={String(branchId)}
           state={stateName}
+          branchName={dashboardData?.branch?.name || ""}
+          loading={false}
         />
       </div>
     </div>

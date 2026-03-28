@@ -49,19 +49,22 @@ export default function BranchOverview({
   const baseRoute = isSuperAdmin ? "/super-admin" : "/admin";
 
   return (
-    <div className="bg-white rounded-2xl  shadow-[1px_1px_4px_rgba(0,0,0,0.1)]  border border-[#EEF2F6]  w-full max-h-[541px] overflow-y-scroll">
-      <div className="flex justify-between items-center px-6 py-5">
-        <div>
-          <h3 className="text-[18px] font-semibold text-[#0F172A]">
+    <div className="w-full overflow-hidden rounded-2xl border border-[#EEF2F6] bg-white shadow-[1px_1px_4px_rgba(0,0,0,0.1)]">
+      {/* top heading stays fixed */}
+      <div className="flex items-center justify-between border-b border-[#EEF2F6] bg-white px-4 py-4 sm:px-6 sm:py-5">
+        <div className="min-w-0">
+          <h3 className="text-[16px] font-semibold text-[#0F172A] sm:text-[18px]">
             {title}
           </h3>
-          <p className="text-[13px] text-[#64748B] mt-1">{subtitle}</p>
+          <p className="mt-1 text-[12px] text-[#64748B] sm:text-[13px]">
+            {subtitle}
+          </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="ml-3 flex shrink-0 items-center gap-3">
           {isSuperAdmin && (
             <Link href={editHref || `${baseRoute}/Branches/EditBranch`}>
-              <button className="bg-blue-600 text-white px-4 py-2 text-sm rounded-lg hover:bg-blue-700 transition">
+              <button className="rounded-lg bg-blue-600 px-3 py-2 text-[13px] text-white transition hover:bg-blue-700 sm:px-4 sm:text-sm">
                 Edit Branch
               </button>
             </Link>
@@ -69,9 +72,10 @@ export default function BranchOverview({
         </div>
       </div>
 
-      <div className="overflow-x-auto active:cursor-grabbing">
-        <table className="w-full min-w-[900px]  ">
-          <thead>
+      {/* only this section scrolls horizontally + vertically */}
+      <div className="max-h-[460px] overflow-x-auto overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+        <table className="min-w-[1000px] w-full border-separate border-spacing-0">
+          <thead className="sticky top-0 z-20">
             <tr className="bg-[#F8FAFC] text-left">
               {[
                 "Branch Name",
@@ -84,7 +88,7 @@ export default function BranchOverview({
               ].map((head) => (
                 <th
                   key={head}
-                  className="px-6 py-4 text-[13px] font-medium text-[#475569]"
+                  className="whitespace-nowrap border-b border-[#E2E8F0] bg-[#F8FAFC] px-4 py-4 text-[12px] font-medium text-[#475569] sm:px-6 sm:text-[13px]"
                 >
                   {head}
                 </th>
@@ -95,13 +99,13 @@ export default function BranchOverview({
           <tbody>
             {loading ? (
               Array.from({ length: 6 }).map((_, index) => (
-                <tr key={index}>
+                <tr key={index} className="bg-white">
                   {Array.from({ length: 7 }).map((__, idx) => (
                     <td
                       key={idx}
-                      className="px-6 py-4 border border-[#E2E2E2]"
+                      className="border-b border-[#E2E8F0] px-4 py-4 sm:px-6"
                     >
-                      <div className="h-4 w-full rounded bg-gray-100 animate-pulse" />
+                      <div className="h-4 w-full animate-pulse rounded bg-gray-100" />
                     </td>
                   ))}
                 </tr>
@@ -109,41 +113,45 @@ export default function BranchOverview({
             ) : data.length > 0 ? (
               data.map((branch) => {
                 const resolvedHref =
-                  branch.href || `${baseRoute}/Branches/${encodeURIComponent(branch.id)}`;
+                  branch.href ||
+                  `${baseRoute}/Branches/${encodeURIComponent(branch.id)}`;
 
                 return (
-                  <tr key={branch.id} className="hover:bg-[#F8FAFC] transition">
-                    <td className="px-6 py-4 font-medium text-[#0F172A] border border-[#E2E2E2]">
+                  <tr
+                    key={branch.id}
+                    className="bg-white transition hover:bg-[#F8FAFC]"
+                  >
+                    <td className="whitespace-nowrap border-b border-[#E2E8F0] px-4 py-4 font-medium text-[#0F172A] sm:px-6">
                       {branch.name}
                     </td>
 
-                    <td className="px-6 py-4 text-[#334155] border border-[#E2E2E2]">
+                    <td className="whitespace-nowrap border-b border-[#E2E8F0] px-4 py-4 text-[#334155] sm:px-6">
                       {formatNumber(branch.stock)}
                     </td>
 
-                    <td className="px-6 py-4 text-[#334155] border border-[#E2E2E2]">
+                    <td className="whitespace-nowrap border-b border-[#E2E8F0] px-4 py-4 text-[#334155] sm:px-6">
                       {formatCurrency(branch.purchase)}
                     </td>
 
-                    <td className="px-6 py-4 text-[#334155] border border-[#E2E2E2]">
+                    <td className="whitespace-nowrap border-b border-[#E2E8F0] px-4 py-4 text-[#334155] sm:px-6">
                       {formatCurrency(branch.sales)}
                     </td>
 
-                    <td className="px-6 py-4 text-[#334155] border border-[#E2E2E2]">
+                    <td className="whitespace-nowrap border-b border-[#E2E8F0] px-4 py-4 text-[#334155] sm:px-6">
                       {formatNumber(branch.in)}
                     </td>
 
-                    <td className="px-6 py-4 text-[#334155] border border-[#E2E2E2]">
+                    <td className="whitespace-nowrap border-b border-[#E2E8F0] px-4 py-4 text-[#334155] sm:px-6">
                       {formatNumber(branch.out)}
                     </td>
 
-                    <td className="px-6 py-4 border border-[#E2E2E2]">
+                    <td className="whitespace-nowrap border-b border-[#E2E8F0] px-4 py-4 sm:px-6">
                       <Link
                         href={resolvedHref}
                         onClick={() => {
                           if (isSuperAdmin) setLocation(branch.name);
                         }}
-                        className="text-blue-600 text-sm font-medium hover:underline"
+                        className="text-sm font-medium text-blue-600 hover:underline"
                       >
                         View
                       </Link>

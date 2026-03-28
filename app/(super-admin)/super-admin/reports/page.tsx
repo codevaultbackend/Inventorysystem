@@ -31,6 +31,9 @@ type ReportItem = {
   date: string;
   generatedBy: string;
   format: string;
+  downloadType?: string;
+  downloadFormat?: string;
+  downloadUrl?: string;
 };
 
 type ReportsApiResponse = {
@@ -52,17 +55,108 @@ type TransitDonutChartRow = {
   percentage: number;
 };
 
-type ReportsTableRow = {
+export type ReportsTableRow = {
   name: string;
   type: string;
   date: string;
   generatedBy: string;
   format: string;
+  downloadType?: string;
+  downloadFormat?: string;
+  downloadUrl?: string;
 };
 
 function toNumber(value: unknown) {
   const num = Number(value);
   return Number.isFinite(num) ? num : 0;
+}
+
+function normalizeReportType(type: string) {
+  const value = (type || "").trim().toLowerCase();
+
+  if (value === "sale" || value === "sales") return "sales";
+  if (value === "inventory") return "inventory";
+  if (value === "users" || value === "user") return "users";
+  if (value === "financial" || value === "finance" || value === "reports")
+    return "reports";
+  if (
+    value === "client" ||
+    value === "clients" ||
+    value === "ledger" ||
+    value === "ladger"
+  )
+    return "clients";
+
+  return value;
+}
+
+function normalizeFormat(format: string) {
+  const value = (format || "").trim().toLowerCase();
+
+  if (value === "xlsx" || value === "excel") return "excel";
+  if (value === "csv") return "csv";
+  if (value === "pdf") return "pdf";
+
+  return "excel";
+}
+
+function buildDownloadMeta(item: ReportItem) {
+  const type = normalizeReportType(item?.type || "");
+  const format = normalizeFormat(item?.format || "");
+
+  if (item?.downloadUrl) {
+    return {
+      downloadType: type,
+      downloadFormat: format,
+      downloadUrl: item.downloadUrl,
+    };
+  }
+
+  if (type === "sales") {
+    return {
+      downloadType: type,
+      downloadFormat: "excel",
+      downloadUrl: "/getcsv/report/export-excel",
+    };
+  }
+
+  if (type === "reports") {
+    return {
+      downloadType: type,
+      downloadFormat: "csv",
+      downloadUrl: "/getcsv/report-superadmin/export-csv",
+    };
+  }
+
+  if (type === "inventory") {
+    return {
+      downloadType: type,
+      downloadFormat: "excel",
+      downloadUrl: "/getcsv/report-superadmin/export-excel?type=inventory",
+    };
+  }
+
+  if (type === "users") {
+    return {
+      downloadType: type,
+      downloadFormat: "excel",
+      downloadUrl: "/getcsv/report-superadmin/export-excel?type=users",
+    };
+  }
+
+  if (type === "clients") {
+    return {
+      downloadType: type,
+      downloadFormat: "excel",
+      downloadUrl: "/getcsv/report-superadmin/export-excel?type=clients",
+    };
+  }
+
+  return {
+    downloadType: type,
+    downloadFormat: format,
+    downloadUrl: "",
+  };
 }
 
 export default function Reports() {
@@ -88,7 +182,12 @@ export default function Reports() {
 
         const token =
           typeof window !== "undefined"
-            ? localStorage.getItem("token")
+            ? localStorage.getItem("accessToken") ||
+              localStorage.getItem("token") ||
+              localStorage.getItem("authToken") ||
+              localStorage.getItem("ims_token") ||
+              localStorage.getItem("imsToken") ||
+              localStorage.getItem("jwt")
             : null;
 
         const res = await fetch("/api/sqlbranch/d/report", {
@@ -165,13 +264,20 @@ export default function Reports() {
   }, [data?.transitChart]);
 
   const reportsData: ReportsTableRow[] = useMemo(() => {
-    return (data?.reports || []).map((item) => ({
-      name: item?.name || "-",
-      type: item?.type || "-",
-      date: item?.date || "-",
-      generatedBy: item?.generatedBy || "-",
-      format: item?.format || "-",
-    }));
+    return (data?.reports || []).map((item) => {
+      const meta = buildDownloadMeta(item);
+
+      return {
+        name: item?.name || "-",
+        type: item?.type || "-",
+        date: item?.date || "-",
+        generatedBy: item?.generatedBy || "-",
+        format: item?.format || meta.downloadFormat || "-",
+        downloadType: meta.downloadType,
+        downloadFormat: meta.downloadFormat,
+        downloadUrl: meta.downloadUrl,
+      };
+    });
   }, [data?.reports]);
 
   if (error && !loading) {

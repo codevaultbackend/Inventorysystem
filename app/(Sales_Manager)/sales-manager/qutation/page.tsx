@@ -8,7 +8,11 @@ import QuotationModal from "./component/QuotationModal";
 import StatsSection from "./component/StatsSection";
 import { useRouter } from "next/navigation";
 
-export type QuotationStatus = "pending" | "approved" | "rejected" | "invoiced";
+export type QuotationStatus =
+  | "pending"
+  | "approved"
+  | "rejected"
+  | "invoiced";
 
 export interface QuotationItem {
   id: number;
@@ -48,9 +52,27 @@ export interface Quotation {
   items: QuotationItem[];
 }
 
+interface BranchGroupedQuotation {
+  branchId?: number;
+  branchName?: string;
+  branchLocation?: string;
+  quotations?: any[];
+}
+
 interface QuotationApiResponse {
-  total: number;
-  quotations: Quotation[];
+  success?: boolean;
+  total?: number;
+  quotations?: any[];
+  branches?: BranchGroupedQuotation[];
+  data?: {
+    total?: number;
+    quotations?: any[];
+    rows?: any[];
+    branches?: BranchGroupedQuotation[];
+  };
+  rows?: any[];
+  message?: string;
+  error?: string;
 }
 
 type SortType =
@@ -67,7 +89,8 @@ function getStoredToken() {
     localStorage.getItem("accessToken") ||
     localStorage.getItem("authToken") ||
     localStorage.getItem("ims_token") ||
-    localStorage.getItem("imsToken")
+    localStorage.getItem("imsToken") ||
+    localStorage.getItem("jwt")
   );
 }
 
@@ -91,6 +114,131 @@ function getStoredUserRole(): string {
   return "";
 }
 
+function getBaseUrl() {
+  return (
+    process.env.NEXT_PUBLIC_API_BASE_URL ||
+    process.env.NEXT_PUBLIC_API_URL ||
+    "https://ims-swp9.onrender.com"
+  ).replace(/\/+$/, "");
+}
+
+function normalizeQuotation(raw: any): Quotation {
+  return {
+    id: Number(raw?.id || 0),
+    quotation_no: String(raw?.quotation_no || raw?.quotationNo || "-"),
+    client_id: Number(raw?.client_id || raw?.clientId || 0),
+    branch_id: Number(raw?.branch_id || raw?.branchId || 0),
+    total_amount: Number(raw?.total_amount || raw?.totalAmount || 0),
+    gst_amount: Number(raw?.gst_amount || raw?.gstAmount || 0),
+    valid_till: raw?.valid_till || raw?.validTill || null,
+    status: String(raw?.status || "pending").toLowerCase() as QuotationStatus,
+    createdAt: String(
+      raw?.createdAt || raw?.created_at || new Date().toISOString()
+    ),
+    client: raw?.client
+      ? {
+          id: Number(raw.client?.id || 0),
+          name: raw.client?.name ?? null,
+          phone: raw.client?.phone ?? null,
+          email: raw.client?.email ?? null,
+        }
+      : null,
+    branch: raw?.branch
+      ? {
+          id: Number(raw.branch?.id || raw?.branch_id || raw?.branchId || 0),
+          name: String(raw.branch?.name || raw?.branchName || ""),
+          location: String(
+            raw.branch?.location || raw?.branchLocation || ""
+          ),
+        }
+      : raw?.branchName || raw?.branchLocation || raw?.branch_id || raw?.branchId
+      ? {
+          id: Number(raw?.branch_id || raw?.branchId || 0),
+          name: String(raw?.branchName || ""),
+          location: String(raw?.branchLocation || ""),
+        }
+      : null,
+    items: Array.isArray(raw?.items)
+      ? raw.items.map((item: any) => ({
+          id: Number(item?.id || 0),
+          product_name: String(item?.product_name || item?.productName || ""),
+          quantity: Number(item?.quantity || 0),
+          unit_price: Number(item?.unit_price || item?.unitPrice || 0),
+          cgst: Number(item?.cgst || 0),
+          sgst: Number(item?.sgst || 0),
+          amount: Number(item?.amount || 0),
+        }))
+      : [],
+  };
+}
+
+function extractFromBranches(branches: BranchGroupedQuotation[] = []) {
+  if (!Array.isArray(branches)) return [];
+
+  return branches.flatMap((branch) => {
+    const branchQuotations = Array.isArray(branch?.quotations)
+      ? branch.quotations
+      : [];
+
+    return branchQuotations.map((quote: any) => {
+      const hasBranchObject = !!quote?.branch;
+
+      if (hasBranchObject) return quote;
+
+      return {
+        ...quote,
+        branch: {
+          id: Number(quote?.branch_id || quote?.branchId || branch?.branchId || 0),
+          name: String(
+            quote?.branch?.name || branch?.branchName || ""
+          ),
+          location: String(
+            quote?.branch?.location || branch?.branchLocation || ""
+          ),
+        },
+      };
+    });
+  });
+}
+
+function extractQuotationPayload(resData: QuotationApiResponse) {
+  const directRows =
+    resData?.quotations ||
+    resData?.data?.quotations ||
+    resData?.rows ||
+    resData?.data?.rows ||
+    [];
+
+  const branchRows =
+    extractFromBranches(resData?.branches || []) ||
+    extractFromBranches(resData?.data?.branches || []);
+
+  const mergedRows = Array.isArray(directRows) && directRows.length
+    ? directRows
+    : branchRows;
+
+  const normalized = Array.isArray(mergedRows)
+    ? mergedRows.map(normalizeQuotation)
+    : [];
+
+  const uniqueMap = new Map<number, Quotation>();
+
+  normalized.forEach((quote) => {
+    if (!uniqueMap.has(quote.id)) {
+      uniqueMap.set(quote.id, quote);
+    }
+  });
+
+  const quotations = Array.from(uniqueMap.values());
+
+  const total =
+    Number(resData?.total) ||
+    Number(resData?.data?.total) ||
+    quotations.length;
+
+  return { quotations, total };
+}
+
 export default function Page() {
   const [loading, setLoading] = useState(true);
   const [approveLoading, setApproveLoading] = useState(false);
@@ -103,7 +251,7 @@ export default function Page() {
   const [sortBy, setSortBy] = useState<SortType>("latest");
   const [userRole, setUserRole] = useState("");
 
-  const BaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "";
+  const baseUrl = getBaseUrl();
   const router = useRouter();
 
   const canApprove = useMemo(() => {
@@ -122,16 +270,47 @@ export default function Page() {
 
       const token = getStoredToken();
 
-      const res = await axios.get<QuotationApiResponse>(`${BaseUrl}/sales/get`, {
-        headers: token
-          ? {
-              Authorization: `Bearer ${token}`,
-            }
-          : undefined,
-      });
+      const headers = token
+        ? {
+            Authorization: `Bearer ${token}`,
+          }
+        : undefined;
 
-      setQuotations(res.data?.quotations || []);
-      setTotal(res.data?.total || 0);
+      const endpoints = [
+        `${baseUrl}/sales/get`,
+        `${baseUrl}/sales/quotation/get`,
+        `${baseUrl}/sales/quotations`,
+      ];
+
+      let responseData: QuotationApiResponse | null = null;
+      let lastError: any = null;
+
+      for (const endpoint of endpoints) {
+        try {
+          const res = await axios.get<QuotationApiResponse>(endpoint, {
+            headers,
+            withCredentials: true,
+          });
+
+          responseData = res.data;
+          break;
+        } catch (err: any) {
+          lastError = err;
+          const status = err?.response?.status;
+
+          if (status === 404) continue;
+          throw err;
+        }
+      }
+
+      if (!responseData) {
+        throw lastError || new Error("Failed to load quotations");
+      }
+
+      const payload = extractQuotationPayload(responseData);
+
+      setQuotations(payload.quotations);
+      setTotal(payload.total);
     } catch (err: any) {
       console.error("Quotation fetch error:", err);
       setError(
@@ -140,10 +319,12 @@ export default function Page() {
           err?.message ||
           "Failed to load quotations"
       );
+      setQuotations([]);
+      setTotal(0);
     } finally {
       setLoading(false);
     }
-  }, [BaseUrl]);
+  }, [baseUrl]);
 
   useEffect(() => {
     setUserRole(getStoredUserRole());
@@ -156,19 +337,52 @@ export default function Page() {
 
       const token = getStoredToken();
 
-      const res = await axios.put(
-        `${BaseUrl}/sales/approve/${quoteId}`,
-        {},
-        {
-          headers: token
-            ? {
-                Authorization: `Bearer ${token}`,
-              }
-            : undefined,
-        }
-      );
+      const endpoints = [
+        `${baseUrl}/sales/approve/${quoteId}`,
+        `${baseUrl}/sales/quotation/approve/${quoteId}`,
+        `${baseUrl}/sales/quotations/approve/${quoteId}`,
+      ];
 
-      const updatedQuotation: Quotation | undefined = res?.data?.quotation;
+      let updatedQuotation: Quotation | null = null;
+      let lastError: any = null;
+
+      for (const endpoint of endpoints) {
+        try {
+          const res = await axios.put(
+            endpoint,
+            {},
+            {
+              headers: token
+                ? {
+                    Authorization: `Bearer ${token}`,
+                  }
+                : undefined,
+              withCredentials: true,
+            }
+          );
+
+          const updatedQuotationRaw =
+            res?.data?.quotation ||
+            res?.data?.data?.quotation ||
+            res?.data?.updatedQuotation ||
+            res?.data?.data?.updatedQuotation ||
+            null;
+
+          updatedQuotation = updatedQuotationRaw
+            ? normalizeQuotation(updatedQuotationRaw)
+            : null;
+
+          break;
+        } catch (err: any) {
+          lastError = err;
+          if (err?.response?.status === 404) continue;
+          throw err;
+        }
+      }
+
+      if (!updatedQuotation && lastError) {
+        throw lastError;
+      }
 
       setQuotations((prev) =>
         prev.map((quote) =>
@@ -196,6 +410,7 @@ export default function Page() {
       alert(
         err?.response?.data?.message ||
           err?.response?.data?.error ||
+          err?.message ||
           "Failed to approve quotation"
       );
     } finally {
@@ -207,18 +422,22 @@ export default function Page() {
     const normalizedSearch = search.trim().toLowerCase();
 
     const filtered = quotations.filter((quote) => {
+      if (!normalizedSearch) return true;
+
       const clientName = quote.client?.name?.toLowerCase() || "";
       const clientEmail = quote.client?.email?.toLowerCase() || "";
       const clientPhone = quote.client?.phone?.toLowerCase() || "";
       const quotationNo = quote.quotation_no?.toLowerCase() || "";
       const branchName = quote.branch?.name?.toLowerCase() || "";
+      const status = quote.status?.toLowerCase() || "";
 
       return (
         quotationNo.includes(normalizedSearch) ||
         clientName.includes(normalizedSearch) ||
         clientEmail.includes(normalizedSearch) ||
         clientPhone.includes(normalizedSearch) ||
-        branchName.includes(normalizedSearch)
+        branchName.includes(normalizedSearch) ||
+        status.includes(normalizedSearch)
       );
     });
 
@@ -243,6 +462,7 @@ export default function Page() {
           (a, b) =>
             new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         );
+        break;
     }
 
     return sorted;
@@ -253,8 +473,15 @@ export default function Page() {
     const approved = quotations.filter((q) => q.status === "approved");
     const rejected = quotations.filter((q) => q.status === "rejected");
 
-    const totalAmount = quotations.reduce((sum, q) => sum + q.total_amount, 0);
-    const pendingAmount = pending.reduce((sum, q) => sum + q.total_amount, 0);
+    const totalAmount = quotations.reduce(
+      (sum, q) => sum + Number(q.total_amount || 0),
+      0
+    );
+
+    const pendingAmount = pending.reduce(
+      (sum, q) => sum + Number(q.total_amount || 0),
+      0
+    );
 
     const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
     const pendingThisWeek = pending.filter(
@@ -262,7 +489,7 @@ export default function Page() {
     ).length;
 
     return {
-      totalQuotations: total,
+      totalQuotations: total || quotations.length,
       totalAmount,
       pendingCount: pending.length,
       pendingAmount,
@@ -274,7 +501,7 @@ export default function Page() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#F6F8FB] p-3 sm:p-4 md:p-6">
+      <div className="min-h-screen bg-[#F6F8FB] ">
         <div className="mx-auto max-w-[1280px] animate-pulse space-y-5">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <div className="h-[96px] rounded-[16px] bg-white" />
@@ -302,7 +529,7 @@ export default function Page() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-[#F6F8FB] p-3 sm:p-4 md:p-6">
+      <div className="min-h-screen bg-[#F6F8FB] ">
         <div className="mx-auto flex min-h-[400px] max-w-[1280px] items-center justify-center rounded-[20px] bg-white p-8 text-center shadow-sm">
           <div>
             <h2 className="text-[24px] font-semibold text-[#111827]">
@@ -316,7 +543,7 @@ export default function Page() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F6F8FB] p-3 sm:p-4 md:p-6">
+    <div className="min-h-screen bg-[#F6F8FB] ">
       <div className="mx-auto max-w-[1280px]">
         <StatsSection stats={stats} />
 
@@ -332,6 +559,7 @@ export default function Page() {
             </div>
 
             <button
+              type="button"
               className="inline-flex h-[42px] w-full items-center justify-center gap-2 rounded-[10px] bg-[#111827] px-4 text-[13px] font-medium text-white transition hover:bg-[#1F2937] sm:w-auto"
               onClick={() => router.push("/sales-manager/client-intake")}
             >
@@ -357,7 +585,7 @@ export default function Page() {
             <div className="relative w-full lg:w-[220px]">
               <SlidersHorizontal
                 size={16}
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9CA3AF]"
+                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#9CA3AF]"
               />
               <select
                 value={sortBy}

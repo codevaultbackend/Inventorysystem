@@ -1,7 +1,6 @@
 "use client";
 
-import Link from "next/link";
-import { Eye } from "lucide-react";
+import { Download, Eye } from "lucide-react";
 
 type LedgerEntry = {
   entryId: number;
@@ -11,6 +10,10 @@ type LedgerEntry = {
   amount: number;
   receivedAmount: number;
   pendingAmount: number;
+  quotationId?: number | null;
+  quotation_id?: number | null;
+  invoiceId?: number | null;
+  invoice_id?: number | null;
 };
 
 type LedgerCompany = {
@@ -22,7 +25,12 @@ type LedgerCompany = {
 
 type Props = {
   company: LedgerCompany;
-  basePath?: string;
+  onViewInvoice?: (entry: LedgerEntry) => void;
+  onDownloadInvoice?: (entry: LedgerEntry) => void;
+  busyAction?: {
+    entryId: number;
+    type: "view" | "download";
+  } | null;
 };
 
 const formatMoney = (value: number) =>
@@ -33,7 +41,9 @@ const formatMoney = (value: number) =>
 
 export default function LedgerEntriesTable({
   company,
-  basePath = "/sales-manager/ledger",
+  onViewInvoice,
+  onDownloadInvoice,
+  busyAction,
 }: Props) {
   const companyLabel =
     company.companyShort || company.companyName || `Client ${company.id}`;
@@ -80,52 +90,79 @@ export default function LedgerEntriesTable({
 
           <tbody>
             {company.entries.length > 0 ? (
-              company.entries.map((entry, index) => (
-                <tr
-                  key={`${company.id}-${entry.entryId}-${entry.transactionId}`}
-                  className={`h-[64px] border-b border-[#EEF2F6] ${
-                    index % 2 === 0 ? "bg-[#FAFBFC]" : "bg-white"
-                  }`}
-                >
-                  <td className="px-[18px] text-[12px] font-semibold text-[#374151]">
-                    LE{String(entry.entryId).padStart(6, "0")}
-                  </td>
+              company.entries.map((entry, index) => {
+                const isViewing =
+                  busyAction?.entryId === entry.entryId &&
+                  busyAction?.type === "view";
 
-                  <td className="px-[18px] text-[12px] font-medium text-[#748092]">
-                    {entry.transactionId}
-                  </td>
+                const isDownloading =
+                  busyAction?.entryId === entry.entryId &&
+                  busyAction?.type === "download";
 
-                  <td className="px-[18px] text-[12px] font-medium text-[#374151]">
-                    {entry.client}
-                  </td>
+                return (
+                  <tr
+                    key={`${company.id}-${entry.entryId}-${entry.transactionId}`}
+                    className={`h-[64px] border-b border-[#EEF2F6] ${
+                      index % 2 === 0 ? "bg-[#FAFBFC]" : "bg-white"
+                    }`}
+                  >
+                    <td className="px-[18px] text-[12px] font-semibold text-[#374151]">
+                      LE{String(entry.entryId).padStart(6, "0")}
+                    </td>
 
-                  <td className="px-[18px] text-[12px] font-medium text-[#6B7280]">
-                    {entry.dateTime}
-                  </td>
+                    <td className="px-[18px] text-[12px] font-medium text-[#748092]">
+                      {entry.transactionId}
+                    </td>
 
-                  <td className="px-[18px] text-[12px] font-semibold text-[#16A34A]">
-                    {formatMoney(entry.receivedAmount)}
-                  </td>
+                    <td className="px-[18px] text-[12px] font-medium text-[#374151]">
+                      {entry.client}
+                    </td>
 
-                  <td className="px-[18px] text-[12px] font-semibold text-[#16A34A]">
-                    {formatMoney(entry.pendingAmount)}
-                  </td>
+                    <td className="px-[18px] text-[12px] font-medium text-[#6B7280]">
+                      {entry.dateTime}
+                    </td>
 
-                  <td className="px-[18px] text-[12px] font-semibold text-[#16A34A]">
-                    {formatMoney(entry.amount)}
-                  </td>
+                    <td className="px-[18px] text-[12px] font-semibold text-[#16A34A]">
+                      {formatMoney(entry.receivedAmount)}
+                    </td>
 
-                  <td className="px-[18px] text-center">
-                    <Link
-                      href={`${basePath}/${company.id}/${entry.entryId}`}
-                      className="inline-flex h-[28px] items-center gap-[5px] rounded-[5px] border border-[#E5E7EB] bg-white px-[11px] text-[11px] font-medium text-[#374151] transition hover:bg-[#F8FAFC]"
-                    >
-                      <Eye className="h-[12px] w-[12px]" strokeWidth={1.9} />
-                      View
-                    </Link>
-                  </td>
-                </tr>
-              ))
+                    <td className="px-[18px] text-[12px] font-semibold text-[#16A34A]">
+                      {formatMoney(entry.pendingAmount)}
+                    </td>
+
+                    <td className="px-[18px] text-[12px] font-semibold text-[#16A34A]">
+                      {formatMoney(entry.amount)}
+                    </td>
+
+                    <td className="px-[18px] text-center">
+                      <div className="inline-flex items-center gap-[6px]">
+                        <button
+                          type="button"
+                          onClick={() => onViewInvoice?.(entry)}
+                          disabled={!!busyAction}
+                          className="inline-flex h-[28px] items-center gap-[5px] rounded-[5px] border border-[#E5E7EB] bg-white px-[11px] text-[11px] font-medium text-[#374151] transition hover:bg-[#F8FAFC] disabled:cursor-not-allowed disabled:opacity-70"
+                        >
+                          <Eye className="h-[12px] w-[12px]" strokeWidth={1.9} />
+                          {isViewing ? "Opening..." : "View"}
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => onDownloadInvoice?.(entry)}
+                          disabled={!!busyAction}
+                          className="inline-flex h-[28px] items-center gap-[5px] rounded-[5px] border border-[#E5E7EB] bg-white px-[11px] text-[11px] font-medium text-[#374151] transition hover:bg-[#F8FAFC] disabled:cursor-not-allowed disabled:opacity-70"
+                        >
+                          <Download
+                            className="h-[12px] w-[12px]"
+                            strokeWidth={1.9}
+                          />
+                          {isDownloading ? "Downloading..." : "Download"}
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })
             ) : (
               <tr>
                 <td
@@ -142,60 +179,87 @@ export default function LedgerEntriesTable({
 
       <div className="grid grid-cols-1 gap-3 p-4 sm:hidden">
         {company.entries.length > 0 ? (
-          company.entries.map((entry) => (
-            <div
-              key={`${company.id}-${entry.entryId}-${entry.transactionId}-mobile`}
-              className="rounded-[12px] border border-[#E5E7EB] bg-[#FCFCFD] p-4"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="text-[13px] font-semibold text-[#111827]">
-                    LE{String(entry.entryId).padStart(6, "0")}
-                  </p>
-                  <p className="mt-1 truncate text-[12px] text-[#6B7280]">
-                    {entry.transactionId}
-                  </p>
+          company.entries.map((entry) => {
+            const isViewing =
+              busyAction?.entryId === entry.entryId &&
+              busyAction?.type === "view";
+
+            const isDownloading =
+              busyAction?.entryId === entry.entryId &&
+              busyAction?.type === "download";
+
+            return (
+              <div
+                key={`${company.id}-${entry.entryId}-${entry.transactionId}-mobile`}
+                className="rounded-[12px] border border-[#E5E7EB] bg-[#FCFCFD] p-4"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-[13px] font-semibold text-[#111827]">
+                      LE{String(entry.entryId).padStart(6, "0")}
+                    </p>
+                    <p className="mt-1 truncate text-[12px] text-[#6B7280]">
+                      {entry.transactionId}
+                    </p>
+                  </div>
+
+                  <div className="flex shrink-0 items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => onViewInvoice?.(entry)}
+                      disabled={!!busyAction}
+                      className="inline-flex h-[30px] items-center gap-1 rounded-[6px] border border-[#E5E7EB] bg-white px-3 text-[11px] font-medium text-[#374151] disabled:cursor-not-allowed disabled:opacity-70"
+                    >
+                      <Eye className="h-[12px] w-[12px]" strokeWidth={1.9} />
+                      {isViewing ? "Opening..." : "View"}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => onDownloadInvoice?.(entry)}
+                      disabled={!!busyAction}
+                      className="inline-flex h-[30px] items-center gap-1 rounded-[6px] border border-[#E5E7EB] bg-white px-3 text-[11px] font-medium text-[#374151] disabled:cursor-not-allowed disabled:opacity-70"
+                    >
+                      <Download
+                        className="h-[12px] w-[12px]"
+                        strokeWidth={1.9}
+                      />
+                      {isDownloading ? "Downloading..." : "Download"}
+                    </button>
+                  </div>
                 </div>
 
-                <Link
-                  href={`${basePath}/${company.id}/${entry.entryId}`}
-                  className="inline-flex h-[30px] shrink-0 items-center gap-1 rounded-[6px] border border-[#E5E7EB] bg-white px-3 text-[11px] font-medium text-[#374151]"
-                >
-                  <Eye className="h-[12px] w-[12px]" strokeWidth={1.9} />
-                  View
-                </Link>
+                <div className="mt-3 space-y-1 text-[12px] text-[#4B5563]">
+                  <p>
+                    <span className="font-medium text-[#111827]">Client:</span>{" "}
+                    {entry.client}
+                  </p>
+                  <p>
+                    <span className="font-medium text-[#111827]">Date:</span>{" "}
+                    {entry.dateTime}
+                  </p>
+                  <p>
+                    <span className="font-medium text-[#111827]">Received:</span>{" "}
+                    <span className="font-semibold text-[#16A34A]">
+                      {formatMoney(entry.receivedAmount)}
+                    </span>
+                  </p>
+                  <p>
+                    <span className="font-medium text-[#111827]">Pending:</span>{" "}
+                    <span className="font-semibold text-[#D97706]">
+                      {formatMoney(entry.pendingAmount)}
+                    </span>
+                  </p>
+                  <p>
+                    <span className="font-medium text-[#111827]">Amount:</span>{" "}
+                    <span className="font-semibold text-[#16A34A]">
+                      {formatMoney(entry.amount)}
+                    </span>
+                  </p>
+                </div>
               </div>
-
-              <div className="mt-3 space-y-1 text-[12px] text-[#4B5563]">
-                <p>
-                  <span className="font-medium text-[#111827]">Client:</span>{" "}
-                  {entry.client}
-                </p>
-                <p>
-                  <span className="font-medium text-[#111827]">Date:</span>{" "}
-                  {entry.dateTime}
-                </p>
-                <p>
-                  <span className="font-medium text-[#111827]">Received:</span>{" "}
-                  <span className="font-semibold text-[#16A34A]">
-                    {formatMoney(entry.receivedAmount)}
-                  </span>
-                </p>
-                <p>
-                  <span className="font-medium text-[#111827]">Pending:</span>{" "}
-                  <span className="font-semibold text-[#D97706]">
-                    {formatMoney(entry.pendingAmount)}
-                  </span>
-                </p>
-                <p>
-                  <span className="font-medium text-[#111827]">Amount:</span>{" "}
-                  <span className="font-semibold text-[#16A34A]">
-                    {formatMoney(entry.amount)}
-                  </span>
-                </p>
-              </div>
-            </div>
-          ))
+            );
+          })
         ) : (
           <div className="rounded-[12px] border border-dashed border-[#D7DEE7] bg-[#FAFBFC] px-4 py-8 text-center text-[14px] text-[#6B7280]">
             No ledger entries found.

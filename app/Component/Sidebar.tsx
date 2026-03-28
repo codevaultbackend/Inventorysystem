@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { LogOut } from "lucide-react";
 import { useApp } from "@/app/context/AppContext";
 import { useAuth } from "@/app/context/AuthContext";
+import { highlightText } from "./highlightText";
 
 import DashboardIcon from "../svgIcons/DashboardIcon";
 import BranchOverview from "../svgIcons/BranchOverview";
@@ -28,6 +29,10 @@ type NavItem = {
   label: string;
   href: string;
   icon: React.ComponentType<{ className?: string }>;
+};
+
+type SidebarProps = {
+  role?: string;
 };
 
 const ROLE_NAV_ITEMS: Record<string, NavItem[]> = {
@@ -69,7 +74,11 @@ const ROLE_NAV_ITEMS: Record<string, NavItem[]> = {
     },
   ],
   inventory_manager: [
-    { label: "Dashboard", href: "/inventory-manager/admin-dashboard", icon: DashboardIcon },
+    {
+      label: "Dashboard",
+      href: "/inventory-manager/admin-dashboard",
+      icon: DashboardIcon,
+    },
     {
       label: "All Stocks",
       href: "/inventory-manager/all-stocks",
@@ -121,11 +130,6 @@ const ROLE_NAV_ITEMS: Record<string, NavItem[]> = {
   sales_manager: [
     { label: "Dashboard", href: "/sales-manager", icon: DashboardIcon },
     {
-      label: "All Sales",
-      href: "/sales-manager/Branches",
-      icon: BsBarChartLine,
-    },
-    {
       label: "Client Intake",
       href: "/sales-manager/client-intake",
       icon: LuUsersRound,
@@ -134,6 +138,11 @@ const ROLE_NAV_ITEMS: Record<string, NavItem[]> = {
     {
       label: "Qutation",
       href: "/sales-manager/qutation",
+      icon: IoDocumentTextSharp,
+    },
+    {
+      label: "Invoice",
+      href: "/sales-manager/invoice",
       icon: IoDocumentTextSharp,
     },
     {
@@ -162,9 +171,12 @@ const ROLE_NAV_ITEMS: Record<string, NavItem[]> = {
     },
     { label: "Invoice", href: "/sales-manager/invoice", icon: IoMdClipboard },
   ],
-
   admin: [
-    { label: "Dashboard", href: "/super-admin/admin_dash", icon: PiWindowsLogo },
+    {
+      label: "Dashboard",
+      href: "/super-admin/admin_dash",
+      icon: PiWindowsLogo,
+    },
     {
       label: "All Stocks",
       href: "/super-admin/all-stocks",
@@ -188,16 +200,16 @@ function cn(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
 }
 
-export default function Sidebar() {
+export default function Sidebar({ role }: SidebarProps) {
   const pathname = usePathname();
-  const { collapsed } = useApp();
-  const { role, logout } = useAuth();
+  const { collapsed, globalSearch } = useApp();
+  const { role: authRole, logout } = useAuth();
 
-  const NAV_ITEMS = ROLE_NAV_ITEMS[role || ""] || [];
+  const currentRole = role || authRole || "";
+  const NAV_ITEMS = ROLE_NAV_ITEMS[currentRole] || [];
+
   const stickyTriggerRef = useRef<HTMLDivElement | null>(null);
   const [isSticky, setIsSticky] = useState(false);
-
-  /* ================= ACTIVE ROUTE DETECTION ================= */
 
   const activeHref = useMemo(() => {
     if (!pathname) return "";
@@ -266,7 +278,9 @@ export default function Sidebar() {
                   )}
                 />
 
-                <span className="text-[13px] font-[500]">{item.label}</span>
+                <span className="text-[13px] font-[500]">
+                  {highlightText(item.label, globalSearch)}
+                </span>
               </Link>
             );
           })}
@@ -281,7 +295,9 @@ export default function Sidebar() {
             "
           >
             <LogOut className="h-4 w-4 text-[#6B7280]" />
-            <span className="text-[13px] font-[500]">Log Out</span>
+            <span className="text-[13px] font-[500]">
+              {highlightText("Log Out", globalSearch)}
+            </span>
           </button>
         </div>
       </div>
@@ -336,7 +352,7 @@ export default function Sidebar() {
 
                   {!collapsed && (
                     <span className="text-[14px] font-[500] whitespace-nowrap">
-                      {item.label}
+                      {highlightText(item.label, globalSearch)}
                     </span>
                   )}
                 </Link>
@@ -363,7 +379,7 @@ export default function Sidebar() {
 
             {!collapsed && (
               <span className="text-[14px] font-[500] whitespace-nowrap">
-                Log Out
+                {highlightText("Log Out", globalSearch)}
               </span>
             )}
           </button>

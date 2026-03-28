@@ -97,7 +97,7 @@ export default function ReportAnalysis() {
         if (filters.date) params.date = filters.date;
         if (filters.type) params.type = filters.type;
 
-        const res = await api.get<SalesReportResponse>("/sales/report", {
+        const res = await api.get<SalesReportResponse>("/sales/report-all", {
           params,
         });
 

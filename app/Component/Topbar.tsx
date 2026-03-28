@@ -8,7 +8,8 @@ import ToggleNav from "../svgIcons/ToggleNav";
 import Link from "next/link";
 
 export default function TopBar() {
-  const { setCollapsed, setMobileOpen } = useApp();
+  const { setCollapsed, setMobileOpen, globalSearch, setGlobalSearch } =
+    useApp();
   const { user } = useAuth();
 
   const handleToggle = () => {
@@ -56,10 +57,12 @@ export default function TopBar() {
           <input
             type="text"
             placeholder="Search"
+            value={globalSearch}
+            onChange={(e) => setGlobalSearch(e.target.value)}
             className="
-              w-full bg-transparent text-[14px] text-[#0F172A] outline-none
-              placeholder:text-[#94A3B8]
-            "
+    w-full bg-transparent text-[14px] text-[#0F172A] outline-none
+    placeholder:text-[#94A3B8]
+  "
           />
         </div>
       </div>

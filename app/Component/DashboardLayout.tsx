@@ -3,6 +3,7 @@
 import React from "react";
 import Sidebar from "./Sidebar";
 import Topbar from "./Topbar";
+import GlobalSearchNavigator from "./GlobalSearchNavigator";
 import { useAuth } from "@/app/context/AuthContext";
 
 export type Role =
@@ -47,10 +48,15 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         <Topbar />
       </div>
 
+      <GlobalSearchNavigator />
+
       <div className="flex flex-col gap-4 px-4 pb-6 pt-4 lg:flex-row lg:gap-[16px] lg:px-6">
         <Sidebar role={role} />
 
-        <main className="w-full min-w-0 flex-1">
+        <main
+          data-dashboard-search-root="true"
+          className="w-full min-w-0 flex-1"
+        >
           {children}
         </main>
       </div>

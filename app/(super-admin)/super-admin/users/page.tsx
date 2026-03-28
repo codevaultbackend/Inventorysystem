@@ -1,6 +1,6 @@
 "use client";
 
-import { Search, Phone } from "lucide-react";
+import { Search, Phone, Download } from "lucide-react";
 import { useSuperDashboard } from "../../../context/SuperDashboardContext";
 import { useMemo, useRef, useState } from "react";
 
@@ -124,6 +124,23 @@ function UsersTableSkeleton() {
   );
 }
 
+const API_BASE =
+  process.env.NEXT_PUBLIC_API_URL?.replace(/\/+$/, "") ||
+  "https://ims-swp9.onrender.com";
+
+const getStoredToken = (): string | null => {
+  if (typeof window === "undefined") return null;
+
+  return (
+    localStorage.getItem("accessToken") ||
+    localStorage.getItem("token") ||
+    localStorage.getItem("authToken") ||
+    localStorage.getItem("ims_token") ||
+    localStorage.getItem("imsToken") ||
+    localStorage.getItem("jwt")
+  );
+};
+
 export default function UserManagementPage() {
   const { users, loading, error } = useSuperDashboard();
 
@@ -132,6 +149,8 @@ export default function UserManagementPage() {
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("All Users");
   const [statusFilter, setStatusFilter] = useState("All Status");
+  const [downloadingCsv, setDownloadingCsv] = useState(false);
+  const [downloadError, setDownloadError] = useState("");
 
   /* ================= DRAG SCROLL ================= */
 
@@ -204,6 +223,53 @@ export default function UserManagementPage() {
     ] as string[];
   }, [tableUsers]);
 
+  const handleDownloadUsersCsv = async () => {
+    try {
+      setDownloadingCsv(true);
+      setDownloadError("");
+
+      const token = getStoredToken();
+
+      const response = await fetch(`${API_BASE}/getcsv/user-get/export-excel`, {
+        method: "GET",
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      });
+
+      if (!response.ok) {
+        let message = "Failed to download CSV";
+        try {
+          const data = await response.json();
+          message = data?.message || message;
+        } catch {
+          //
+        }
+        throw new Error(message);
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+
+      const contentDisposition = response.headers.get("content-disposition") || "";
+      const match = contentDisposition.match(/filename="?([^"]+)"?/i);
+      const fileName = match?.[1] || `users-report-${Date.now()}.csv`;
+
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+
+      window.URL.revokeObjectURL(url);
+    } catch (err: any) {
+      setDownloadError(err?.message || "Unable to download users CSV");
+    } finally {
+      setDownloadingCsv(false);
+    }
+  };
+
   return (
     <div className="space-y-5 sm:space-y-6">
       {/* PAGE HEADER */}
@@ -239,7 +305,7 @@ export default function UserManagementPage() {
             />
           </div>
 
-          <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 lg:w-auto">
+          <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-3 lg:w-auto">
             <select
               value={roleFilter}
               onChange={(e) => setRoleFilter(e.target.value)}
@@ -267,6 +333,21 @@ export default function UserManagementPage() {
               <option value="Active">Active</option>
               <option value="Inactive">Inactive</option>
             </select>
+
+            <button
+              type="button"
+              onClick={handleDownloadUsersCsv}
+              disabled={downloadingCsv}
+              className="
+                inline-flex h-[44px] min-w-0 items-center justify-center gap-2
+                rounded-xl border border-[#E2E8F0] bg-white px-4 text-[14px]
+                font-medium text-[#0F172A] outline-none transition
+                hover:bg-[#F8FAFC] disabled:cursor-not-allowed disabled:opacity-60
+              "
+            >
+              <Download className="h-4 w-4" />
+              {downloadingCsv ? "Downloading..." : "Download CSV"}
+            </button>
           </div>
         </div>
       )}
@@ -304,9 +385,9 @@ export default function UserManagementPage() {
               </p>
             </div>
 
-            {error && (
+            {(error || downloadError) && (
               <div className="mb-3 rounded-xl border border-[#FECACA] bg-[#FEF2F2] px-4 py-3 text-[13px] text-[#B91C1C]">
-                {error}
+                {downloadError || error}
               </div>
             )}
 

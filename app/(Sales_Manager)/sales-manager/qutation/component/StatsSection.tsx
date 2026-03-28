@@ -29,7 +29,7 @@ function formatCurrency(value: number) {
 
 export default function StatsSection({ stats }: Props) {
   return (
-    <div className="mb-5 grid grid-cols-2 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div className="mb-5 grid grid-cols-1 gap-[14px] sm:grid-cols-2 xl:grid-cols-4">
       <StatCard
         label="Total Quotations"
         value={String(stats.totalQuotations)}
@@ -91,23 +91,47 @@ function StatCard({
   subColor: string;
 }) {
   return (
-    <div className="flex h-auto min-h-[96px] items-center justify-between rounded-[14px] bg-white px-5 py-4 shadow-sm">
-      <div className="min-w-0">
-        {sub && (
-          <p className={`mb-1 text-[12px] font-medium ${subColor}`}>{sub}</p>
-        )}
+    <div
+      className="
+        group relative max-h-[153px] overflow-hidden
+        rounded-[26px] border border-[#E7ECF2] bg-white
+        px-[16px] pb-[14px] pt-[16px]
+        shadow-[0_1px_2px_rgba(16,24,40,0.04),0_8px_18px_rgba(16,24,40,0.06)]
+        transition-all duration-200
+        hover:shadow-[0_2px_6px_rgba(16,24,40,0.06),0_14px_28px_rgba(16,24,40,0.08)]
+        sm:px-[18px] sm:pb-[16px] sm:pt-[16px]
+        xl:min-h-[156px]
+      "
+      style={{ borderRadius: "24px" }}
+    >
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-[1px] bg-[linear-gradient(90deg,rgba(255,255,255,0),rgba(255,255,255,0.95),rgba(255,255,255,0))]" />
 
-        <p className="text-[24px] font-semibold leading-none text-[#111827]">
-          {value}
-        </p>
+      <div className="flex h-full flex-col">
+        <div
+          className={`mb-[18px] flex h-[50px] w-[50px] items-center justify-center rounded-[14px] border border-[#EEF2F6] bg-[#F4F7FB] shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] ${iconBg}`}
+        >
+          <span className={`text-[22px] ${iconColor}`}>{icon}</span>
+        </div>
 
-        <p className="mt-2 text-[13px] text-[#6B7280]">{label}</p>
-      </div>
+        <div className="mt-auto">
+          <div className="min-h-[20px]">
+            {sub ? (
+              <p
+                className={`line-clamp-1 text-[13px] font-medium leading-[20px] tracking-[-0.01em] ${subColor}`}
+              >
+                {sub}
+              </p>
+            ) : null}
+          </div>
 
-      <div
-        className={`flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-full text-[20px] ${iconBg} ${iconColor}`}
-      >
-        {icon}
+          <p className="mt-[6px] truncate text-[28px] font-semibold leading-[1.05] tracking-[-0.03em] text-[#111827] sm:text-[30px] xl:text-[29px]">
+            {value}
+          </p>
+
+          <p className="mt-[8px] line-clamp-1 text-[14px] font-medium leading-[20px] tracking-[-0.01em] text-[#98A2B3]">
+            {label}
+          </p>
+        </div>
       </div>
     </div>
   );
