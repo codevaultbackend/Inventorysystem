@@ -33,25 +33,65 @@ type DashboardResponse = {
     totalSale: string | number;
     pendingQuotation: string | number;
     readyToDispatch: string | number;
+    totalOrders?: string | number;
   };
-  salesAnalytics: {
+
+  salesAnalytics?: {
     month: string;
-    onlinesales: number;
-    offlinesales: number;
+    onlinesales?: number;
+    offlinesales?: number;
+    onlineSales?: number;
+    offlineSales?: number;
   }[];
-  quotationStatus: {
+
+  globalSalesAnalytics?: {
+    month: string;
+    monthDate?: string;
+    onlinesales?: number;
+    offlinesales?: number;
+    onlineSales?: number;
+    offlineSales?: number;
+  }[];
+
+  quotationStatus?: {
     pending: string | number;
     approved: string | number;
     rejected: string | number;
     invoiced: string | number;
-    totalvalue: number;
+    totalvalue?: number;
+    totalValue?: number;
   };
-  categorySales: {
+
+  globalQuotationStatus?: {
+    pending: string | number;
+    approved: string | number;
+    rejected: string | number;
+    invoiced: string | number;
+    totalvalue?: number;
+    totalValue?: number;
+  };
+
+  categorySales?: {
     category: string;
     units: string | number;
     revenue: number;
   }[];
-  recentActivity: {
+
+  globalCategorySales?: {
+    category: string;
+    units: string | number;
+    revenue: number;
+  }[];
+
+  recentActivity?: {
+    quotation_no: string;
+    client: string | null;
+    total_amount: number;
+    status: string;
+    createdAt: string;
+  }[];
+
+  globalRecentActivity?: {
     quotation_no: string;
     client: string | null;
     total_amount: number;
@@ -300,13 +340,21 @@ export default function SalesManagerDashboardPage() {
   const [error, setError] = useState("");
   const [dashboard, setDashboard] = useState<DashboardResponse | null>(null);
 
-  const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+  const baseUrl =
+    process.env.NEXT_PUBLIC_API_BASE_URL ||
+    process.env.NEXT_PUBLIC_API_URL ||
+    "";
 
   useEffect(() => {
     const fetchDashboard = async () => {
       try {
         setLoading(true);
         setError("");
+
+        if (!baseUrl) {
+          setError("API base URL is missing.");
+          return;
+        }
 
         const token =
           typeof window !== "undefined"
@@ -339,15 +387,34 @@ export default function SalesManagerDashboardPage() {
   }, [baseUrl]);
 
   const quickAction = dashboard?.quickAction;
-  const quotationStatus = dashboard?.quotationStatus;
 
-  const salesAnalytics =
+  const quotationStatus =
+    dashboard?.quotationStatus || dashboard?.globalQuotationStatus;
+
+  const salesAnalyticsRaw =
     dashboard?.salesAnalytics?.length
       ? dashboard.salesAnalytics
-      : [{ month: "Mar", onlinesales: 0, offlinesales: 0 }];
+      : dashboard?.globalSalesAnalytics?.length
+      ? dashboard.globalSalesAnalytics
+      : [];
 
-  const categorySales = dashboard?.categorySales || [];
-  const recentActivity = dashboard?.recentActivity || [];
+  const salesAnalytics = salesAnalyticsRaw.length
+    ? salesAnalyticsRaw.map((item) => ({
+        month: item.month,
+        onlinesales: toNumber(item.onlinesales ?? item.onlineSales ?? 0),
+        offlinesales: toNumber(item.offlinesales ?? item.offlineSales ?? 0),
+      }))
+    : [{ month: "Mar", onlinesales: 0, offlinesales: 0 }];
+
+  const categorySales =
+    dashboard?.categorySales?.length
+      ? dashboard.categorySales
+      : dashboard?.globalCategorySales || [];
+
+  const recentActivity =
+    dashboard?.recentActivity?.length
+      ? dashboard.recentActivity
+      : dashboard?.globalRecentActivity || [];
 
   const totalQuotations = useMemo(() => {
     if (!quotationStatus) return 0;
@@ -556,12 +623,7 @@ export default function SalesManagerDashboardPage() {
                         stroke="#232663"
                         strokeWidth={3}
                         dot={false}
-                        activeDot={{
-                          r: 5,
-                          fill: "#232663",
-                          stroke: "#fff",
-                          strokeWidth: 2,
-                        }}
+                        activeDot={{ r: 5 }}
                       />
                       <Line
                         type="monotone"
@@ -569,12 +631,7 @@ export default function SalesManagerDashboardPage() {
                         stroke="#F39B13"
                         strokeWidth={3}
                         dot={false}
-                        activeDot={{
-                          r: 5,
-                          fill: "#F39B13",
-                          stroke: "#fff",
-                          strokeWidth: 2,
-                        }}
+                        activeDot={{ r: 5 }}
                       />
                     </LineChart>
                   </ResponsiveContainer>
@@ -582,11 +639,12 @@ export default function SalesManagerDashboardPage() {
               </div>
 
               <div className="rounded-[18px] border border-[#E6EBF2] bg-white p-4 shadow-[0_8px_24px_rgba(15,23,42,0.04)]">
-                <div className="mb-2 flex items-center justify-between">
+                <div className="mb-4 flex items-center justify-between">
                   <h3 className="text-[18px] font-semibold text-[#111827]">
                     Quotation Status
                   </h3>
-                  <button className="text-[#667085]">
+
+                  <button className="inline-flex items-center justify-center text-[#98A2B3]">
                     <MoreHorizontal size={18} />
                   </button>
                 </div>
@@ -596,25 +654,16 @@ export default function SalesManagerDashboardPage() {
                     <ResponsiveContainer width="100%" height="100%">
                       <PieChart>
                         <Pie
-                          data={
-                            quoteChartData.length
-                              ? quoteChartData
-                              : [{ name: "Empty", value: 1, color: "#E5E7EB" }]
-                          }
+                          data={quoteChartData}
                           dataKey="value"
                           nameKey="name"
-                          innerRadius={58}
-                          outerRadius={88}
-                          paddingAngle={4}
-                          cornerRadius={2}
+                          innerRadius={68}
+                          outerRadius={98}
+                          paddingAngle={3}
                           stroke="none"
                         >
-                          {(
-                            quoteChartData.length
-                              ? quoteChartData
-                              : [{ name: "Empty", value: 1, color: "#E5E7EB" }]
-                          ).map((entry, index) => (
-                            <Cell key={index} fill={entry.color} />
+                          {quoteChartData.map((entry) => (
+                            <Cell key={entry.name} fill={entry.color} />
                           ))}
                         </Pie>
                       </PieChart>
@@ -623,7 +672,11 @@ export default function SalesManagerDashboardPage() {
                     <div className="absolute inset-0 flex items-center justify-center">
                       <div className="rounded-full border border-[#E5E7EB] bg-white px-6 py-5 shadow-[0_8px_20px_rgba(15,23,42,0.06)]">
                         <div className="text-center text-[16px] font-semibold text-[#374151]">
-                          {formatAmount(quotationStatus?.totalvalue || 0)}
+                          {formatAmount(
+                            quotationStatus?.totalvalue ??
+                              quotationStatus?.totalValue ??
+                              0
+                          )}
                         </div>
                       </div>
                     </div>
@@ -668,7 +721,7 @@ export default function SalesManagerDashboardPage() {
             </>
           ) : (
             <>
-              <div className="min-w-0 rounded-[18px] border border-[#E6EBF2] bg-white p-4 shadow-[0_8px_24px_rgba(15,23,42,0.04)]">
+              <div className="min-w-0 rounded-[18px] border border-[#E6EBF2] bg-white p-4 shadow-[0_8px_24px_rgba(15,23,42,0.04)] max-h-[430px]">
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <h3 className="text-[18px] font-semibold text-[#111827]">
                     Sales by Category ( Units Sold )
@@ -686,12 +739,11 @@ export default function SalesManagerDashboardPage() {
                       <BarChart
                         data={categoryChartData}
                         margin={{ top: 10, right: 8, left: 8, bottom: 0 }}
-                        barCategoryGap={24}
                       >
                         <CartesianGrid
-                          vertical={true}
-                          horizontal={false}
-                          stroke="#EEF2F7"
+                          vertical={false}
+                          stroke="#E7EDF5"
+                          strokeDasharray="0"
                         />
                         <XAxis
                           dataKey="name"
@@ -703,31 +755,16 @@ export default function SalesManagerDashboardPage() {
                           tickLine={false}
                           axisLine={false}
                           tick={{ fill: "#98A2B3", fontSize: 12 }}
-                          tickFormatter={(value) =>
-                            value >= 100000
-                              ? `${Math.round(value / 100000)}L`
-                              : value >= 1000
-                              ? `${Math.round(value / 1000)}K`
-                              : `${value}`
-                          }
                         />
                         <Tooltip
-                          cursor={{ fill: "rgba(110, 73, 216, 0.06)" }}
-                          formatter={(value: number, _name, item: any) => [
-                            formatAmount(value),
-                            item?.payload?.name,
-                          ]}
-                          contentStyle={{
-                            borderRadius: "12px",
-                            border: "none",
-                            boxShadow: "0 10px 30px rgba(15,23,42,0.12)",
-                          }}
+                          formatter={(value: any) => [value, "Units"]}
+                          cursor={{ fill: "rgba(15,23,42,0.04)" }}
                         />
                         <Bar
-                          dataKey="revenue"
-                          fill="#6E49D8"
-                          radius={[10, 10, 10, 10]}
-                          maxBarSize={16}
+                          dataKey="units"
+                          fill="#2C2F73"
+                          radius={[8, 8, 0, 0]}
+                          maxBarSize={56}
                         />
                       </BarChart>
                     </ResponsiveContainer>
@@ -735,64 +772,61 @@ export default function SalesManagerDashboardPage() {
                 </div>
               </div>
 
-              <div className="rounded-[18px] border border-[#E6EBF2] bg-white shadow-[0_8px_24px_rgba(15,23,42,0.04)]">
-                <div className="border-b border-[#EEF2F6] px-4 py-5">
-                  <h3 className="text-[18px] font-semibold text-[#111827]">
-                    Recent Activity
-                  </h3>
+              <div className="rounded-[18px] max-h-[430px] overflow-y-auto border border-[#E6EBF2] bg-white shadow-[0_8px_24px_rgba(15,23,42,0.04)]">
+                <div className="flex items-center justify-between border-b border-[#EEF2F6] px-4 py-5">
+                  <div className="flex items-center gap-2">
+                    <ClipboardList size={18} className="text-[#667085]" />
+                    <h3 className="text-[18px] font-semibold text-[#111827]">
+                      Recent Activity
+                    </h3>
+                  </div>
+
+                  <button className="inline-flex items-center justify-center text-[#98A2B3]">
+                    <MoreHorizontal size={18} />
+                  </button>
                 </div>
 
-                {recentActivity.length === 0 ? (
-                  <div className="flex min-h-[250px] flex-col items-center justify-center px-6 text-center">
-                    <div className="mb-4 flex h-[72px] w-[72px] items-center justify-center rounded-full bg-[#F8FAFC]">
-                      <ClipboardList size={36} className="text-[#C4CBD5]" />
+                <div className="space-y-3 px-3 py-3">
+                  {recentActivity.length === 0 ? (
+                    <div className="rounded-[14px] border border-[#EEF2F6] bg-[#FCFDFE] px-4 py-6 text-center text-[14px] text-[#667085]">
+                      No recent activity found.
                     </div>
-                    <p className="text-[18px] font-medium text-[#6B7280]">
-                      No recent activity
-                    </p>
-                    <p className="mt-2 text-[14px] text-[#9CA3AF]">
-                      Start by adding a new client
-                    </p>
-                  </div>
-                ) : (
-                  <div className="max-h-[360px] overflow-y-auto px-3 py-3">
-                    <div className="space-y-3">
-                      {recentActivity.slice(0, 8).map((item, index) => (
-                        <div
-                          key={`${item.quotation_no}-${index}`}
-                          className="rounded-[14px] border border-[#EEF2F6] bg-[#FCFDFE] px-3 py-3"
-                        >
-                          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                            <div className="min-w-0">
-                              <p className="truncate text-[14px] font-semibold text-[#111827]">
-                                {item.quotation_no}
-                              </p>
-                              <p className="mt-1 truncate text-[13px] text-[#6B7280]">
-                                {item.client || "Walk-in Client"}
-                              </p>
-                              <p className="mt-1 text-[12px] text-[#98A2B3]">
-                                {formatDateTime(item.createdAt)}
-                              </p>
-                            </div>
+                  ) : (
+                    recentActivity.slice(0, 6).map((item, index) => (
+                      <div
+                        key={`${item.quotation_no}-${index}`}
+                        className="rounded-[14px] border border-[#EEF2F6] bg-[#FCFDFE] px-3 py-3"
+                      >
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-[14px] font-semibold text-[#111827]">
+                              {item.quotation_no}
+                            </p>
+                            <p className="mt-1 truncate text-[14px] text-[#667085]">
+                              {item.client || "No client name"}
+                            </p>
+                            <p className="mt-1 text-[12px] text-[#98A2B3]">
+                              {formatDateTime(item.createdAt)}
+                            </p>
+                          </div>
 
-                            <div className="text-left sm:text-right">
-                              <p className="text-[14px] font-semibold text-[#111827]">
-                                {formatAmount(item.total_amount)}
-                              </p>
-                              <span
-                                className={`mt-2 inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold capitalize ${statusColor(
-                                  item.status
-                                )}`}
-                              >
-                                {item.status}
-                              </span>
-                            </div>
+                          <div className="sm:text-right">
+                            <p className="text-[14px] font-semibold text-[#111827]">
+                              {formatAmount(item.total_amount)}
+                            </p>
+                            <span
+                              className={`mt-2 inline-flex rounded-full px-2.5 py-1 text-[12px] font-medium ${statusColor(
+                                item.status
+                              )}`}
+                            >
+                              {item.status}
+                            </span>
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                      </div>
+                    ))
+                  )}
+                </div>
               </div>
             </>
           )}

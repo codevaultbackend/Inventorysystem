@@ -19,7 +19,7 @@ const formatCurrency = (value: number) =>
 
 export default function TopSelling({ data }: Props) {
   return (
-    <div className="bg-white border border-gray-200 rounded-xl shadow-sm w-full">
+    <div className="bg-white max-h-[325px] overflow-y-auto border border-gray-200 rounded-xl shadow-sm w-full">
       <div className="px-6 py-4 border-b border-gray-100">
         <h3 className="text-[16px] font-semibold text-gray-800">
           Top Selling Products

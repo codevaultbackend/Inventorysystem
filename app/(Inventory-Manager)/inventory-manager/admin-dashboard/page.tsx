@@ -229,9 +229,7 @@ export default function InventoryBranchPage() {
           subtitle="Item wise inventory summary"
           data={itemRows}
           getViewHref={(row) =>
-            `/inventory-manager/Branches/${encodeURIComponent(
-              stateName
-            )}/${encodeURIComponent(branchId)}/${encodeURIComponent(
+            `/inventory-manager/all-stocks/${encodeURIComponent(
               row.slugItemName
             )}`
           }

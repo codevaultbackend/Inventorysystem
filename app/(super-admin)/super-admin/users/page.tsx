@@ -20,7 +20,7 @@ type UserType = {
 
 function FilterBarSkeleton() {
   return (
-    <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between animate-pulse">
+    <div className="flex animate-pulse flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
       <div className="relative w-full lg:max-w-[420px]">
         <div className="h-[44px] w-full rounded-xl border border-[#E2E8F0] bg-white" />
       </div>
@@ -53,69 +53,74 @@ function UsersTableSkeleton() {
         </div>
 
         <div className="overflow-x-auto rounded-xl border border-[#F1F5F9]">
-          <table className="w-full min-w-[980px]">
-            <thead>
-              <tr className="bg-[#F8FAFC] text-left">
-                {Array.from({ length: 7 }).map((_, i) => (
-                  <th key={i} className="px-4 py-4 sm:px-6">
-                    <div className="h-4 w-20 rounded bg-[#E9EEF5]" />
-                  </th>
-                ))}
-              </tr>
-            </thead>
-
-            <tbody>
-              {Array.from({ length: 6 }).map((_, rowIndex) => (
-                <tr key={rowIndex} className="border-b border-[#F1F5F9]">
-                  <td className="px-4 py-4 sm:px-6">
-                    <div className="flex min-w-[220px] items-center gap-3">
-                      <div className="h-9 w-9 rounded-full bg-[#E9EEF5]" />
-                      <div className="min-w-0 flex-1">
-                        <div className="h-4 w-28 rounded bg-[#E9EEF5]" />
-                        <div className="mt-2 h-3 w-36 rounded bg-[#E9EEF5]" />
-                      </div>
-                    </div>
-                  </td>
-
-                  <td className="px-4 py-4 sm:px-6">
-                    <div className="min-w-[150px]">
-                      <div className="h-4 w-24 rounded bg-[#E9EEF5]" />
-                    </div>
-                  </td>
-
-                  <td className="px-4 py-4 sm:px-6">
-                    <div className="min-w-[140px]">
+          <div className="max-h-[560px] overflow-y-auto overflow-x-hidden">
+            <table className="w-full min-w-[980px]">
+              <thead className="sticky top-0 z-10">
+                <tr className="bg-[#F8FAFC] text-left">
+                  {Array.from({ length: 7 }).map((_, i) => (
+                    <th
+                      key={i}
+                      className="bg-[#F8FAFC] px-4 py-4 sm:px-6"
+                    >
                       <div className="h-4 w-20 rounded bg-[#E9EEF5]" />
-                    </div>
-                  </td>
-
-                  <td className="px-4 py-4 sm:px-6">
-                    <div className="min-w-[120px]">
-                      <div className="h-4 w-24 rounded bg-[#E9EEF5]" />
-                    </div>
-                  </td>
-
-                  <td className="px-4 py-4 sm:px-6">
-                    <div className="min-w-[140px]">
-                      <div className="h-4 w-24 rounded bg-[#E9EEF5]" />
-                    </div>
-                  </td>
-
-                  <td className="px-4 py-4 sm:px-6">
-                    <div className="min-w-[100px]">
-                      <div className="h-7 w-20 rounded-full bg-[#E9EEF5]" />
-                    </div>
-                  </td>
-
-                  <td className="px-4 py-4 sm:px-6">
-                    <div className="min-w-[150px]">
-                      <div className="h-4 w-24 rounded bg-[#E9EEF5]" />
-                    </div>
-                  </td>
+                    </th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+
+              <tbody>
+                {Array.from({ length: 6 }).map((_, rowIndex) => (
+                  <tr key={rowIndex} className="border-b border-[#F1F5F9]">
+                    <td className="px-4 py-4 sm:px-6">
+                      <div className="flex min-w-[220px] items-center gap-3">
+                        <div className="h-9 w-9 rounded-full bg-[#E9EEF5]" />
+                        <div className="min-w-0 flex-1">
+                          <div className="h-4 w-28 rounded bg-[#E9EEF5]" />
+                          <div className="mt-2 h-3 w-36 rounded bg-[#E9EEF5]" />
+                        </div>
+                      </div>
+                    </td>
+
+                    <td className="px-4 py-4 sm:px-6">
+                      <div className="min-w-[150px]">
+                        <div className="h-4 w-24 rounded bg-[#E9EEF5]" />
+                      </div>
+                    </td>
+
+                    <td className="px-4 py-4 sm:px-6">
+                      <div className="min-w-[140px]">
+                        <div className="h-4 w-20 rounded bg-[#E9EEF5]" />
+                      </div>
+                    </td>
+
+                    <td className="px-4 py-4 sm:px-6">
+                      <div className="min-w-[120px]">
+                        <div className="h-4 w-24 rounded bg-[#E9EEF5]" />
+                      </div>
+                    </td>
+
+                    <td className="px-4 py-4 sm:px-6">
+                      <div className="min-w-[140px]">
+                        <div className="h-4 w-24 rounded bg-[#E9EEF5]" />
+                      </div>
+                    </td>
+
+                    <td className="px-4 py-4 sm:px-6">
+                      <div className="min-w-[100px]">
+                        <div className="h-7 w-20 rounded-full bg-[#E9EEF5]" />
+                      </div>
+                    </td>
+
+                    <td className="px-4 py-4 sm:px-6">
+                      <div className="min-w-[150px]">
+                        <div className="h-4 w-24 rounded bg-[#E9EEF5]" />
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
 
         <div className="mt-3 h-4 w-48 rounded bg-[#E9EEF5] sm:hidden" />
@@ -251,7 +256,8 @@ export default function UserManagementPage() {
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
 
-      const contentDisposition = response.headers.get("content-disposition") || "";
+      const contentDisposition =
+        response.headers.get("content-disposition") || "";
       const match = contentDisposition.match(/filename="?([^"]+)"?/i);
       const fileName = match?.[1] || `users-report-${Date.now()}.csv`;
 
@@ -401,102 +407,105 @@ export default function UserManagementPage() {
                 isDragging ? "cursor-grabbing select-none" : "cursor-grab"
               }`}
             >
-              <table className="w-full min-w-[980px]">
-                <thead>
-                  <tr className="bg-[#F8FAFC] text-left">
-                    <TableHead>User</TableHead>
-                    <TableHead>Contact</TableHead>
-                    <TableHead>Role</TableHead>
-                    <TableHead>Profile</TableHead>
-                    <TableHead>Branch</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Last Login</TableHead>
-                  </tr>
-                </thead>
+              <div className="max-h-[560px] overflow-y-auto overflow-x-hidden">
+                <table className="w-full min-w-[980px]">
+                  <thead className="sticky top-0 z-20">
+                    <tr className="bg-[#F8FAFC] text-left">
+                      <TableHead>User</TableHead>
+                      <TableHead>Contact</TableHead>
+                      <TableHead>Role</TableHead>
+                      <TableHead>Profile</TableHead>
+                      <TableHead>Branch</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Last Login</TableHead>
+                    </tr>
+                  </thead>
 
-                <tbody>
-                  {filteredUsers.length > 0 ? (
-                    filteredUsers.map((user, i) => (
-                      <tr
-                        key={user.id || i}
-                        className="border-b border-[#F1F5F9] transition hover:bg-[#F8FAFC]"
-                      >
-                        <td className="px-4 py-4 sm:px-6">
-                          <div className="flex min-w-[220px] items-center gap-3">
-                            <img
-                              src={`https://i.pravatar.cc/40?u=${encodeURIComponent(
-                                user.email || user.name || String(user.id)
-                              )}`}
-                              className="h-9 w-9 rounded-full object-cover"
-                              alt={user.name || "User"}
-                            />
+                  <tbody>
+                    {filteredUsers.length > 0 ? (
+                      filteredUsers.map((user, i) => (
+                        <tr
+                          key={user.id || i}
+                          className="border-b border-[#F1F5F9] transition hover:bg-[#F8FAFC]"
+                        >
+                          <td className="px-4 py-4 sm:px-6">
+                            <div className="flex min-w-[220px] items-center gap-3">
+                              <img
+                                src={`https://i.pravatar.cc/40?u=${encodeURIComponent(
+                                  user.email || user.name || String(user.id)
+                                )}`}
+                                className="h-9 w-9 rounded-full object-cover"
+                                alt={user.name || "User"}
+                                draggable={false}
+                              />
 
-                            <div className="min-w-0">
-                              <p className="truncate text-[14px] font-medium text-[#0F172A]">
-                                {user.name || "Unknown User"}
-                              </p>
+                              <div className="min-w-0">
+                                <p className="truncate text-[14px] font-medium text-[#0F172A]">
+                                  {user.name || "Unknown User"}
+                                </p>
 
-                              <p className="truncate text-[12px] text-[#94A3B8]">
-                                {user.email || "No email"}
-                              </p>
+                                <p className="truncate text-[12px] text-[#94A3B8]">
+                                  {user.email || "No email"}
+                                </p>
+                              </div>
                             </div>
-                          </div>
-                        </td>
+                          </td>
 
-                        <td className="px-4 py-4 text-[14px] text-[#475569] sm:px-6">
-                          <div className="flex min-w-[150px] items-center gap-2">
-                            <Phone className="h-4 w-4 shrink-0 text-[#94A3B8]" />
-                            <span>{user.phone || "Not available"}</span>
-                          </div>
-                        </td>
+                          <td className="px-4 py-4 text-[14px] text-[#475569] sm:px-6">
+                            <div className="flex min-w-[150px] items-center gap-2">
+                              <Phone className="h-4 w-4 shrink-0 text-[#94A3B8]" />
+                              <span>{user.phone || "Not available"}</span>
+                            </div>
+                          </td>
 
-                        <td className="px-4 py-4 text-[14px] text-[#475569] capitalize sm:px-6">
-                          <div className="min-w-[140px]">
-                            {(user.role || "N/A").replaceAll("_", " ")}
-                          </div>
-                        </td>
+                          <td className="px-4 py-4 text-[14px] text-[#475569] capitalize sm:px-6">
+                            <div className="min-w-[140px]">
+                              {(user.role || "N/A").replaceAll("_", " ")}
+                            </div>
+                          </td>
 
-                        <td className="px-4 py-4 text-[14px] text-[#475569] sm:px-6">
-                          <div className="min-w-[120px]">
-                            {user.profile || "Team Member"}
-                          </div>
-                        </td>
+                          <td className="px-4 py-4 text-[14px] text-[#475569] sm:px-6">
+                            <div className="min-w-[120px]">
+                              {user.profile || "Team Member"}
+                            </div>
+                          </td>
 
-                        <td className="px-4 py-4 text-[14px] text-[#475569] sm:px-6">
-                          <div className="min-w-[140px]">
-                            {user.branch || "No branch assigned"}
-                          </div>
-                        </td>
+                          <td className="px-4 py-4 text-[14px] text-[#475569] sm:px-6">
+                            <div className="min-w-[140px]">
+                              {user.branch || "No branch assigned"}
+                            </div>
+                          </td>
 
-                        <td className="px-4 py-4 sm:px-6">
-                          <div className="min-w-[100px]">
-                            <StatusBadge status={user.status || "Active"} />
-                          </div>
-                        </td>
+                          <td className="px-4 py-4 sm:px-6">
+                            <div className="min-w-[100px]">
+                              <StatusBadge status={user.status || "Active"} />
+                            </div>
+                          </td>
 
-                        <td className="px-4 py-4 text-[13px] text-[#94A3B8] sm:px-6">
-                          <div className="min-w-[150px]">
-                            {user.lastLogin || "No recent login"}
+                          <td className="px-4 py-4 text-[13px] text-[#94A3B8] sm:px-6">
+                            <div className="min-w-[150px]">
+                              {user.lastLogin || "No recent login"}
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={7} className="px-4 py-10 sm:px-6">
+                          <div className="rounded-xl border border-dashed border-[#DCE4EC] bg-[#FAFBFC] px-4 py-10 text-center">
+                            <p className="text-[15px] font-medium text-[#0F172A]">
+                              No users found
+                            </p>
+                            <p className="mt-1 text-[13px] text-[#64748B]">
+                              Try changing the search text or filter options
+                            </p>
                           </div>
                         </td>
                       </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={7} className="px-4 py-10 sm:px-6">
-                        <div className="rounded-xl border border-dashed border-[#DCE4EC] bg-[#FAFBFC] px-4 py-10 text-center">
-                          <p className="text-[15px] font-medium text-[#0F172A]">
-                            No users found
-                          </p>
-                          <p className="mt-1 text-[13px] text-[#64748B]">
-                            Try changing the search text or filter options
-                          </p>
-                        </div>
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
 
             <p className="mt-3 text-[12px] text-[#94A3B8] sm:hidden">
@@ -513,7 +522,7 @@ export default function UserManagementPage() {
 
 function TableHead({ children }: { children: React.ReactNode }) {
   return (
-    <th className="px-4 py-4 text-[13px] font-medium text-[#475569] sm:px-6">
+    <th className="sticky top-0 z-20 bg-[#F8FAFC] px-4 py-4 text-[13px] font-medium text-[#475569] sm:px-6">
       <span className="whitespace-nowrap">{children}</span>
     </th>
   );

@@ -19,7 +19,9 @@ import {
   Smartphone,
   KeyRound,
   ListFilter,
+  Loader2,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 type TabType = "general" | "notification" | "security";
 
@@ -69,13 +71,55 @@ type CombinedItem = {
   kind: CombinedItemType;
   type?: string;
   normalizedCategory:
-    | "user"
-    | "inventory"
-    | "sales"
-    | "alert"
-    | "system"
-    | "otp"
-    | "other";
+  | "user"
+  | "inventory"
+  | "sales"
+  | "alert"
+  | "system"
+  | "otp"
+  | "other";
+};
+
+type SystemSettingsForm = {
+  companyName: string;
+  timeZone: string;
+  dateFormat: string;
+  currency: string;
+};
+
+type RecoveryForm = {
+  recoveryPhone: string;
+  recoveryEmail: string;
+};
+
+type ChangePasswordForm = {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+};
+
+type OtpResetForm = {
+  email: string;
+  otp: string;
+  newPassword: string;
+  confirmPassword: string;
+};
+
+type SecurityOverview = {
+  recentActivities?: Array<{
+    id?: string | number;
+    title?: string;
+    subtitle?: string;
+    location?: string;
+    time?: string;
+    createdAt?: string;
+    created_at?: string;
+  }>;
+  recoveryEmail?: string;
+  recoveryPhone?: string;
+  email?: string;
+  phone?: string;
+  [key: string]: any;
 };
 
 const INITIAL_VISIBLE_ITEMS = 8;
@@ -100,15 +144,77 @@ export default function SystemSettingsPage() {
 
   const listContainerRef = useRef<HTMLDivElement | null>(null);
 
+  const [generalLoading, setGeneralLoading] = useState(false);
+  const [generalSaving, setGeneralSaving] = useState(false);
+  const [generalMessage, setGeneralMessage] = useState("");
+  const [generalError, setGeneralError] = useState("");
+
+  const [securityLoading, setSecurityLoading] = useState(false);
+  const [securityMessage, setSecurityMessage] = useState("");
+  const [securityError, setSecurityError] = useState("");
+
+  const [passwordSaving, setPasswordSaving] = useState(false);
+  const [passwordMessage, setPasswordMessage] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+
+  const [recoverySaving, setRecoverySaving] = useState(false);
+  const [recoveryMessage, setRecoveryMessage] = useState("");
+  const [recoveryError, setRecoveryError] = useState("");
+
+  const [otpSending, setOtpSending] = useState(false);
+  const [otpVerifying, setOtpVerifying] = useState(false);
+  const [otpMessage, setOtpMessage] = useState("");
+  const [otpError, setOtpError] = useState("");
+  const router = useRouter();
+
+  const [settingsForm, setSettingsForm] = useState<SystemSettingsForm>({
+    companyName: "",
+    timeZone: "Asia/Kolkata (IST)",
+    dateFormat: "DD/MM/YYYY",
+    currency: "INR (₹)",
+  });
+
+  const [securityOverview, setSecurityOverview] = useState<SecurityOverview>({
+    recentActivities: [],
+    recoveryEmail: "",
+    recoveryPhone: "",
+  });
+
+  const [recoveryForm, setRecoveryForm] = useState<RecoveryForm>({
+    recoveryPhone: "",
+    recoveryEmail: "",
+  });
+
+  const [passwordForm, setPasswordForm] = useState<ChangePasswordForm>({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
+
+  const [otpResetForm, setOtpResetForm] = useState<OtpResetForm>({
+    email: "",
+    otp: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
+
   const API_BASE =
     process.env.NEXT_PUBLIC_API_BASE_URL ||
     process.env.NEXT_PUBLIC_API_URL ||
     "https://ims-swp9.onrender.com";
 
   useEffect(() => {
+    fetchSystemSettings();
+  }, []);
+
+  useEffect(() => {
     if (activeTab === "notification") {
       fetchNotifications();
       fetchRecentActivities();
+    }
+
+    if (activeTab === "security") {
+      fetchSecurityOverview();
     }
   }, [activeTab]);
 
@@ -130,11 +236,11 @@ export default function SystemSettingsPage() {
     );
   };
 
-  const getHeaders = () => {
+  const getHeaders = (includeContentType = true) => {
     const token = getStoredToken();
 
     return {
-      "Content-Type": "application/json",
+      ...(includeContentType ? { "Content-Type": "application/json" } : {}),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     };
   };
@@ -157,6 +263,103 @@ export default function SystemSettingsPage() {
     return [];
   };
 
+  const extractObject = (data: any) => {
+    if (!data) return {};
+    if (typeof data !== "object") return {};
+    if (data.data && typeof data.data === "object" && !Array.isArray(data.data)) {
+      return data.data;
+    }
+    return data;
+  };
+
+  const getValue = (obj: any, keys: string[], fallback = "") => {
+    for (const key of keys) {
+      if (obj?.[key] !== undefined && obj?.[key] !== null) {
+        return String(obj[key]);
+      }
+    }
+    return fallback;
+  };
+
+  const fetchSystemSettings = async () => {
+    try {
+      setGeneralLoading(true);
+      setGeneralError("");
+      setGeneralMessage("");
+
+      const res = await fetch(`${API_BASE}/system-setting/get/system-settings`, {
+        method: "GET",
+        headers: getHeaders(),
+      });
+
+      const data = await readResponse(res);
+
+      if (!res.ok) {
+        throw new Error(
+          data?.message || data?.error || "Failed to load system settings"
+        );
+      }
+
+      const payload = extractObject(data);
+
+      setSettingsForm({
+        companyName: getValue(payload, [
+          "companyName",
+          "company_name",
+          "organizationName",
+          "organisationName",
+          "businessName",
+          "name",
+        ]),
+        timeZone: getValue(payload, ["timeZone", "time_zone"], "Asia/Kolkata (IST)"),
+        dateFormat: getValue(payload, ["dateFormat", "date_format"], "DD/MM/YYYY"),
+        currency: getValue(payload, ["currency", "currencyCode"], "INR (₹)"),
+      });
+    } catch (error: any) {
+      setGeneralError(error?.message || "Failed to load system settings");
+    } finally {
+      setGeneralLoading(false);
+    }
+  };
+
+  const handleSaveGeneral = async () => {
+    try {
+      setGeneralSaving(true);
+      setGeneralError("");
+      setGeneralMessage("");
+
+      const payload = {
+        companyName: settingsForm.companyName,
+        timeZone: settingsForm.timeZone,
+        dateFormat: settingsForm.dateFormat,
+        currency: settingsForm.currency,
+      };
+
+      const res = await fetch(`${API_BASE}/system-setting/update/system`, {
+        method: "POST",
+        headers: getHeaders(),
+        body: JSON.stringify(payload),
+      });
+
+      const data = await readResponse(res);
+
+      if (!res.ok) {
+        throw new Error(
+          data?.message || data?.error || "Failed to save system settings"
+        );
+      }
+
+      setGeneralMessage(
+        data?.message || "System settings updated successfully"
+      );
+      await fetchSystemSettings();
+    } catch (error: any) {
+      setGeneralError(error?.message || "Failed to save system settings");
+    } finally {
+      setGeneralSaving(false);
+    }
+  };
+
   const fetchNotifications = async () => {
     try {
       setNotificationsLoading(true);
@@ -177,9 +380,7 @@ export default function SystemSettingsPage() {
 
       setNotifications(extractArray(data));
     } catch (error: any) {
-      setNotificationsError(
-        error?.message || "Failed to load notifications"
-      );
+      setNotificationsError(error?.message || "Failed to load notifications");
       setNotifications([]);
     } finally {
       setNotificationsLoading(false);
@@ -206,12 +407,237 @@ export default function SystemSettingsPage() {
 
       setActivities(extractArray(data));
     } catch (error: any) {
-      setActivitiesError(
-        error?.message || "Failed to load recent activities"
-      );
+      setActivitiesError(error?.message || "Failed to load recent activities");
       setActivities([]);
     } finally {
       setActivitiesLoading(false);
+    }
+  };
+
+  const fetchSecurityOverview = async () => {
+    try {
+      setSecurityLoading(true);
+      setSecurityError("");
+      setSecurityMessage("");
+
+      const res = await fetch(`${API_BASE}/system-setting/get/security`, {
+        method: "GET",
+        headers: getHeaders(),
+      });
+
+      const data = await readResponse(res);
+
+      if (!res.ok) {
+        throw new Error(
+          data?.message || data?.error || "Failed to load security overview"
+        );
+      }
+
+      const payload = extractObject(data);
+
+      const recentActivitiesPayload =
+        extractArray(payload?.recentActivities).length > 0
+          ? extractArray(payload?.recentActivities)
+          : extractArray(payload);
+
+      setSecurityOverview({
+        ...payload,
+        recentActivities: recentActivitiesPayload,
+      });
+
+      setRecoveryForm({
+        recoveryPhone: getValue(payload, ["recoveryPhone", "recovery_phone", "phone"]),
+        recoveryEmail: getValue(payload, ["recoveryEmail", "recovery_email", "email"]),
+      });
+
+      setOtpResetForm((prev) => ({
+        ...prev,
+        email:
+          prev.email ||
+          getValue(payload, ["recoveryEmail", "recovery_email", "email"]),
+      }));
+    } catch (error: any) {
+      setSecurityError(error?.message || "Failed to load security overview");
+    } finally {
+      setSecurityLoading(false);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    try {
+      setPasswordSaving(true);
+      setPasswordError("");
+      setPasswordMessage("");
+
+      if (!passwordForm.currentPassword.trim()) {
+        throw new Error("Current password is required");
+      }
+
+      if (!passwordForm.newPassword.trim()) {
+        throw new Error("New password is required");
+      }
+
+      if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+        throw new Error("New password and confirm password do not match");
+      }
+
+      const res = await fetch(`${API_BASE}/change-password`, {
+        method: "POST",
+        headers: getHeaders(),
+        body: JSON.stringify({
+          currentPassword: passwordForm.currentPassword,
+          newPassword: passwordForm.newPassword,
+          confirmPassword: passwordForm.confirmPassword,
+        }),
+      });
+
+      const data = await readResponse(res);
+
+      if (!res.ok) {
+        throw new Error(
+          data?.message || data?.error || "Failed to change password"
+        );
+      }
+
+      setPasswordMessage(data?.message || "Password changed successfully");
+      setPasswordForm({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
+      await fetchSecurityOverview();
+    } catch (error: any) {
+      setPasswordError(error?.message || "Failed to change password");
+    } finally {
+      setPasswordSaving(false);
+    }
+  };
+
+  const handleUpdateRecovery = async () => {
+    try {
+      setRecoverySaving(true);
+      setRecoveryError("");
+      setRecoveryMessage("");
+
+      const res = await fetch(`${API_BASE}/update/recovery`, {
+        method: "PUT",
+        headers: getHeaders(),
+        body: JSON.stringify({
+          recoveryPhone: recoveryForm.recoveryPhone,
+          recoveryEmail: recoveryForm.recoveryEmail,
+        }),
+      });
+
+      const data = await readResponse(res);
+
+      if (!res.ok) {
+        throw new Error(
+          data?.message || data?.error || "Failed to update recovery details"
+        );
+      }
+
+      setRecoveryMessage(
+        data?.message || "Recovery details updated successfully"
+      );
+      await fetchSecurityOverview();
+    } catch (error: any) {
+      setRecoveryError(
+        error?.message || "Failed to update recovery details"
+      );
+    } finally {
+      setRecoverySaving(false);
+    }
+  };
+
+  const handleSendOtp = async () => {
+    try {
+      setOtpSending(true);
+      setOtpError("");
+      setOtpMessage("");
+
+      if (!otpResetForm.email.trim()) {
+        throw new Error("Recovery email is required");
+      }
+
+      const res = await fetch(`${API_BASE}/super-admin/send-reset-otp`, {
+        method: "POST",
+        headers: getHeaders(),
+        body: JSON.stringify({
+          email: otpResetForm.email,
+        }),
+      });
+
+      const data = await readResponse(res);
+
+      if (!res.ok) {
+        throw new Error(
+          data?.message || data?.error || "Failed to send OTP"
+        );
+      }
+
+      setOtpMessage(data?.message || "OTP sent successfully");
+    } catch (error: any) {
+      setOtpError(error?.message || "Failed to send OTP");
+    } finally {
+      setOtpSending(false);
+    }
+  };
+
+  const handleVerifyOtpAndReset = async () => {
+    try {
+      setOtpVerifying(true);
+      setOtpError("");
+      setOtpMessage("");
+
+      if (!otpResetForm.email.trim()) {
+        throw new Error("Recovery email is required");
+      }
+
+      if (!otpResetForm.otp.trim()) {
+        throw new Error("OTP is required");
+      }
+
+      if (!otpResetForm.newPassword.trim()) {
+        throw new Error("New password is required");
+      }
+
+      if (otpResetForm.newPassword !== otpResetForm.confirmPassword) {
+        throw new Error("New password and confirm password do not match");
+      }
+
+      const res = await fetch(`${API_BASE}/super-admin/verify-reset-otp`, {
+        method: "POST",
+        headers: getHeaders(),
+        body: JSON.stringify({
+          email: otpResetForm.email,
+          otp: otpResetForm.otp,
+          newPassword: otpResetForm.newPassword,
+          confirmPassword: otpResetForm.confirmPassword,
+        }),
+      });
+
+      const data = await readResponse(res);
+
+      if (!res.ok) {
+        throw new Error(
+          data?.message || data?.error || "Failed to verify OTP and reset password"
+        );
+      }
+
+      setOtpMessage(data?.message || "Password reset successfully");
+      setOtpResetForm((prev) => ({
+        ...prev,
+        otp: "",
+        newPassword: "",
+        confirmPassword: "",
+      }));
+      await fetchSecurityOverview();
+    } catch (error: any) {
+      setOtpError(
+        error?.message || "Failed to verify OTP and reset password"
+      );
+    } finally {
+      setOtpVerifying(false);
     }
   };
 
@@ -329,6 +755,40 @@ export default function SystemSettingsPage() {
     }
   }, [hasMoreItems, loadMoreItems]);
 
+  const securityActivityCards = useMemo(() => {
+    const list = extractArray(securityOverview?.recentActivities);
+
+    if (list.length) {
+      return list.slice(0, 3).map((item: any, index: number) => ({
+        id: item?.id ?? index,
+        title: item?.title || "Recent security activity",
+        subtitle:
+          item?.subtitle ||
+          item?.description ||
+          `${formatTime(item?.time || item?.createdAt || item?.created_at)}${item?.location ? ` . ${item.location}` : ""
+          }`,
+      }));
+    }
+
+    return [
+      {
+        id: 1,
+        title: "New sign-in activity",
+        subtitle: "Recently . India",
+      },
+      {
+        id: 2,
+        title: "Account security checked",
+        subtitle: "Recently . India",
+      },
+      {
+        id: 3,
+        title: "Recovery details available",
+        subtitle: "Recently . India",
+      },
+    ];
+  }, [securityOverview]);
+
   return (
     <div className="space-y-4 sm:space-y-6">
       <div>
@@ -367,10 +827,21 @@ export default function SystemSettingsPage() {
         <div className="p-4 sm:p-6 lg:p-8">
           {activeTab === "general" && (
             <div className="space-y-5 sm:space-y-6 max-w-full">
+              {generalError && <ErrorMessage message={generalError} />}
+              {generalMessage && <SuccessMessage message={generalMessage} />}
+
               <FormField label="Company Name">
                 <input
                   type="text"
-                  className="w-full h-[46px] sm:h-[48px] rounded-[12px] sm:rounded-[14px] border border-[#E2E8F0] px-4 text-[14px] outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/20"
+                  value={settingsForm.companyName}
+                  onChange={(e) =>
+                    setSettingsForm((prev) => ({
+                      ...prev,
+                      companyName: e.target.value,
+                    }))
+                  }
+                  disabled={generalLoading || generalSaving}
+                  className="w-full h-[46px] sm:h-[48px] rounded-[12px] sm:rounded-[14px] border border-[#E2E8F0] px-4 text-[14px] outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/20 disabled:bg-[#F8FAFC] disabled:text-[#94A3B8]"
                 />
               </FormField>
 
@@ -378,7 +849,15 @@ export default function SystemSettingsPage() {
                 <input
                   type="text"
                   placeholder="Asia/Kolkata (IST)"
-                  className="w-full h-[46px] sm:h-[48px] rounded-[12px] sm:rounded-[14px] border border-[#E2E8F0] px-4 text-[14px] outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/20"
+                  value={settingsForm.timeZone}
+                  onChange={(e) =>
+                    setSettingsForm((prev) => ({
+                      ...prev,
+                      timeZone: e.target.value,
+                    }))
+                  }
+                  disabled={generalLoading || generalSaving}
+                  className="w-full h-[46px] sm:h-[48px] rounded-[12px] sm:rounded-[14px] border border-[#E2E8F0] px-4 text-[14px] outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/20 disabled:bg-[#F8FAFC] disabled:text-[#94A3B8]"
                 />
               </FormField>
 
@@ -386,7 +865,15 @@ export default function SystemSettingsPage() {
                 <input
                   type="text"
                   placeholder="DD/MM/YYYY"
-                  className="w-full h-[46px] sm:h-[48px] rounded-[12px] sm:rounded-[14px] border border-[#E2E8F0] px-4 text-[14px] outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/20"
+                  value={settingsForm.dateFormat}
+                  onChange={(e) =>
+                    setSettingsForm((prev) => ({
+                      ...prev,
+                      dateFormat: e.target.value,
+                    }))
+                  }
+                  disabled={generalLoading || generalSaving}
+                  className="w-full h-[46px] sm:h-[48px] rounded-[12px] sm:rounded-[14px] border border-[#E2E8F0] px-4 text-[14px] outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/20 disabled:bg-[#F8FAFC] disabled:text-[#94A3B8]"
                 />
               </FormField>
 
@@ -394,12 +881,27 @@ export default function SystemSettingsPage() {
                 <input
                   type="text"
                   placeholder="INR (₹)"
-                  className="w-full h-[46px] sm:h-[48px] rounded-[12px] sm:rounded-[14px] border border-[#E2E8F0] px-4 text-[14px] outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/20"
+                  value={settingsForm.currency}
+                  onChange={(e) =>
+                    setSettingsForm((prev) => ({
+                      ...prev,
+                      currency: e.target.value,
+                    }))
+                  }
+                  disabled={generalLoading || generalSaving}
+                  className="w-full h-[46px] sm:h-[48px] rounded-[12px] sm:rounded-[14px] border border-[#E2E8F0] px-4 text-[14px] outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/20 disabled:bg-[#F8FAFC] disabled:text-[#94A3B8]"
                 />
               </FormField>
 
-              <button className="mt-2 sm:mt-4 w-full sm:w-auto px-6 py-3 bg-[#1D4ED8] text-white rounded-xl text-[14px] sm:text-[15px] font-medium shadow-md hover:bg-[#1E40AF] transition">
-                Save Changes
+              <button
+                onClick={handleSaveGeneral}
+                disabled={generalLoading || generalSaving}
+                className="mt-2 sm:mt-4 w-full sm:w-auto px-6 py-3 bg-[#1D4ED8] text-white rounded-xl text-[14px] sm:text-[15px] font-medium shadow-md hover:bg-[#1E40AF] transition disabled:opacity-70 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2"
+              >
+                {(generalLoading || generalSaving) && (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                )}
+                {generalSaving ? "Saving..." : "Save Changes"}
               </button>
             </div>
           )}
@@ -452,43 +954,54 @@ export default function SystemSettingsPage() {
 
           {activeTab === "security" && (
             <div className="space-y-6 sm:space-y-8 max-w-full">
+              {securityError && <ErrorMessage message={securityError} />}
+              {securityMessage && <SuccessMessage message={securityMessage} />}
+
               <SectionTitle title="Recent Security Activity" />
 
-              <SimpleCard
-                title="New sign-in on Mac OS"
-                subtitle="Jan 30 . India"
-              />
-              <SimpleCard
-                title="New sign-in on Mac OS"
-                subtitle="Jan 30 . India"
-              />
-              <SimpleCard
-                title="New sign-in on Mac OS"
-                subtitle="Jan 30 . India"
-              />
+              {securityLoading ? (
+                <div className="space-y-4">
+                  {[1, 2, 3].map((item) => (
+                    <div
+                      key={item}
+                      className="rounded-xl px-4 sm:px-6 py-4 bg-[#F8FAFC] animate-pulse"
+                    >
+                      <div className="h-4 w-[180px] bg-[#E5E7EB] rounded" />
+                      <div className="h-3 w-[120px] bg-[#E5E7EB] rounded mt-2" />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                securityActivityCards.map((item) => (
+                  <SimpleCard
+                    key={item.id}
+                    title={item.title}
+                    subtitle={item.subtitle}
+                  />
+                ))
+              )}
 
               <SectionTitle
                 title="How you sign in"
                 subtitle="Make sure you can always access your Google Account by keeping this information up to date"
               />
 
-              <SecurityOption
-                icon={<KeyRound className="w-5 h-5" />}
-                title="Change Password"
-                subtitle="Use password reset flow from login screen"
-              />
+              <div className="space-y-4">
+                <SecurityOption
+                  icon={<KeyRound className="w-5 h-5" />}
+                  title="Change Password"
+                  subtitle="Use your current password to set a new one"
+                  onClick={() => router.push("/Resetpassword")}
+                  
+                />
 
-              <SecurityOption
-                icon={<Smartphone className="w-5 h-5" />}
-                title="Recovery Phone"
-                subtitle="Enter you Phone Number"
-              />
+                <SecurityOption
+                  icon={<Mail className="w-5 h-5" />}
+                  title="Recovery Email"
+                  subtitle="Enter your email"
+                />
 
-              <SecurityOption
-                icon={<Mail className="w-5 h-5" />}
-                title="Recovery Email"
-                subtitle="Enter you Email"
-              />
+              </div>
             </div>
           )}
         </div>
@@ -501,11 +1014,10 @@ function TabButton({ active, onClick, icon, label }: any) {
   return (
     <button
       onClick={onClick}
-      className={`flex shrink-0 items-center gap-2 px-3 sm:px-5 py-3 sm:py-4 text-[13px] sm:text-[14px] font-medium relative transition ${
-        active
+      className={`flex shrink-0 items-center gap-2 px-3 sm:px-5 py-3 sm:py-4 text-[13px] sm:text-[14px] font-medium relative transition ${active
           ? "text-[#2563EB]"
           : "text-[#64748B] hover:text-[#0F172A]"
-      }`}
+        }`}
     >
       {icon}
       <span className="whitespace-nowrap">{label}</span>
@@ -538,6 +1050,22 @@ function SectionTitle({ title, subtitle }: any) {
           {subtitle}
         </p>
       )}
+    </div>
+  );
+}
+
+function ErrorMessage({ message }: { message: string }) {
+  return (
+    <div className="rounded-xl border border-[#FECACA] bg-[#FEF2F2] px-4 py-3 text-[13px] text-[#B91C1C]">
+      {message}
+    </div>
+  );
+}
+
+function SuccessMessage({ message }: { message: string }) {
+  return (
+    <div className="rounded-xl border border-[#BFDBFE] bg-[#EFF6FF] px-4 py-3 text-[13px] text-[#1D4ED8]">
+      {message}
     </div>
   );
 }
@@ -660,9 +1188,9 @@ function SimpleCard({ title, subtitle }: any) {
   );
 }
 
-function SecurityOption({ icon, title, subtitle }: any) {
+function SecurityOption({ icon, title, subtitle,  onClick }: any) {
   return (
-    <div className="bg-[#F8FAFC] rounded-xl px-4 sm:px-6 py-4 flex items-start sm:items-center gap-4 hover:bg-[#F1F5F9] transition">
+    <div className="bg-[#F8FAFC] rounded-xl px-4 sm:px-6 py-4 flex items-start sm:items-center gap-4 hover:bg-[#F1F5F9] transition" onClick={onClick} >
       <div className="w-9 h-9 rounded-lg bg-white flex items-center justify-center border border-[#E2E8F0] shrink-0">
         {icon}
       </div>
@@ -710,9 +1238,8 @@ function getCategoryFromContent(
   message?: string,
   description?: string
 ) {
-  const combined = `${type || ""} ${title || ""} ${message || ""} ${
-    description || ""
-  }`.toLowerCase();
+  const combined = `${type || ""} ${title || ""} ${message || ""} ${description || ""
+    }`.toLowerCase();
 
   if (
     combined.includes("otp") ||
@@ -776,9 +1303,8 @@ function getIconByContent(
   description?: string,
   fallback?: "notification" | "activity"
 ) {
-  const combined = `${type || ""} ${title || ""} ${message || ""} ${
-    description || ""
-  }`.toLowerCase();
+  const combined = `${type || ""} ${title || ""} ${message || ""} ${description || ""
+    }`.toLowerCase();
 
   if (
     combined.includes("otp") ||

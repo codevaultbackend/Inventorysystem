@@ -203,7 +203,7 @@ function normalizeCode(value?: string) {
 
 function BranchOverviewHeaderSkeleton() {
   return (
-    <div className="flex flex-col gap-4 border-none px-4 py-5 animate-pulse sm:flex-row sm:items-center sm:justify-between sm:px-6">
+    <div className="flex animate-pulse flex-col gap-4 border-none px-4 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
       <div className="min-w-0">
         <div className="h-6 w-40 rounded bg-[#E9EEF5]" />
         <div className="mt-2 h-4 w-56 rounded bg-[#E9EEF5]" />
@@ -266,7 +266,7 @@ function BranchOverviewTableSkeleton() {
 
 export default function BranchOverview() {
   const [period] = useState<PeriodKey>("Weekly");
-  const [showAddRow, setShowAddRow] = useState(false);
+  const [isAddOpen, setIsAddOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState<NewBranchForm>(initialForm);
   const [formError, setFormError] = useState("");
@@ -333,6 +333,16 @@ export default function BranchOverview() {
     fetchAllBranches();
   }, []);
 
+  useEffect(() => {
+    const handleWindowMouseUp = () => {
+      dragStateRef.current.isDown = false;
+      setIsDragging(false);
+    };
+
+    window.addEventListener("mouseup", handleWindowMouseUp);
+    return () => window.removeEventListener("mouseup", handleWindowMouseUp);
+  }, []);
+
   const mergedRawBranches = useMemo<BranchOverviewItem[]>(() => {
     const dashboardBranches = data?.branchOverview || [];
 
@@ -355,9 +365,13 @@ export default function BranchOverview() {
     const mergedDashboardBranches = dashboardBranches
       .map((branch) => {
         const matchedMaster =
-          (typeof branch.id === "number" ? masterById.get(branch.id) : undefined) ||
-          (branch.code ? masterByCode.get(normalizeCode(branch.code)) : undefined) ||
-          ((branch.branchName || branch.name)
+          (typeof branch.id === "number"
+            ? masterById.get(branch.id)
+            : undefined) ||
+          (branch.code
+            ? masterByCode.get(normalizeCode(branch.code))
+            : undefined) ||
+          (branch.branchName || branch.name
             ? masterByName.get(normalizeName(branch.branchName || branch.name))
             : undefined);
 
@@ -397,7 +411,9 @@ export default function BranchOverview() {
     );
 
     const masterOnlyBranches: BranchOverviewItem[] = masterBranches
-      .filter((item) => typeof item.id === "number" && !existingIds.has(item.id))
+      .filter(
+        (item) => typeof item.id === "number" && !existingIds.has(item.id)
+      )
       .map((item) => ({
         id: item.id,
         name: item.name,
@@ -413,8 +429,11 @@ export default function BranchOverview() {
         stockOut: 0,
       }));
 
-    return [...localNumericBranches, ...mergedDashboardBranches, ...masterOnlyBranches]
-      .filter((item) => typeof item.id === "number");
+    return [
+      ...localNumericBranches,
+      ...mergedDashboardBranches,
+      ...masterOnlyBranches,
+    ].filter((item) => typeof item.id === "number");
   }, [data, createdLocalBranches, masterBranches]);
 
   const tableBranches = useMemo<TableBranch[]>(() => {
@@ -488,22 +507,29 @@ export default function BranchOverview() {
     }));
   };
 
-  const resetForm = () => {
+  const closeAddModal = () => {
+    if (saving) return;
     setForm(initialForm);
     setFormError("");
-    setShowAddRow(false);
+    setIsAddOpen(false);
   };
 
   const handleAddRow = () => {
     setForm(initialForm);
     setFormError("");
-    setShowAddRow(true);
+    setIsAddOpen(true);
   };
 
   const handleCreateBranch = async () => {
     setFormError("");
 
-    if (!form.name || !form.code || !form.location || !form.type || !form.state) {
+    if (
+      !form.name ||
+      !form.code ||
+      !form.location ||
+      !form.type ||
+      !form.state
+    ) {
       setFormError("Please fill all required fields.");
       return;
     }
@@ -553,7 +579,7 @@ export default function BranchOverview() {
         return [localBranch, ...prev];
       });
 
-      resetForm();
+      closeAddModal();
     } catch (err: any) {
       const backendError =
         err?.response?.data?.error ||
@@ -586,7 +612,9 @@ export default function BranchOverview() {
         `/sqlbranch/d/get-branch-user/${branchId}`
       );
 
-      const users = Array.isArray(response?.data?.users) ? response.data.users : [];
+      const users = Array.isArray(response?.data?.users)
+        ? response.data.users
+        : [];
 
       setCredentialsByBranchId((prev) => ({
         ...prev,
@@ -622,7 +650,7 @@ export default function BranchOverview() {
       }));
 
       const response = await api.put<ToggleBranchResponse>(
-        `sqlbranch/branch/${branchId}/toggle`
+        `/sqlbranch/branch/${branchId}/toggle`
       );
 
       const updatedStatus = response?.data?.branch?.status;
@@ -654,24 +682,19 @@ export default function BranchOverview() {
     }
   };
 
+  const stopDragging = () => {
+    dragStateRef.current.isDown = false;
+    setIsDragging(false);
+  };
+
   const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
     const el = tableScrollRef.current;
     if (!el || loading || masterLoading) return;
 
     dragStateRef.current.isDown = true;
-    dragStateRef.current.startX = e.pageX - el.offsetLeft;
+    dragStateRef.current.startX = e.pageX;
     dragStateRef.current.scrollLeft = el.scrollLeft;
     setIsDragging(true);
-  };
-
-  const handleMouseLeave = () => {
-    dragStateRef.current.isDown = false;
-    setIsDragging(false);
-  };
-
-  const handleMouseUp = () => {
-    dragStateRef.current.isDown = false;
-    setIsDragging(false);
   };
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -679,8 +702,24 @@ export default function BranchOverview() {
     if (!el || !dragStateRef.current.isDown || loading || masterLoading) return;
 
     e.preventDefault();
-    const x = e.pageX - el.offsetLeft;
-    const walk = (x - dragStateRef.current.startX) * 1.2;
+    const walk = (e.pageX - dragStateRef.current.startX) * 1.2;
+    el.scrollLeft = dragStateRef.current.scrollLeft - walk;
+  };
+
+  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    const el = tableScrollRef.current;
+    if (!el || loading || masterLoading) return;
+
+    dragStateRef.current.isDown = true;
+    dragStateRef.current.startX = e.touches[0].pageX;
+    dragStateRef.current.scrollLeft = el.scrollLeft;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+    const el = tableScrollRef.current;
+    if (!el || !dragStateRef.current.isDown || loading || masterLoading) return;
+
+    const walk = (e.touches[0].pageX - dragStateRef.current.startX) * 1.2;
     el.scrollLeft = dragStateRef.current.scrollLeft - walk;
   };
 
@@ -703,7 +742,7 @@ export default function BranchOverview() {
             <div className="flex w-full flex-wrap items-center gap-3 sm:w-auto">
               <button
                 onClick={handleAddRow}
-                disabled={showAddRow}
+                disabled={isAddOpen}
                 className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
               >
                 <Plus size={16} />
@@ -722,22 +761,27 @@ export default function BranchOverview() {
         <div
           ref={tableScrollRef}
           onMouseDown={handleMouseDown}
-          onMouseLeave={handleMouseLeave}
-          onMouseUp={handleMouseUp}
           onMouseMove={handleMouseMove}
-          className={`w-full select-none overflow-x-auto overflow-y-hidden touch-pan-x ${
+          onMouseUp={stopDragging}
+          onMouseLeave={stopDragging}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={stopDragging}
+          className={`hide-scrollbar w-full overflow-auto touch-pan-x ${
             isDragging ? "cursor-grabbing" : "cursor-grab"
           }`}
           style={{
             WebkitOverflowScrolling: "touch",
             scrollbarWidth: "thin",
+            userSelect: isDragging ? "none" : "auto",
+            maxHeight: "460px",
           }}
         >
           {loading || masterLoading ? (
             <BranchOverviewTableSkeleton />
           ) : (
             <table className="w-full min-w-[1320px] lg:min-w-[1400px]">
-              <thead>
+              <thead className="sticky top-0 z-10 bg-[#F8FAFC]">
                 <tr className="bg-[#F8FAFC] text-left">
                   {[
                     "Branch Name",
@@ -764,121 +808,6 @@ export default function BranchOverview() {
               </thead>
 
               <tbody>
-                {showAddRow && (
-                  <tr className="align-top bg-[#F8FAFC]">
-                    <td className="min-w-[180px] border border-[#E2E2E2] px-3 py-4 sm:px-4 lg:px-6">
-                      <input
-                        value={form.name}
-                        onChange={(e) => handleFormChange("name", e.target.value)}
-                        placeholder="Branch name"
-                        className="w-full rounded-lg border border-[#D7DFE9] bg-white px-3 py-2 text-sm outline-none focus:border-blue-500"
-                      />
-                    </td>
-
-                    <td className="min-w-[130px] border border-[#E2E2E2] px-3 py-4 sm:px-4 lg:px-6">
-                      <input
-                        value={form.code}
-                        onChange={(e) => handleFormChange("code", e.target.value)}
-                        placeholder="Code"
-                        className="w-full rounded-lg border border-[#D7DFE9] bg-white px-3 py-2 text-sm outline-none focus:border-blue-500"
-                      />
-                    </td>
-
-                    <td className="min-w-[170px] border border-[#E2E2E2] px-3 py-4 sm:px-4 lg:px-6">
-                      <input
-                        value={form.location}
-                        onChange={(e) =>
-                          handleFormChange("location", e.target.value)
-                        }
-                        placeholder="Location"
-                        className="w-full rounded-lg border border-[#D7DFE9] bg-white px-3 py-2 text-sm outline-none focus:border-blue-500"
-                      />
-                    </td>
-
-                    <td className="min-w-[170px] border border-[#E2E2E2] px-3 py-4 sm:px-4 lg:px-6">
-                      <select
-                        value={form.type}
-                        onChange={(e) => handleFormChange("type", e.target.value)}
-                        className="w-full rounded-lg border border-[#D7DFE9] bg-white px-3 py-2 text-sm outline-none focus:border-blue-500"
-                      >
-                        <option value="">Select Type</option>
-                        {BRANCH_TYPE_OPTIONS.map((option) => (
-                          <option key={option.value} value={option.value}>
-                            {option.label}
-                          </option>
-                        ))}
-                      </select>
-                    </td>
-
-                    <td className="min-w-[150px] border border-[#E2E2E2] px-3 py-4 sm:px-4 lg:px-6">
-                      <input
-                        value={form.state}
-                        onChange={(e) => handleFormChange("state", e.target.value)}
-                        placeholder="State"
-                        className="w-full rounded-lg border border-[#D7DFE9] bg-white px-3 py-2 text-sm outline-none focus:border-blue-500"
-                      />
-                    </td>
-
-                    <td className="whitespace-nowrap border border-[#E2E2E2] px-3 py-4 text-[#334155] sm:px-4 lg:px-6">
-                      0
-                    </td>
-                    <td className="whitespace-nowrap border border-[#E2E2E2] px-3 py-4 text-[#334155] sm:px-4 lg:px-6">
-                      ₹0
-                    </td>
-                    <td className="whitespace-nowrap border border-[#E2E2E2] px-3 py-4 text-[#334155] sm:px-4 lg:px-6">
-                      ₹0
-                    </td>
-                    <td className="whitespace-nowrap border border-[#E2E2E2] px-3 py-4 text-[#334155] sm:px-4 lg:px-6">
-                      0
-                    </td>
-
-                    <td className="min-w-[210px] border border-[#E2E2E2] px-3 py-4 sm:px-4 lg:px-6">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <button
-                          onClick={handleCreateBranch}
-                          disabled={saving}
-                          className="rounded-lg bg-blue-600 px-4 py-2 text-sm text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
-                        >
-                          {saving ? "Creating..." : "Create"}
-                        </button>
-
-                        <button
-                          onClick={resetForm}
-                          disabled={saving}
-                          className="inline-flex items-center gap-2 rounded-lg border border-[#D7DFE9] px-4 py-2 text-sm text-[#475569] transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
-                        >
-                          <X size={16} />
-                          Cancel
-                        </button>
-                      </div>
-                    </td>
-
-                    <td className="min-w-[180px] border border-[#E2E2E2] px-3 py-4 sm:px-4 lg:px-6">
-                      <select
-                        value={form.status}
-                        onChange={(e) =>
-                          handleFormChange("status", e.target.value)
-                        }
-                        className="w-full rounded-lg border border-[#D7DFE9] bg-white px-3 py-2 text-sm outline-none focus:border-blue-500"
-                      >
-                        <option value="ACTIVE">ACTIVE</option>
-                        <option value="INACTIVE">INACTIVE</option>
-                      </select>
-                    </td>
-                  </tr>
-                )}
-
-                {showAddRow && formError && (
-                  <tr>
-                    <td
-                      colSpan={12}
-                      className="border-b border-[#E2E2E2] px-3 py-3 text-sm text-red-500 sm:px-4 lg:px-6"
-                    >
-                      {formError}
-                    </td>
-                  </tr>
-                )}
-
                 {error ? (
                   <tr>
                     <td
@@ -895,7 +824,10 @@ export default function BranchOverview() {
                       !!toggleLoadingByBranchId[String(branch.id)];
 
                     return (
-                      <tr key={branch.id} className="transition hover:bg-[#F8FAFC]">
+                      <tr
+                        key={branch.id}
+                        className="transition hover:bg-[#F8FAFC]"
+                      >
                         <td className="whitespace-nowrap border border-[#E2E2E2] px-3 py-4 font-medium text-[#0F172A] sm:px-4 lg:px-6">
                           {branch.name}
                         </td>
@@ -950,13 +882,14 @@ export default function BranchOverview() {
                           <button
                             onClick={() => handleToggleBranchStatus(branch.id)}
                             disabled={isToggling}
-                            className={`inline-flex min-w-[110px] items-center justify-center rounded-full px-3 py-1.5 text-sm font-medium transition ${
-                              getStatusStyle(branch.status)
-                            } ${
+                            className={`inline-flex min-w-[110px] items-center justify-center rounded-full px-3 py-1.5 text-sm font-medium transition ${getStatusStyle(
+                              branch.status
+                            )} ${
                               isToggling ? "cursor-not-allowed opacity-70" : ""
                             }`}
                             title={
-                              currentRole === "admin" || currentRole === "super_admin"
+                              currentRole === "admin" ||
+                              currentRole === "super_admin"
                                 ? "Toggle branch status"
                                 : "You do not have permission"
                             }
@@ -987,128 +920,372 @@ export default function BranchOverview() {
         </div>
       </div>
 
-      {selectedCredentialsBranchId !== null && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-5xl overflow-hidden rounded-2xl border border-[#EEF2F6] bg-white shadow-xl">
-            <div className="flex items-center justify-between px-5 py-4 sm:px-6">
-              <div>
-                <h3 className="text-[18px] font-semibold text-[#0F172A]">
-                  Branch User Credentials
-                </h3>
-                <p className="mt-1 text-[13px] text-[#64748B]">
-                  {selectedBranchName} branch users
-                </p>
+      {isAddOpen && (
+        <div
+          className="fixed inset-0 z-50 bg-black/40 p-0 backdrop-blur-[2px] transition-all duration-300 sm:p-4"
+          onClick={closeAddModal}
+        >
+          <div className="flex min-h-[100dvh] items-end justify-center sm:items-center">
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="flex h-[100dvh] w-full flex-col overflow-hidden rounded-t-[28px] border border-[#EEF2F6] bg-white shadow-[0_30px_70px_rgba(15,23,42,0.18)] transition-all duration-300 sm:h-auto sm:max-h-[92vh] sm:max-w-[760px] sm:rounded-[28px]"
+            >
+              <div className="shrink-0 border-b border-[#EEF2F6] px-4 py-4 sm:px-6 sm:py-5">
+                <div className="mb-3 flex justify-center sm:hidden">
+                  <div className="h-1.5 w-12 rounded-full bg-[#D9E2EC]" />
+                </div>
+
+                <div className="flex items-start justify-between gap-4">
+                  <div className="min-w-0">
+                    <h3 className="text-[20px] font-semibold text-[#0F172A] sm:text-[22px]">
+                      Add Branch
+                    </h3>
+                    <p className="mt-1 text-[13px] text-[#64748B] sm:text-[14px]">
+                      Create a new branch without changing the existing table
+                      layout
+                    </p>
+                  </div>
+
+                  <button
+                    onClick={closeAddModal}
+                    disabled={saving}
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[#E2E8F0] bg-white text-[#64748B] transition hover:bg-[#F8FAFC] disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
               </div>
 
-              <button
-                onClick={() => {
-                  setSelectedCredentialsBranchId(null);
-                  setShowPasswords(false);
-                  setCredentialsError("");
-                }}
-                className="text-[#64748B] hover:text-[#0F172A]"
-              >
-                <X size={20} />
-              </button>
+              <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-5">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <BranchField
+                    label="Branch Name"
+                    value={form.name}
+                    onChange={(value) => handleFormChange("name", value)}
+                    placeholder="Branch name"
+                    required
+                  />
+
+                  <BranchField
+                    label="Code"
+                    value={form.code}
+                    onChange={(value) => handleFormChange("code", value)}
+                    placeholder="Code"
+                    required
+                  />
+
+                  <BranchField
+                    label="Location"
+                    value={form.location}
+                    onChange={(value) => handleFormChange("location", value)}
+                    placeholder="Location"
+                    required
+                  />
+
+                  <BranchSelectField
+                    label="Type"
+                    value={form.type}
+                    onChange={(value) =>
+                      handleFormChange("type", value as NewBranchForm["type"])
+                    }
+                    required
+                    options={[
+                      { label: "Select Type", value: "" },
+                      ...BRANCH_TYPE_OPTIONS.map((option) => ({
+                        label: option.label,
+                        value: option.value,
+                      })),
+                    ]}
+                  />
+
+                  <BranchField
+                    label="State"
+                    value={form.state}
+                    onChange={(value) => handleFormChange("state", value)}
+                    placeholder="State"
+                    required
+                  />
+
+                  <BranchSelectField
+                    label="Status"
+                    value={form.status}
+                    onChange={(value) =>
+                      handleFormChange(
+                        "status",
+                        value as NewBranchForm["status"]
+                      )
+                    }
+                    options={[
+                      { label: "ACTIVE", value: "ACTIVE" },
+                      { label: "INACTIVE", value: "INACTIVE" },
+                    ]}
+                  />
+                </div>
+
+                <div className="mt-5 rounded-[20px] border border-[#E5E7EB] bg-[#F8FAFC] px-4 py-4">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <p className="text-[13px] font-medium text-[#64748B]">
+                        Default Values
+                      </p>
+                      <h4 className="mt-1 text-[18px] font-semibold text-[#0F172A]">
+                        Stock: 0 · Purchase: ₹0 · Sales: ₹0
+                      </h4>
+                    </div>
+
+                    <div className="text-[12px] font-medium text-[#94A3B8] sm:text-right">
+                      Branch will be added with initial zero metrics
+                    </div>
+                  </div>
+                </div>
+
+                {formError ? (
+                  <div className="mt-4 rounded-[16px] border border-red-200 bg-red-50 px-4 py-3 text-[14px] font-medium text-red-600">
+                    {formError}
+                  </div>
+                ) : null}
+              </div>
+
+              <div className="shrink-0 border-t border-[#EEF2F6] bg-white px-4 py-4 sm:px-6 sm:py-5">
+                <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                  <button
+                    onClick={closeAddModal}
+                    disabled={saving}
+                    className="inline-flex h-[48px] w-full items-center justify-center rounded-[14px] border border-[#D7DFE9] bg-white px-5 text-[14px] font-semibold text-[#475569] transition hover:bg-[#F8FAFC] disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    onClick={handleCreateBranch}
+                    disabled={saving}
+                    className="inline-flex h-[48px] w-full items-center justify-center gap-2 rounded-[14px] bg-blue-600 px-5 text-[14px] font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+                  >
+                    {saving ? (
+                      <>
+                        <Loader2 size={16} className="animate-spin" />
+                        Creating...
+                      </>
+                    ) : (
+                      <>
+                        <Plus size={16} />
+                        Create Branch
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
             </div>
+          </div>
+        </div>
+      )}
 
-            <div className="px-5 py-4 sm:px-6">
-              <div className="mb-4 flex items-center justify-end">
-                <button
-                  onClick={() => setShowPasswords((prev) => !prev)}
-                  className="inline-flex items-center gap-2 text-sm font-medium text-blue-600 hover:text-blue-700"
-                >
-                  {showPasswords ? <EyeOff size={16} /> : <Eye size={16} />}
-                  {showPasswords ? "Hide Passwords" : "Show Passwords"}
-                </button>
+      {selectedCredentialsBranchId !== null && (
+        <div
+          className="fixed inset-0 z-50 bg-black/40 p-0 backdrop-blur-[2px] transition-all duration-300 sm:p-4"
+          onClick={() => {
+            if (loadingCredentials) return;
+            setSelectedCredentialsBranchId(null);
+            setCredentialsError("");
+            setShowPasswords(false);
+          }}
+        >
+          <div className="flex min-h-[100dvh] items-end justify-center sm:items-center">
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="flex h-[100dvh] w-full flex-col overflow-hidden rounded-t-[28px] border border-[#EEF2F6] bg-white shadow-[0_30px_70px_rgba(15,23,42,0.18)] transition-all duration-300 sm:h-auto sm:max-h-[90vh] sm:max-w-[980px] sm:rounded-[28px]"
+            >
+              <div className="shrink-0 border-b border-[#EEF2F6] px-4 py-4 sm:px-6 sm:py-5">
+                <div className="mb-3 flex justify-center sm:hidden">
+                  <div className="h-1.5 w-12 rounded-full bg-[#D9E2EC]" />
+                </div>
+
+                <div className="flex items-start justify-between gap-4">
+                  <div className="min-w-0">
+                    <h3 className="text-[20px] font-semibold text-[#0F172A] sm:text-[22px]">
+                      {selectedBranchName} Credentials
+                    </h3>
+                    <p className="mt-1 text-[13px] text-[#64748B] sm:text-[14px]">
+                      View branch user login details
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setShowPasswords((prev) => !prev)}
+                      className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-[#E2E8F0] bg-white px-3 text-[#64748B] transition hover:bg-[#F8FAFC]"
+                    >
+                      {showPasswords ? <EyeOff size={16} /> : <Eye size={16} />}
+                      <span className="hidden text-sm sm:inline">
+                        {showPasswords ? "Hide" : "Show"} Passwords
+                      </span>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        if (loadingCredentials) return;
+                        setSelectedCredentialsBranchId(null);
+                        setCredentialsError("");
+                        setShowPasswords(false);
+                      }}
+                      className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[#E2E8F0] bg-white text-[#64748B] transition hover:bg-[#F8FAFC]"
+                    >
+                      <X size={18} />
+                    </button>
+                  </div>
+                </div>
               </div>
 
-              {loadingCredentials ? (
-                <div className="flex min-h-[180px] items-center justify-center">
-                  <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
-                </div>
-              ) : credentialsError ? (
-                <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-4 text-sm text-red-600">
-                  {credentialsError}
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full min-w-[880px]">
-                    <thead>
-                      <tr className="bg-[#F8FAFC] text-left">
-                        {[
-                          "User ID",
-                          "Name",
-                          "Email",
-                          "Role",
-                          "Branch ID",
-                          "Password",
-                        ].map((head) => (
-                          <th
-                            key={head}
-                            className="px-4 py-3 text-[13px] font-medium text-[#475569]"
-                          >
-                            {head}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
+              <div className="min-h-0 flex-1 overflow-auto px-4 py-4 sm:px-6 sm:py-5">
+                {credentialsError ? (
+                  <div className="mb-4 rounded-[16px] border border-red-200 bg-red-50 px-4 py-3 text-[14px] font-medium text-red-600">
+                    {credentialsError}
+                  </div>
+                ) : null}
 
-                    <tbody>
-                      {selectedCredentials.length > 0 ? (
-                        selectedCredentials.map((item, index) => (
-                          <tr key={`${item.email}-${index}`} className="border-b">
-                            <td className="px-4 py-3 text-sm text-[#0F172A]">
-                              {item.id}
-                            </td>
-                            <td className="px-4 py-3 text-sm text-[#0F172A]">
-                              {item.name || "-"}
-                            </td>
-                            <td className="break-all px-4 py-3 text-sm text-[#334155]">
-                              {item.email}
-                            </td>
-                            <td className="px-4 py-3 text-sm capitalize text-[#334155]">
-                              {item.role ? item.role.replace(/_/g, " ") : "-"}
-                            </td>
-                            <td className="px-4 py-3 text-sm text-[#334155]">
-                              {item.branch_id ?? "-"}
-                            </td>
-                            <td className="px-4 py-3 text-sm text-[#334155]">
-                              {showPasswords ? item.password || "-" : "••••••••"}
+                {loadingCredentials ? (
+                  <div className="flex min-h-[220px] items-center justify-center">
+                    <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto rounded-2xl border border-[#EEF2F6]">
+                    <table className="w-full min-w-[760px]">
+                      <thead className="bg-[#F8FAFC]">
+                        <tr className="text-left">
+                          <th className="whitespace-nowrap px-4 py-4 text-[13px] font-medium text-[#475569]">
+                            ID
+                          </th>
+                          <th className="whitespace-nowrap px-4 py-4 text-[13px] font-medium text-[#475569]">
+                            Name
+                          </th>
+                          <th className="whitespace-nowrap px-4 py-4 text-[13px] font-medium text-[#475569]">
+                            Email
+                          </th>
+                          <th className="whitespace-nowrap px-4 py-4 text-[13px] font-medium text-[#475569]">
+                            Role
+                          </th>
+                          <th className="whitespace-nowrap px-4 py-4 text-[13px] font-medium text-[#475569]">
+                            Branch ID
+                          </th>
+                          <th className="whitespace-nowrap px-4 py-4 text-[13px] font-medium text-[#475569]">
+                            Password
+                          </th>
+                        </tr>
+                      </thead>
+
+                      <tbody>
+                        {selectedCredentials.length > 0 ? (
+                          selectedCredentials.map((item, index) => (
+                            <tr
+                              key={`${item.id}-${index}`}
+                              className="border-t border-[#EEF2F6] transition hover:bg-[#F8FAFC]"
+                            >
+                              <td className="whitespace-nowrap px-4 py-4 text-[14px] text-[#334155]">
+                                {item.id ?? "-"}
+                              </td>
+                              <td className="whitespace-nowrap px-4 py-4 text-[14px] text-[#334155]">
+                                {item.name || "-"}
+                              </td>
+                              <td className="whitespace-nowrap px-4 py-4 text-[14px] text-[#334155]">
+                                {item.email || "-"}
+                              </td>
+                              <td className="whitespace-nowrap px-4 py-4 text-[14px] text-[#334155]">
+                                {item.role || "-"}
+                              </td>
+                              <td className="whitespace-nowrap px-4 py-4 text-[14px] text-[#334155]">
+                                {item.branch_id ?? "-"}
+                              </td>
+                              <td className="whitespace-nowrap px-4 py-4 text-[14px] text-[#334155]">
+                                {showPasswords
+                                  ? item.password || "-"
+                                  : "••••••••"}
+                              </td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td
+                              colSpan={6}
+                              className="px-4 py-8 text-center text-sm text-[#64748B]"
+                            >
+                              No credentials available for this branch.
                             </td>
                           </tr>
-                        ))
-                      ) : (
-                        <tr>
-                          <td
-                            colSpan={6}
-                            className="px-4 py-8 text-center text-sm text-[#64748B]"
-                          >
-                            No credentials available for this branch.
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-
-            <div className="flex justify-end border-t px-5 py-4 sm:px-6">
-              <button
-                onClick={() => {
-                  setSelectedCredentialsBranchId(null);
-                  setShowPasswords(false);
-                  setCredentialsError("");
-                }}
-                className="rounded-lg bg-blue-600 px-4 py-2 text-sm text-white transition hover:bg-blue-700"
-              >
-                Close
-              </button>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
       )}
     </>
+  );
+}
+
+type BranchFieldProps = {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  required?: boolean;
+};
+
+function BranchField({
+  label,
+  value,
+  onChange,
+  placeholder,
+  required = false,
+}: BranchFieldProps) {
+  return (
+    <label className="block">
+      <span className="mb-2 block text-[13px] font-semibold text-[#334155]">
+        {label} {required ? <span className="text-red-500">*</span> : null}
+      </span>
+      <input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="h-[48px] w-full rounded-[14px] border border-[#D7DFE9] bg-white px-4 text-[14px] font-medium text-[#0F172A] outline-none transition-all duration-200 placeholder:text-[#94A3B8] focus:border-blue-500"
+      />
+    </label>
+  );
+}
+
+type BranchSelectFieldProps = {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  options: { label: string; value: string }[];
+  required?: boolean;
+};
+
+function BranchSelectField({
+  label,
+  value,
+  onChange,
+  options,
+  required = false,
+}: BranchSelectFieldProps) {
+  return (
+    <label className="block">
+      <span className="mb-2 block text-[13px] font-semibold text-[#334155]">
+        {label} {required ? <span className="text-red-500">*</span> : null}
+      </span>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="h-[48px] w-full rounded-[14px] border border-[#D7DFE9] bg-white px-4 text-[14px] font-medium text-[#0F172A] outline-none transition-all duration-200 focus:border-blue-500"
+      >
+        {options.map((option) => (
+          <option key={`${label}-${option.value}`} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    </label>
   );
 }

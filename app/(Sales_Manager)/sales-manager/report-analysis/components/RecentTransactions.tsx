@@ -38,7 +38,7 @@ const getStatusStyle = (status: string) => {
 
 export default function RecentTransactions({ data }: Props) {
   return (
-    <div className="bg-white border border-gray-200 rounded-xl shadow-sm w-full">
+    <div className="bg-white border border-gray-200 rounded-xl shadow-sm w-full max-h-[325px] overflow-y-auto">
       <div className="px-6 py-4 border-b border-gray-100">
         <h3 className="text-[16px] font-semibold text-gray-800">
           Recent Transactions

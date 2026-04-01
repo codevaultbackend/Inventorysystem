@@ -118,81 +118,83 @@ export default function HierarchyTable<T extends Record<string, any>>({
       </div>
 
       <div className="w-full overflow-x-auto">
-        <table className="min-w-[900px] w-full">
-          <thead className="bg-[#F3F6F9]">
-            <tr>
-              {columns.map((col) => (
-                <th
-                  key={String(col.key)}
-                  className="whitespace-nowrap px-6 py-4 text-left text-[14px] font-semibold text-[#111827]"
-                >
-                  {col.title}
-                </th>
-              ))}
-              <th className="whitespace-nowrap px-6 py-4 text-left text-[14px] font-semibold text-[#111827]">
-                Action
-              </th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {visibleData.length > 0 ? (
-              visibleData.map((row, index) => {
-                const href = getViewHref ? getViewHref(row) : null;
-
-                return (
-                  <tr
-                    key={
-                      row.id ??
-                      row.branchId ??
-                      row.state ??
-                      row.branchName ??
-                      row.itemName ??
-                      row.item ??
-                      index
-                    }
-                    className="border-t border-[#EDF2F7]"
-                  >
-                    {columns.map((col) => (
-                      <td
-                        key={String(col.key)}
-                        className="whitespace-nowrap px-6 py-4 text-[14px] font-medium text-[#111827]"
-                      >
-                        {col.render
-                          ? col.render(row)
-                          : String(row[col.key as keyof T] ?? "-")}
-                      </td>
-                    ))}
-
-                    <td className="whitespace-nowrap px-6 py-4 text-[14px] font-medium">
-                      {href ? (
-                        <Link
-                          href={href}
-                          className="text-[#0D63C8] underline underline-offset-2 transition hover:text-[#084A97]"
-                        >
-                          View
-                        </Link>
-                      ) : (
-                        <span className="cursor-not-allowed text-[#94A3B8]">
-                          View
-                        </span>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })
-            ) : (
+        <div className="max-h-[520px] overflow-y-auto">
+          <table className="min-w-[900px] w-full border-separate border-spacing-0">
+            <thead className="sticky top-0 z-20 bg-[#F3F6F9]">
               <tr>
-                <td
-                  colSpan={columns.length + 1}
-                  className="px-6 py-10 text-center text-sm text-[#64748B]"
-                >
-                  {emptyMessage}
-                </td>
+                {columns.map((col) => (
+                  <th
+                    key={String(col.key)}
+                    className="whitespace-nowrap px-6 py-4 text-left text-[14px] font-semibold text-[#111827] bg-[#F3F6F9]"
+                  >
+                    {col.title}
+                  </th>
+                ))}
+                <th className="whitespace-nowrap px-6 py-4 text-left text-[14px] font-semibold text-[#111827] bg-[#F3F6F9]">
+                  Action
+                </th>
               </tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+
+            <tbody>
+              {visibleData.length > 0 ? (
+                visibleData.map((row, index) => {
+                  const href = getViewHref ? getViewHref(row) : null;
+
+                  return (
+                    <tr
+                      key={
+                        row.id ??
+                        row.branchId ??
+                        row.state ??
+                        row.branchName ??
+                        row.itemName ??
+                        row.item ??
+                        index
+                      }
+                      className="border-t border-[#EDF2F7]"
+                    >
+                      {columns.map((col) => (
+                        <td
+                          key={String(col.key)}
+                          className="whitespace-nowrap px-6 py-4 text-[14px] font-medium text-[#111827] bg-white"
+                        >
+                          {col.render
+                            ? col.render(row)
+                            : String(row[col.key as keyof T] ?? "-")}
+                        </td>
+                      ))}
+
+                      <td className="whitespace-nowrap px-6 py-4 text-[14px] font-medium bg-white">
+                        {href ? (
+                          <Link
+                            href={href}
+                            className="text-[#0D63C8] underline underline-offset-2 transition hover:text-[#084A97]"
+                          >
+                            View
+                          </Link>
+                        ) : (
+                          <span className="cursor-not-allowed text-[#94A3B8]">
+                            View
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })
+              ) : (
+                <tr>
+                  <td
+                    colSpan={columns.length + 1}
+                    className="px-6 py-10 text-center text-sm text-[#64748B] bg-white"
+                  >
+                    {emptyMessage}
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {filteredData.length > 0 && (

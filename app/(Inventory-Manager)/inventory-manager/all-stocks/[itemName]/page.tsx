@@ -264,8 +264,8 @@ export default function InventoryItemPage() {
                 onClick={() =>
                   router.push(
                     routeBranchId
-                      ? `/inventory-manager/Branches/${routeBranchId}`
-                      : "/inventory-manager/Branches"
+                      ? `/inventory-manager/all-stocks/`
+                      : "/inventory-manager/all-stocks"
                   )
                 }
                 className="inline-flex h-[44px] items-center justify-center rounded-[14px] border border-[#D0D5DD] bg-white px-4 text-sm font-semibold text-[#111827] transition hover:bg-[#F8FAFC]"
