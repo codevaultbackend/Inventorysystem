@@ -223,34 +223,6 @@ export default function InventoryBranchPage() {
           subtitle="Category wise stock summary"
           data={categoryChartData}
         />
-
-        <HierarchyTable
-          title="Inventory Items"
-          subtitle="Item wise inventory summary"
-          data={itemRows}
-          getViewHref={(row) =>
-            `/inventory-manager/all-stocks/${encodeURIComponent(
-              row.slugItemName
-            )}`
-          }
-          columns={[
-            {
-              key: "itemName",
-              title: "Item Name",
-              render: (row) => row.itemName || "-",
-            },
-            {
-              key: "totalQty",
-              title: "Total Qty",
-              render: (row) => formatNumber(toNumber(row.totalQty)),
-            },
-            {
-              key: "totalValue",
-              title: "Total Value",
-              render: (row) => formatCurrency(toNumber(row.totalValue)),
-            },
-          ]}
-        />
       </div>
     </div>
   );

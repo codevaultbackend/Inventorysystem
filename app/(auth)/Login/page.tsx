@@ -19,8 +19,6 @@ export default function Login() {
     password: false,
   });
 
- 
-
   const emailValid =
     email.length > 0 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
@@ -29,6 +27,11 @@ export default function Login() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    setTouched({
+      email: true,
+      password: true,
+    });
+
     if (!emailValid || !passwordValid) return;
 
     setLoading(true);
@@ -36,7 +39,6 @@ export default function Login() {
 
     try {
       await login(email, password);
-    
     } catch (err: any) {
       setApiError(
         err?.response?.data?.error ||
@@ -49,34 +51,37 @@ export default function Login() {
   };
 
   return (
-    <section className="relative min-h-screen bg-[#F7F9FB] flex justify-center overflow-hidden">
+    <section className="relative flex min-h-screen justify-center overflow-hidden bg-[#F7F9FB]">
+      {loading && (
+        <div className="fixed inset-0 z-[999999999] flex items-center justify-center bg-black/40">
+          <span className="loader"></span>
+        </div>
+      )}
+
       {/* TOP DECOR */}
       <img
         src="/LoginDecordown.png"
         alt=""
-        className="absolute top-[0%] left-0 w-full h-auto z-[1]"
+        className="absolute left-0 top-0 z-[1] h-auto w-full pointer-events-none"
       />
 
       {/* LOGIN CARD */}
       <div className="relative z-10 w-full max-w-[520px] px-6 pt-[90px]">
-        <div className="text-center mb-12">
-          <h1 className="text-[36px] font-[500] text-black leading-[100%]">
+        <div className="mb-12 text-center">
+          <h1 className="text-[36px] font-[500] leading-[100%] text-black">
             Welcome Back!
           </h1>
-          <p className="text-[#5F5F5F] text-[18px] font-[400] mt-[24px] mb-[48px] leading-[100%]">
+          <p className="mt-[24px] mb-[48px] text-[18px] font-[400] leading-[100%] text-[#5F5F5F]">
             Please login to access your account
           </p>
         </div>
 
-        {/* FORM */}
         <form onSubmit={handleLogin} className="space-y-6">
           {/* EMAIL */}
           <div>
             <label
-              className={`block mb-2 text-[16px] font-[500] ${
-                touched.email && !emailValid
-                  ? "text-red-500"
-                  : "text-[#5F5F5F]"
+              className={`mb-2 block text-[16px] font-[500] ${
+                touched.email && !emailValid ? "text-red-500" : "text-[#5F5F5F]"
               }`}
             >
               Email ID
@@ -90,18 +95,17 @@ export default function Login() {
                 placeholder="Enter your email"
                 onChange={(e) => setEmail(e.target.value)}
                 onBlur={() =>
-                  setTouched((p) => ({ ...p, email: true }))
+                  setTouched((prev) => ({ ...prev, email: true }))
                 }
-                className={`w-full h-[58px] px-4 rounded-[12px] outline-none border transition
-                  ${
-                    touched.email && !emailValid
-                      ? "border-red-500 bg-red-50"
-                      : "border-black"
-                  }`}
+                className={`w-full h-[58px] rounded-[12px] border px-4 outline-none transition ${
+                  touched.email && !emailValid
+                    ? "border-red-500 bg-red-50"
+                    : "border-black bg-white"
+                }`}
               />
 
               {touched.email && !emailValid && (
-                <span className="absolute right-4 top-[-40%] -translate-y-1/2">
+                <span className="absolute right-4 top-1/2 -translate-y-1/2">
                   <Exclmationerror />
                 </span>
               )}
@@ -111,7 +115,7 @@ export default function Login() {
           {/* PASSWORD */}
           <div className="max-w-[476px]">
             <label
-              className={`block mb-2 text-[16px] font-[500] ${
+              className={`mb-2 block text-[16px] font-[500] ${
                 touched.password && !passwordValid
                   ? "text-red-500"
                   : "text-[#5F5F5F]"
@@ -128,78 +132,66 @@ export default function Login() {
                 name="password"
                 onChange={(e) => setPassword(e.target.value)}
                 onBlur={() =>
-                  setTouched((p) => ({
-                    ...p,
+                  setTouched((prev) => ({
+                    ...prev,
                     password: true,
                   }))
                 }
-                className={`w-full h-[58px] px-4 pr-12 rounded-[12px] outline-none border transition
-                  ${
-                    touched.password && !passwordValid
-                      ? "border-red-500 bg-red-50"
-                      : "border-black"
-                  }`}
+                className={`h-[58px] w-full rounded-[12px] border px-4 pr-[96px] outline-none transition ${
+                  touched.password && !passwordValid
+                    ? "border-red-500 bg-red-50"
+                    : "border-black bg-white"
+                }`}
               />
 
               <button
                 type="button"
-                onClick={() =>
-                  setShowPassword(!showPassword)
-                }
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-black/60"
+                onClick={() => setShowPassword((prev) => !prev)}
+                className="absolute right-4 top-1/2 flex -translate-y-1/2 items-center gap-2 text-[14px] font-[500] text-[#5F5F5F] transition hover:text-black"
               >
                 {showPassword ? (
-                  <i className="fa-solid fa-eye-slash"></i>
+                  <>
+                    <i className="fa-solid fa-eye-slash"></i>
+                    <span>Hide</span>
+                  </>
                 ) : (
-                  <i className="fa-regular fa-eye"></i>
+                  <>
+                    <i className="fa-regular fa-eye"></i>
+                    <span>View</span>
+                  </>
                 )}
               </button>
             </div>
 
-            <div className="text-right mt-2">
-              <a
-                href="/Resetpassword"
-                className="text-[#2563EB] text-sm"
-              >
+            <div className="mt-2 text-right">
+              <a href="/Resetpassword" className="text-sm text-[#2563EB]">
                 Forgot password?
               </a>
             </div>
           </div>
 
-          {apiError && (
-            <p className="text-red-500 text-sm">
-              {apiError}
-            </p>
-          )}
+          {apiError && <p className="text-sm text-red-500">{apiError}</p>}
 
           {/* LOGIN BUTTON */}
           <div
-            className={`max-w-[476px] w-full h-16 rounded-xl shadow-[2px_2px_4px_0px_rgba(0,0,0,0.24)]
-              ${
-                emailValid || passwordValid
-                  ? "bg-[#0D4CBA]"
-                  : "bg-[#0D4CBA] hover:bg-blue-700"
-              }`}
+            className={`h-16 w-full max-w-[476px] rounded-xl shadow-[2px_2px_4px_0px_rgba(0,0,0,0.24)] ${
+              emailValid && passwordValid
+                ? "bg-[#0D4CBA]"
+                : "bg-[#0D4CBA]/60"
+            }`}
           >
             <button
               type="submit"
-              disabled={
-                !emailValid ||
-                !passwordValid ||
-                loading
-              }
-              className={`w-full h-full rounded-[12px] text-lg text-white ${
-                !emailValid || !passwordValid
+              disabled={!emailValid || !passwordValid || loading}
+              className={`h-full w-full rounded-[12px] text-lg text-white ${
+                !emailValid || !passwordValid || loading
                   ? "cursor-not-allowed"
                   : "cursor-pointer"
               }`}
             >
-              {loading
-                ? "Logging in..."
-                : "Log In"}
+              {loading ? "Logging in..." : "Login"}
             </button>
           </div>
-
         </form>
       </div>
 
@@ -207,7 +199,7 @@ export default function Login() {
       <img
         src="/LoginDecorUp.png"
         alt=""
-        className="absolute bottom-[-40%] max-w-[1100px] h-auto z-[1] max-[768px]:bottom-[-158px]"
+        className="pointer-events-none absolute bottom-[-40%] z-[1] h-auto max-w-[1100px] max-[768px]:bottom-[-158px]"
       />
     </section>
   );

@@ -157,7 +157,7 @@ export default function HierarchyTable<T extends Record<string, any>>({
                       {columns.map((col) => (
                         <td
                           key={String(col.key)}
-                          className="whitespace-nowrap px-6 py-4 text-[14px] font-medium text-[#111827] bg-white"
+                          className="whitespace-nowrap px-6 py-4 text-[14px] font-medium text-[#111827] bg-white border-[1px] border-[#E6E6E6]"
                         >
                           {col.render
                             ? col.render(row)
@@ -165,7 +165,7 @@ export default function HierarchyTable<T extends Record<string, any>>({
                         </td>
                       ))}
 
-                      <td className="whitespace-nowrap px-6 py-4 text-[14px] font-medium bg-white">
+                      <td className="whitespace-nowrap px-6 py-4 text-[14px] font-medium bg-white border-[1px] border-[#E6E6E6]">
                         {href ? (
                           <Link
                             href={href}

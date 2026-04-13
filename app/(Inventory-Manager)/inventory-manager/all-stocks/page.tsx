@@ -268,9 +268,9 @@ export default function InventoryBranchPage() {
 
   return (
     <>
-      <div className="min-h-screen bg-[#F7F9FB] px-4 py-5 sm:px-5 lg:px-6">
+      <div className="min-h-screen bg-[#F7F9FB] ">
         <div className="mx-auto w-full max-w-[1440px] space-y-6">
-          <div className="flex flex-col gap-4 rounded-[24px] border border-[#E5E7EB] bg-white px-5 py-5 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:px-6">
+          <div className="flex flex-col gap-4 rounded-[24px] border border-[#E6E6E6] bg-white px-5 py-5 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:px-6">
             <div className="min-w-0">
               <h1 className="text-[24px] font-semibold tracking-[-0.02em] text-[#0F172A]">
                 Inventory Items

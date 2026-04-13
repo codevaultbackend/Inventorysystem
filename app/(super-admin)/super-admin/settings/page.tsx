@@ -992,7 +992,6 @@ export default function SystemSettingsPage() {
                   title="Change Password"
                   subtitle="Use your current password to set a new one"
                   onClick={() => router.push("/Resetpassword")}
-                  
                 />
 
                 <SecurityOption
