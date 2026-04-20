@@ -1,8 +1,15 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Plus, X, Package2, Loader2 } from "lucide-react";
+import {
+  Plus,
+  X,
+  Package2,
+  Loader2,
+  Upload,
+  FileSpreadsheet,
+} from "lucide-react";
 import InventoryOverviewCards from "../../Components/InventoryOverviewCards";
 import StockCategoryBarChart from "../../Components/StockCategoryBarChart";
 import HierarchyTable from "../../Components/HierarchyTable";
@@ -35,6 +42,8 @@ const initialForm: AddItemForm = {
   rate: "",
 };
 
+const STOCK_SHEET_UPLOAD_ENDPOINT = "/combine/bulk-upload";
+
 export default function InventoryBranchPage() {
   const params = useParams();
   const router = useRouter();
@@ -60,6 +69,14 @@ export default function InventoryBranchPage() {
   const [submitError, setSubmitError] = useState("");
   const [submitSuccess, setSubmitSuccess] = useState("");
   const [form, setForm] = useState<AddItemForm>(initialForm);
+
+  const [isUploadOpen, setIsUploadOpen] = useState(false);
+  const [uploadingSheet, setUploadingSheet] = useState(false);
+  const [uploadError, setUploadError] = useState("");
+  const [uploadSuccess, setUploadSuccess] = useState("");
+  const [selectedSheet, setSelectedSheet] = useState<File | null>(null);
+
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const fetchBranchDetails = async () => {
     try {
@@ -142,6 +159,17 @@ export default function InventoryBranchPage() {
     setForm(initialForm);
   };
 
+  const closeUploadModal = () => {
+    if (uploadingSheet) return;
+    setIsUploadOpen(false);
+    setUploadError("");
+    setUploadSuccess("");
+    setSelectedSheet(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
   const validateForm = () => {
     if (!form.item.trim()) return "Item name is required";
     if (!form.quantity.trim()) return "Quantity is required";
@@ -214,6 +242,88 @@ export default function InventoryBranchPage() {
     }
   };
 
+  const handleSheetFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setUploadError("");
+    setUploadSuccess("");
+
+    const file = e.target.files?.[0] || null;
+    setSelectedSheet(file);
+  };
+
+  const handleSheetUpload = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!selectedSheet) {
+      setUploadError("Please select a sheet file first");
+      return;
+    }
+
+    const lowerName = selectedSheet.name.toLowerCase();
+    const isValidFile =
+      lowerName.endsWith(".xlsx") ||
+      lowerName.endsWith(".xls") ||
+      lowerName.endsWith(".csv");
+
+    if (!isValidFile) {
+      setUploadError("Please upload a valid .xlsx, .xls, or .csv file");
+      return;
+    }
+
+    try {
+      setUploadingSheet(true);
+      setUploadError("");
+      setUploadSuccess("");
+
+      const formData = new FormData();
+      formData.append("file", selectedSheet);
+
+      if (branchId) {
+        formData.append("branchId", branchId);
+      }
+
+      if (stateName) {
+        formData.append("state", stateName);
+      }
+
+      const res = await inventoryDashboardApi.post(
+        STOCK_SHEET_UPLOAD_ENDPOINT,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+
+      if (res.data?.success) {
+        setUploadSuccess(
+          res.data?.message || "Stock sheet uploaded successfully"
+        );
+        await fetchBranchDetails();
+
+        setTimeout(() => {
+          closeUploadModal();
+        }, 900);
+      } else {
+        throw new Error(res.data?.message || "Failed to upload stock sheet");
+      }
+    } catch (err: any) {
+      if (err?.response?.status === 401) {
+        localStorage.clear();
+        router.replace("/login");
+        return;
+      }
+
+      setUploadError(
+        err?.response?.data?.message ||
+          err?.message ||
+          "Failed to upload stock sheet"
+      );
+    } finally {
+      setUploadingSheet(false);
+    }
+  };
+
   if (loading || authLoading) {
     return (
       <div className="min-h-screen bg-[#F7F9FB]">
@@ -280,18 +390,34 @@ export default function InventoryBranchPage() {
               </p>
             </div>
 
-            <button
-              type="button"
-              onClick={() => {
-                setSubmitError("");
-                setSubmitSuccess("");
-                setIsAddOpen(true);
-              }}
-              className="inline-flex h-[46px] items-center justify-center gap-2 rounded-[14px] border border-[#D9E2EC] bg-[#0F172A] px-4 text-[14px] font-semibold text-white shadow-[0_8px_20px_rgba(15,23,42,0.12)] transition-all duration-300 hover:-translate-y-[1px] hover:bg-[#111C33] active:translate-y-0"
-            >
-              <Plus size={18} />
-              Add Item
-            </button>
+            <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
+              <button
+                type="button"
+                onClick={() => {
+                  setUploadError("");
+                  setUploadSuccess("");
+                  setSelectedSheet(null);
+                  setIsUploadOpen(true);
+                }}
+                className="inline-flex h-[46px] items-center justify-center gap-2 rounded-[14px] border border-[#D9E2EC] bg-white px-4 text-[14px] font-semibold text-[#0F172A] shadow-[0_4px_14px_rgba(15,23,42,0.06)] transition-all duration-300 hover:-translate-y-[1px] hover:bg-[#F8FAFC] active:translate-y-0"
+              >
+                <Upload size={18} />
+                Upload Sheet
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setSubmitError("");
+                  setSubmitSuccess("");
+                  setIsAddOpen(true);
+                }}
+                className="inline-flex h-[46px] items-center justify-center gap-2 rounded-[14px] border border-[#D9E2EC] bg-[#0F172A] px-4 text-[14px] font-semibold text-white shadow-[0_8px_20px_rgba(15,23,42,0.12)] transition-all duration-300 hover:-translate-y-[1px] hover:bg-[#111C33] active:translate-y-0"
+              >
+                <Plus size={18} />
+                Add Item
+              </button>
+            </div>
           </div>
 
           <HierarchyTable
@@ -489,6 +615,138 @@ export default function InventoryBranchPage() {
                       <>
                         <Plus size={16} />
                         Add Stock
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <div
+        className={`fixed inset-0 z-[101] transition-all duration-300 ${
+          isUploadOpen
+            ? "pointer-events-auto bg-[rgba(15,23,42,0.42)] backdrop-blur-[2px]"
+            : "pointer-events-none bg-transparent"
+        }`}
+        onClick={closeUploadModal}
+      >
+        <div className="flex min-h-[100dvh] items-end justify-center p-0 sm:items-center sm:p-4 md:p-6">
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className={`flex h-[100dvh] w-full transform flex-col overflow-hidden rounded-t-[28px] border border-[#E2E8F0] bg-white shadow-[0_30px_70px_rgba(15,23,42,0.18)] transition-all duration-300 sm:h-auto sm:max-h-[90vh] sm:max-w-[620px] sm:rounded-[28px] ${
+              isUploadOpen
+                ? "translate-y-0 scale-100 opacity-100"
+                : "translate-y-6 scale-[0.98] opacity-0"
+            }`}
+          >
+            <div className="shrink-0 border-b border-[#EEF2F6] px-4 py-4 sm:px-5 sm:py-5 md:px-6">
+              <div className="mb-3 flex justify-center sm:hidden">
+                <div className="h-1.5 w-12 rounded-full bg-[#D9E2EC]" />
+              </div>
+
+              <div className="flex items-start justify-between gap-3 sm:gap-4">
+                <div className="flex min-w-0 items-start gap-3">
+                  <div className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-[14px] border border-[#E2E8F0] bg-[#F8FAFC] text-[#0F172A] sm:h-[46px] sm:w-[46px]">
+                    <FileSpreadsheet size={20} />
+                  </div>
+
+                  <div className="min-w-0">
+                    <h2 className="text-[18px] font-semibold tracking-[-0.02em] text-[#0F172A] sm:text-[22px]">
+                      Upload Stock Sheet
+                    </h2>
+                    <p className="mt-1 text-[12px] font-medium text-[#64748B] sm:text-[14px]">
+                      Upload .xlsx, .xls, or .csv sheet to add inventory in bulk
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={closeUploadModal}
+                  className="inline-flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-[12px] border border-[#E2E8F0] bg-white text-[#475569] transition-all duration-200 hover:bg-[#F8FAFC] sm:h-[40px] sm:w-[40px]"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+            </div>
+
+            <form
+              onSubmit={handleSheetUpload}
+              className="flex min-h-0 flex-1 flex-col"
+            >
+              <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-5 sm:py-5 md:px-6">
+                <div className="rounded-[20px] border border-dashed border-[#CBD5E1] bg-[#F8FAFC] p-4 sm:p-5">
+                  <label className="block">
+                    <span className="mb-2 block text-[13px] font-semibold text-[#334155]">
+                      Select Sheet File <span className="text-red-500">*</span>
+                    </span>
+
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".xlsx,.xls,.csv"
+                      onChange={handleSheetFileChange}
+                      className="block w-full cursor-pointer rounded-[14px] border border-[#D9E2EC] bg-white px-4 py-3 text-[14px] font-medium text-[#0F172A] file:mr-4 file:rounded-[10px] file:border-0 file:bg-[#0F172A] file:px-4 file:py-2 file:text-[13px] file:font-semibold file:text-white hover:file:bg-[#111C33]"
+                    />
+                  </label>
+
+                  <div className="mt-4 rounded-[16px] border border-[#E5E7EB] bg-white px-4 py-3">
+                    <p className="text-[13px] font-medium text-[#64748B]">
+                      Selected File
+                    </p>
+                    <p className="mt-1 break-all text-[14px] font-semibold text-[#0F172A]">
+                      {selectedSheet?.name || "No file selected"}
+                    </p>
+                  </div>
+
+                  <div className="mt-4 text-[12px] font-medium leading-5 text-[#94A3B8]">
+                    Supported formats: .xlsx, .xls, .csv
+                    <br />
+                    Uploaded records will be processed by backend and reflected in
+                    inventory after successful upload.
+                  </div>
+                </div>
+
+                {uploadError ? (
+                  <div className="mt-4 rounded-[16px] border border-red-200 bg-red-50 px-4 py-3 text-[14px] font-medium text-red-600">
+                    {uploadError}
+                  </div>
+                ) : null}
+
+                {uploadSuccess ? (
+                  <div className="mt-4 rounded-[16px] border border-emerald-200 bg-emerald-50 px-4 py-3 text-[14px] font-medium text-emerald-700">
+                    {uploadSuccess}
+                  </div>
+                ) : null}
+              </div>
+
+              <div className="shrink-0 border-t border-[#EEF2F6] bg-white px-4 py-4 sm:px-5 sm:py-5 md:px-6">
+                <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                  <button
+                    type="button"
+                    onClick={closeUploadModal}
+                    className="inline-flex h-[48px] w-full items-center justify-center rounded-[14px] border border-[#D9E2EC] bg-white px-5 text-[14px] font-semibold text-[#334155] transition-all duration-200 hover:bg-[#F8FAFC] sm:w-auto"
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    type="submit"
+                    disabled={uploadingSheet}
+                    className="inline-flex h-[48px] w-full items-center justify-center gap-2 rounded-[14px] bg-[#0F172A] px-5 text-[14px] font-semibold text-white shadow-[0_10px_24px_rgba(15,23,42,0.14)] transition-all duration-300 hover:-translate-y-[1px] hover:bg-[#111C33] disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:translate-y-0 sm:w-auto"
+                  >
+                    {uploadingSheet ? (
+                      <>
+                        <Loader2 size={16} className="animate-spin" />
+                        Uploading...
+                      </>
+                    ) : (
+                      <>
+                        <Upload size={16} />
+                        Upload Sheet
                       </>
                     )}
                   </button>

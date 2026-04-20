@@ -94,8 +94,8 @@ function getRouteByRole(role: Role | null): string {
     inventory_manager: "/inventory-manager/admin-dashboard",
     super_stock_manager: "/stock-manager",
     stock_manager: "/stock-manager",
-    sales_manager: "/sales-manager/",
-    super_sales_manager: "/sales-manager",
+    sales_manager: "/sales-manager/Dashboard",
+    super_sales_manager: "/sales-manager/admin_dash",
     purchase_manager: "/purchase-manager",
     finance: "/finance",
   };

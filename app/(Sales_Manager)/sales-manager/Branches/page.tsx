@@ -210,7 +210,7 @@ export default function BranchOverviewDashboardPage() {
   if (error) return <div className="p-6 text-sm text-red-600">{error}</div>;
 
   return (
-    <div className="space-y-6 px-2 pb-4 sm:px-3 lg:px-4">
+    <div className="space-y-6  pb-4 ">
       {loading ? (
         <>
           <HeaderSkeleton />

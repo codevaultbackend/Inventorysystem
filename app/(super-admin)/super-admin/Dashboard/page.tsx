@@ -29,6 +29,7 @@ type BranchItem = {
   sales: number;
   in: number;
   out: number;
+  href?: string;
 };
 
 type ActivityItem = {
@@ -39,23 +40,24 @@ type ActivityItem = {
 };
 
 const STOCK_COLORS = [
-  "#3B82F6",
+  "#2563EB",
   "#F97316",
-  "#06B6D4",
-  "#84CC16",
-  "#A855F7",
-  "#EC4899",
+  "#38BDF8",
+  "#8BC34A",
+  "#D946EF",
   "#14B8A6",
-  "#EAB308",
+  "#F59E0B",
+  "#7C3AED",
 ];
 
-function toNumber(value: any) {
+function toNumber(value: unknown) {
   if (typeof value === "number") return value;
+
   if (typeof value === "string") {
-    const cleaned = value.replace(/[₹,\s]/g, "");
-    const parsed = Number(cleaned);
+    const parsed = Number(value.replace(/[₹,\s]/g, ""));
     return Number.isFinite(parsed) ? parsed : 0;
   }
+
   return 0;
 }
 
@@ -66,8 +68,7 @@ function formatDateLabel(dateString: string) {
   if (Number.isNaN(date.getTime())) return dateString;
 
   return date.toLocaleDateString("en-IN", {
-    day: "numeric",
-    month: "short",
+    weekday: "short",
   });
 }
 
@@ -90,7 +91,7 @@ function buildSalesAnalyticsData(
       });
     }
 
-    mergedMap.get(date)!.sales = toNumber(item?.total);
+    mergedMap.get(date)!.sales = toNumber(item?.total ?? item?.sales);
   });
 
   purchaseList.forEach((item) => {
@@ -106,7 +107,7 @@ function buildSalesAnalyticsData(
       });
     }
 
-    mergedMap.get(date)!.purchase = toNumber(item?.total);
+    mergedMap.get(date)!.purchase = toNumber(item?.total ?? item?.purchase);
   });
 
   return Array.from(mergedMap.values()).sort(
@@ -142,17 +143,33 @@ export default function DashboardPage() {
     : [];
 
   const branchOverviewData: BranchItem[] = Array.isArray(data?.branchOverview)
-    ? data.branchOverview.map((item: any, index: number) => ({
-        name: item.branchName || item.name || `Branch ${index + 1}`,
-        id: String(
-          item.id ?? item.branchId ?? item.branch_id ?? `branch-${index + 1}`
-        ),
-        stock: toNumber(item.stockItems ?? item.stock_items ?? item.stock ?? 0),
-        purchase: toNumber(item.purchase ?? 0),
-        sales: toNumber(item.sale ?? item.sales ?? 0),
-        in: toNumber(item.stockIn ?? item.in ?? 0),
-        out: toNumber(item.stockOut ?? item.out ?? 0),
-      }))
+    ? data.branchOverview.map((item: any, index: number) => {
+        const resolvedName =
+          item.state ||
+          item.branchName ||
+          item.name ||
+          `State ${index + 1}`;
+
+        const resolvedId = String(
+          item.id ??
+            item.stateId ??
+            item.state_id ??
+            item.branchId ??
+            item.branch_id ??
+            index + 1
+        );
+
+        return {
+          id: resolvedId,
+          name: resolvedName,
+          stock: toNumber(item.totalStock ?? item.stock ?? item.stockItems ?? 0),
+          purchase: toNumber(item.purchaseCount ?? item.purchase ?? 0),
+          sales: toNumber(item.salesCount ?? item.sales ?? item.sale ?? 0),
+          in: toNumber(item.currentStock ?? item.in ?? item.stockIn ?? 0),
+          out: toNumber(item.out ?? item.stockOut ?? 0),
+          href: `/super-admin/Branches/${encodeURIComponent(resolvedName)}`,
+        };
+      })
     : [];
 
   const recentActivitiesData: ActivityItem[] = Array.isArray(
@@ -168,35 +185,25 @@ export default function DashboardPage() {
 
   if (error && !loading) {
     return (
-      <div className="rounded-[20px] border border-red-200 bg-red-50 px-5 py-4 text-sm font-medium text-red-700">
+      <div className="rounded-[24px] border border-red-200 bg-red-50 px-5 py-4 text-sm font-medium text-red-700">
         {error}
       </div>
     );
   }
 
   return (
-    <div className="space-y-5 lg:space-y-6">
+    <section className="w-full space-y-5 xl:space-y-4">
       <DashboardStats data={data} loading={loading} />
 
-      <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1.55fr)_minmax(660px,0.95fr)]">
-        <div className="min-w-0">
-          <SalesAnalytics data={salesAnalyticsData} loading={loading} />
-        </div>
-
-        <div className="min-w-0">
-          <StockDistribution data={stockDistributionData} loading={loading} />
-        </div>
+      <div className="grid grid-cols-1 items-stretch gap-5 xl:grid-cols-[minmax(0,1.32fr)_minmax(430px,1fr)]">
+        <SalesAnalytics data={salesAnalyticsData} loading={loading} />
+        <StockDistribution data={stockDistributionData} loading={loading} />
       </div>
 
-      <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1.55fr)_minmax(320px,0.95fr)]">
-        <div className="min-w-0">
-          <BranchOverview data={branchOverviewData} loading={loading} />
-        </div>
-
-        <div className="min-w-0">
-          <RecentActivities data={recentActivitiesData} loading={loading} />
-        </div>
+      <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)]">
+        <BranchOverview data={branchOverviewData} loading={loading} />
+        <RecentActivities data={recentActivitiesData} loading={loading} />
       </div>
-    </div>
+    </section>
   );
 }

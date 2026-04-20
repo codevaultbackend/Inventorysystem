@@ -1,6 +1,7 @@
 "use client";
 
-import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
+import { useMemo } from "react";
+import { Cell, Pie, PieChart, ResponsiveContainer } from "recharts";
 
 type StockDistributionItem = {
   name: string;
@@ -15,22 +16,25 @@ type Props = {
 };
 
 function renderCustomLabel(props: any) {
-  const { cx, cy, midAngle, outerRadius, value, fill } = props;
+  const { cx, cy, midAngle, outerRadius, value, fill, percent } = props;
+
+  const numericValue = Number(value) || 0;
+  const numericPercent = Number(percent) || 0;
+
+  if (numericValue <= 0 || numericPercent < 0.07) return null;
 
   const RADIAN = Math.PI / 180;
   const angle = -midAngle * RADIAN;
   const isRight = Math.cos(angle) >= 0;
 
-  const startX = cx + (outerRadius - 6) * Math.cos(angle);
-  const startY = cy + (outerRadius - 6) * Math.sin(angle);
+  const startX = cx + (outerRadius - 3) * Math.cos(angle);
+  const startY = cy + (outerRadius - 3) * Math.sin(angle);
 
-  const midX = cx + (outerRadius + 22) * Math.cos(angle);
-  const midY = cy + (outerRadius + 22) * Math.sin(angle);
+  const midX = cx + (outerRadius + 10) * Math.cos(angle);
+  const midY = cy + (outerRadius + 10) * Math.sin(angle);
 
-  const endX = isRight ? midX + 62 : midX - 62;
+  const endX = isRight ? midX + 24 : midX - 24;
   const endY = midY;
-
-  const textX = isRight ? endX + 8 : endX - 8;
 
   return (
     <g>
@@ -39,8 +43,8 @@ function renderCustomLabel(props: any) {
         y1={startY}
         x2={midX}
         y2={midY}
-        stroke="#D1D5DB"
-        strokeWidth={2}
+        stroke="#D5DCE5"
+        strokeWidth={1.2}
         strokeDasharray="3 3"
       />
       <line
@@ -48,19 +52,19 @@ function renderCustomLabel(props: any) {
         y1={midY}
         x2={endX}
         y2={endY}
-        stroke="#D1D5DB"
-        strokeWidth={2}
+        stroke="#D5DCE5"
+        strokeWidth={1.2}
         strokeDasharray="3 3"
       />
       <text
-        x={textX}
-        y={endY + 5}
+        x={isRight ? endX + 6 : endX - 6}
+        y={endY + 4}
         fill={fill}
         textAnchor={isRight ? "start" : "end"}
-        fontSize="13"
+        fontSize="12"
         fontWeight="700"
       >
-        {`${Number(value).toFixed(0)}%`}
+        {`${Math.round(numericValue)}%`}
       </text>
     </g>
   );
@@ -70,44 +74,58 @@ export default function StockDistribution({
   data = [],
   loading = false,
 }: Props) {
+  const normalizedData = useMemo(() => {
+    return data.map((item, index) => ({
+      name: item?.name || `Category ${index + 1}`,
+      value: Number(item?.value || 0),
+      total: Number(item?.total || 0),
+      color: item?.color || "#2563EB",
+    }));
+  }, [data]);
+
+  const chartData = useMemo(() => {
+    return normalizedData.filter((item) => item.value > 0);
+  }, [normalizedData]);
+
+  const hasChartData = chartData.length > 0;
+
   return (
-    <div className=" lg:max-h-[320px] max-h-[520px] h-full min-w-0 overflow-hidden rounded-[24px] border border-[#E5EAF1] bg-white px-4 py-4 shadow-[1px_1px_4px_rgba(0,0,0,0.1)] sm:px-5 sm:py-5 lg:px-6 lg:py-6">
-      <div className="">
-        <h3 className="text-[14px] font-[500] leading-none tracking-[-0.02em] text-[#111827] sm:text-[20px] lg:text-[18px]">
+    <section className="min-w-0 rounded-[20px] border border-[#E8EDF3] bg-white px-5 py-4 shadow-[0_1px_3px_rgba(16,24,40,0.08),0_1px_2px_rgba(16,24,40,0.04)] sm:px-6 sm:py-5 xl:h-[280px]">
+      <div className="mb-3">
+        <h3 className="text-[18px] font-semibold leading-[24px] tracking-[-0.02em] text-[#171717]">
           Stock Distribution
         </h3>
-        <p className="mt-1.5 text-[12px] text-[#9CA3AF] sm:text-[13px] lg:text-[14px]">
+        <p className="mt-1 text-[13px] leading-[18px] text-[#9AA0AA]">
           Category-wise Breakdown
         </p>
       </div>
 
       {loading ? (
-        <div className=" rounded-[20px] bg-[#F8FAFC] sm:h-[360px] xl:h-[200px]" />
-      ) : data.length > 0 ? (
-        <div className="flex h-full min-h-[270px] min-w-0 flex-col gap-6 sm:min-h-[270px] xl:min-h-[210px] xl:flex-row xl:items-center xl:gap-4">
-          <div className="flex min-w-0 flex-1 items-center justify-center xl:basis-[38%]">
-            <div className="h-[220px] w-full max-w-[320px] max-w-[650px]:w-[350px];
-    max-w-[650px]:h-[135px] max-w-[650px]:left-[-15px] sm:h-[240px] sm:max-w-[360px] md:h-[240px] md:max-w-[390px] xl:h-[240px] xl:max-w-[420px]">
+        <div className="mt-3 h-[190px] animate-pulse rounded-[16px] bg-[#F7FAFC]" />
+      ) : hasChartData ? (
+        <div className="mt-2 grid min-h-[190px] grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_190px] lg:items-center">
+          <div className="flex min-h-[190px] items-center justify-center overflow-visible">
+            <div className="flex h-[190px] w-full max-w-[260px] items-center justify-center overflow-visible sm:h-[205px] sm:max-w-[290px] md:max-w-[320px] xl:h-[185px] xl:max-w-[250px] 2xl:max-w-[270px]">
               <ResponsiveContainer width="100%" height="100%">
-                <PieChart margin={{ top: 10, right: 26, bottom: 10, left: 26 }}>
+                <PieChart margin={{ top: 20, right: 28, bottom: 20, left: 28 }}>
                   <Pie
-                    data={data}
+                    data={chartData}
                     dataKey="value"
                     nameKey="name"
                     cx="50%"
                     cy="50%"
-                    innerRadius="42%"
-                    outerRadius="68%"
+                    innerRadius="62%"
+                    outerRadius="76%"
                     paddingAngle={8}
-                    cornerRadius={16}
-                    startAngle={110}
-                    endAngle={-250}
+                    cornerRadius={18}
+                    startAngle={120}
+                    endAngle={-240}
                     stroke="none"
                     labelLine={false}
                     label={renderCustomLabel}
                     isAnimationActive={false}
                   >
-                    {data.map((entry, index) => (
+                    {chartData.map((entry, index) => (
                       <Cell key={index} fill={entry.color} />
                     ))}
                   </Pie>
@@ -116,25 +134,25 @@ export default function StockDistribution({
             </div>
           </div>
 
-          <div className="min-w-0 xl:basis-[32%]">
-            <div className="space-y-1 sm:space-y-1">
-              {data.map((item, index) => (
+          <div className="w-full self-center lg:max-w-[190px]">
+            <div className="max-h-[172px] space-y-3 overflow-y-auto pr-1">
+              {normalizedData.map((item, index) => (
                 <div
-                  key={index}
-                  className="flex min-w-0 items-center justify-between gap-3"
+                  key={`${item.name}-${index}`}
+                  className="flex items-center justify-between gap-3"
                 >
                   <div className="flex min-w-0 items-center gap-3">
                     <span
-                      className="h-[11px] w-[11px] shrink-0 rounded-full sm:h-[12px] sm:w-[12px]"
+                      className="h-[10px] w-[10px] shrink-0 rounded-full"
                       style={{ backgroundColor: item.color }}
                     />
-                    <span className="truncate text-[13px] font-medium text-[#000000] sm:text-[16px] lg:text-[14px]">
+                    <span className="truncate text-[14px] font-medium text-[#2A2A2A]">
                       {item.name}
                     </span>
                   </div>
 
-                  <span className="shrink-0 text-[13px] font-semibold text-[#111827] sm:text-[16px] lg:text-[14px]">
-                    {item.value}%
+                  <span className="shrink-0 text-[14px] font-semibold text-[#171717]">
+                    {Math.round(item.value)}%
                   </span>
                 </div>
               ))}
@@ -142,10 +160,10 @@ export default function StockDistribution({
           </div>
         </div>
       ) : (
-        <div className="flex h-[200px] items-center justify-center rounded-[20px] bg-[#F8FAFC] text-sm text-[#64748B] sm:h-[360px] xl:h-[200px]">
+        <div className="mt-3 flex h-[190px] items-center justify-center rounded-[16px] border border-dashed border-[#E5EAF1] bg-[#FAFCFE] text-sm text-[#8A94A6]">
           No stock distribution data found
         </div>
       )}
-    </div>
+    </section>
   );
 }

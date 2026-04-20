@@ -128,7 +128,7 @@ const ROLE_NAV_ITEMS: Record<string, NavItem[]> = {
     },
   ],
   sales_manager: [
-    { label: "Dashboard", href: "/sales-manager", icon: DashboardIcon },
+    { label: "Dashboard", href: "/sales-manager/admin_dash", icon: DashboardIcon },
     {
       label: "Client Intake",
       href: "/sales-manager/client-intake",
@@ -152,7 +152,7 @@ const ROLE_NAV_ITEMS: Record<string, NavItem[]> = {
     },
   ],
   super_sales_manager: [
-    { label: "Dashboard", href: "/sales-manager", icon: DashboardIcon },
+    { label: "Dashboard", href: "/sales-manager/Dashboard", icon: DashboardIcon },
     {
       label: "All Sales",
       href: "/sales-manager/Branches",
@@ -164,12 +164,12 @@ const ROLE_NAV_ITEMS: Record<string, NavItem[]> = {
       href: "/sales-manager/qutation",
       icon: IoDocumentTextSharp,
     },
-    {
+    { label: "Invoice", href: "/sales-manager/invoice", icon: IoMdClipboard },
+     {
       label: "Report & Analysis",
       href: "/sales-manager/report-analysis",
       icon: HiOutlineClipboardDocumentList,
     },
-    { label: "Invoice", href: "/sales-manager/invoice", icon: IoMdClipboard },
   ],
   admin: [
     {

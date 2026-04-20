@@ -25,8 +25,6 @@ type Props = {
 
 function formatCurrency(value: number) {
   return new Intl.NumberFormat("en-IN", {
-    style: "currency",
-    currency: "INR",
     maximumFractionDigits: 0,
   }).format(Number(value || 0));
 }
@@ -39,8 +37,7 @@ export default function BranchOverview({
   data = [],
   loading = false,
   title = "Branch Overview",
-  subtitle = "Latest system branch stock and sales summary",
-  editHref,
+  subtitle = "Latest system activities and updates",
 }: Props) {
   const { setLocation } = useSuperDashboard();
   const { user } = useAuth();
@@ -49,46 +46,32 @@ export default function BranchOverview({
   const baseRoute = isSuperAdmin ? "/super-admin" : "/admin";
 
   return (
-    <div className="w-full overflow-hidden rounded-2xl border border-[#EEF2F6] bg-white shadow-[1px_1px_4px_rgba(0,0,0,0.1)]">
-      {/* top heading stays fixed */}
-      <div className="flex items-center justify-between border-b border-[#EEF2F6] bg-white px-4 py-4 sm:px-6 sm:py-5">
-        <div className="min-w-0">
-          <h3 className="text-[16px] font-semibold text-[#0F172A] sm:text-[18px]">
-            {title}
-          </h3>
-          <p className="mt-1 text-[12px] text-[#64748B] sm:text-[13px]">
-            {subtitle}
-          </p>
-        </div>
-
-        <div className="ml-3 flex shrink-0 items-center gap-3">
-          {isSuperAdmin && (
-            <Link href={editHref || `${baseRoute}/Branches/EditBranch`}>
-              <button className="rounded-lg bg-blue-600 px-3 py-2 text-[13px] text-white transition hover:bg-blue-700 sm:px-4 sm:text-sm">
-                Edit Branch
-              </button>
-            </Link>
-          )}
-        </div>
+    <section className="overflow-hidden rounded-[20px] border border-[#E8EDF3] bg-white shadow-[0_1px_3px_rgba(16,24,40,0.08),0_1px_2px_rgba(16,24,40,0.04)]">
+      <div className="border-b border-[#EDF2F7] px-5 py-5">
+        <h3 className="text-[18px] font-semibold leading-[24px] tracking-[-0.02em] text-[#171717]">
+          {title}
+        </h3>
+        <p className="mt-1 text-[13px] leading-[18px] text-[#9AA0AA]">
+          {subtitle}
+        </p>
       </div>
 
-      {/* only this section scrolls horizontally + vertically */}
-      <div className="max-h-[460px] overflow-x-auto overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-        <table className="min-w-[1000px] w-full border-separate border-spacing-0">
-          <thead className="sticky top-0 z-20">
-            <tr className="bg-[#F8FAFC] text-left">
+      <div className="max-h-[430px] overflow-auto">
+        <table className="min-w-[820px] w-full border-separate border-spacing-0">
+          <thead className="sticky top-0 z-10">
+            <tr>
               {[
                 "Branch Name",
                 "Stock Items",
                 "Purchase",
-                "Sales",
+                "Sale",
                 "Stock IN",
                 "Stock OUT",
                 "Action",
               ].map((head) => (
                 <th
                   key={head}
-                  className="whitespace-nowrap border-b border-[#E2E8F0] bg-[#F8FAFC] px-4 py-4 text-[12px] font-medium text-[#475569] sm:px-6 sm:text-[13px]"
+                  className="border-b border-r border-[#E7EDF4] bg-[#F8FAFC] px-6 py-4 text-left text-[14px] font-semibold text-[#171717] last:border-r-0"
                 >
                   {head}
                 </th>
@@ -98,14 +81,14 @@ export default function BranchOverview({
 
           <tbody>
             {loading ? (
-              Array.from({ length: 6 }).map((_, index) => (
-                <tr key={index} className="bg-white">
-                  {Array.from({ length: 7 }).map((__, idx) => (
+              Array.from({ length: 6 }).map((_, rowIndex) => (
+                <tr key={rowIndex} className="bg-white">
+                  {Array.from({ length: 7 }).map((__, cellIndex) => (
                     <td
-                      key={idx}
-                      className="border-b border-[#E2E8F0] px-4 py-4 sm:px-6"
+                      key={cellIndex}
+                      className="border-b border-r border-[#E7EDF4] px-6 py-4 last:border-r-0"
                     >
-                      <div className="h-4 w-full animate-pulse rounded bg-gray-100" />
+                      <div className="h-4 w-full animate-pulse rounded bg-[#EEF2F7]" />
                     </td>
                   ))}
                 </tr>
@@ -113,45 +96,33 @@ export default function BranchOverview({
             ) : data.length > 0 ? (
               data.map((branch) => {
                 const resolvedHref =
-                  branch.href ||
-                  `${baseRoute}/Branches/${encodeURIComponent(branch.id)}`;
+                  branch.href || `${baseRoute}/Branches/${encodeURIComponent(branch.id)}`;
 
                 return (
-                  <tr
-                    key={branch.id}
-                    className="bg-white transition hover:bg-[#F8FAFC]"
-                  >
-                    <td className="whitespace-nowrap border-b border-[#E2E8F0] px-4 py-4 font-medium text-[#0F172A] sm:px-6">
+                  <tr key={branch.id} className="bg-white hover:bg-[#FBFDFF]">
+                    <td className="border-b border-r border-[#E7EDF4] px-6 py-4 text-[15px] font-medium text-[#171717] last:border-r-0">
                       {branch.name}
                     </td>
-
-                    <td className="whitespace-nowrap border-b border-[#E2E8F0] px-4 py-4 text-[#334155] sm:px-6">
+                    <td className="border-b border-r border-[#E7EDF4] px-6 py-4 text-[15px] text-[#171717] last:border-r-0">
                       {formatNumber(branch.stock)}
                     </td>
-
-                    <td className="whitespace-nowrap border-b border-[#E2E8F0] px-4 py-4 text-[#334155] sm:px-6">
+                    <td className="border-b border-r border-[#E7EDF4] px-6 py-4 text-[15px] text-[#171717] last:border-r-0">
                       {formatCurrency(branch.purchase)}
                     </td>
-
-                    <td className="whitespace-nowrap border-b border-[#E2E8F0] px-4 py-4 text-[#334155] sm:px-6">
+                    <td className="border-b border-r border-[#E7EDF4] px-6 py-4 text-[15px] text-[#171717] last:border-r-0">
                       {formatCurrency(branch.sales)}
                     </td>
-
-                    <td className="whitespace-nowrap border-b border-[#E2E8F0] px-4 py-4 text-[#334155] sm:px-6">
+                    <td className="border-b border-r border-[#E7EDF4] px-6 py-4 text-[15px] text-[#171717] last:border-r-0">
                       {formatNumber(branch.in)}
                     </td>
-
-                    <td className="whitespace-nowrap border-b border-[#E2E8F0] px-4 py-4 text-[#334155] sm:px-6">
+                    <td className="border-b border-r border-[#E7EDF4] px-6 py-4 text-[15px] text-[#171717] last:border-r-0">
                       {formatNumber(branch.out)}
                     </td>
-
-                    <td className="whitespace-nowrap border-b border-[#E2E8F0] px-4 py-4 sm:px-6">
+                    <td className="border-b border-[#E7EDF4] px-6 py-4 text-[15px] last:border-r-0">
                       <Link
                         href={resolvedHref}
-                        onClick={() => {
-                          if (isSuperAdmin) setLocation(branch.name);
-                        }}
-                        className="text-sm font-medium text-blue-600 hover:underline"
+                        onClick={() => isSuperAdmin && setLocation(branch.name)}
+                        className="font-medium text-[#2563EB] underline underline-offset-2"
                       >
                         View
                       </Link>
@@ -161,10 +132,7 @@ export default function BranchOverview({
               })
             ) : (
               <tr>
-                <td
-                  colSpan={7}
-                  className="px-6 py-10 text-center text-sm text-[#64748B]"
-                >
+                <td colSpan={7} className="px-6 py-12 text-center text-sm text-[#64748B]">
                   No branch overview data found
                 </td>
               </tr>
@@ -172,6 +140,6 @@ export default function BranchOverview({
           </tbody>
         </table>
       </div>
-    </div>
+    </section>
   );
 }

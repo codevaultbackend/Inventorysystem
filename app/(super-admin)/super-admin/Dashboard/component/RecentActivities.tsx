@@ -207,80 +207,92 @@ export default function RecentActivities({
   }, [hasExternalData, data, activities]);
 
   return (
-    <div className="h-fit rounded-[22px] border border-[#E6EDF5] bg-white p-6 shadow-[1px_1px_4px_rgba(0,0,0,0.1)]">
-      <div className="mb-5">
-        <h3 className="text-[18px] font-semibold tracking-[-0.02em] text-[#111827]">
+    <section
+      className="
+        h-full min-h-[380px] rounded-[20px] border border-[#E7EDF4] bg-white
+        px-4 py-4 shadow-[0_1px_2px_rgba(16,24,40,0.05),0_1px_3px_rgba(16,24,40,0.10)]
+        sm:px-5 sm:py-5
+        xl:min-h-[414px]
+      "
+    >
+      <div className="mb-4 border-b border-[#EDF2F7] pb-4">
+        <h3 className="text-[18px] font-semibold leading-[24px] tracking-[-0.02em] text-[#171717]">
           Recent Activities
         </h3>
-        <p className="mt-1 text-[13px] text-[#8A94A6]">
+        <p className="mt-1 text-[13px] leading-[18px] text-[#9AA0AA]">
           Latest system activities and updates
         </p>
       </div>
 
-      <div className="space-y-3">
+      <div className="flex flex-col gap-3">
         {finalLoading ? (
           Array.from({ length: 5 }).map((_, index) => (
             <div
               key={index}
-              className="flex items-start justify-between rounded-[16px] border border-[#EEF2F7] bg-[#FAFCFE] px-4 py-3.5"
+              className="
+                flex items-start justify-between gap-3 rounded-[14px]
+                border border-[#EEF2F7] bg-[#F8FBFF]
+                px-4 py-3.5
+              "
             >
-              <div className="flex w-full items-start gap-3">
-                <div className="h-10 w-10 animate-pulse rounded-xl bg-[#EEF2F7]" />
-                <div className="flex-1">
-                  <div className="mb-2 h-4 w-36 animate-pulse rounded bg-[#EEF2F7]" />
-                  <div className="h-3 w-44 animate-pulse rounded bg-[#EEF2F7]" />
+              <div className="flex min-w-0 flex-1 items-start gap-3">
+                <div className="h-10 w-10 shrink-0 animate-pulse rounded-[10px] bg-[#EEF2F7]" />
+                <div className="min-w-0 flex-1">
+                  <div className="mb-2 h-4 w-32 animate-pulse rounded bg-[#EEF2F7]" />
+                  <div className="h-3 w-44 max-w-full animate-pulse rounded bg-[#EEF2F7]" />
                 </div>
               </div>
-              <div className="h-3 w-16 animate-pulse rounded bg-[#EEF2F7]" />
+              <div className="mt-1 h-3 w-14 shrink-0 animate-pulse rounded bg-[#EEF2F7]" />
             </div>
           ))
         ) : error ? (
-          <div className="flex h-[240px] items-center justify-center rounded-[16px] border border-dashed border-[#E5EAF1] bg-[#FAFCFE] text-sm text-[#8A94A6]">
+          <div className="flex min-h-[260px] items-center justify-center rounded-[16px] border border-dashed border-[#E5EAF1] bg-[#FAFCFE] px-4 text-center text-sm text-[#8A94A6]">
             {error}
           </div>
         ) : finalData.length > 0 ? (
-          finalData.map((item, index) => {
+          finalData.slice(0, 5).map((item, index) => {
             const IconData = getActivityIcon(item.type);
             const Icon = IconData.icon;
 
             return (
-              <div
+              <article
                 key={item.id ?? index}
                 className="
-                  flex items-start justify-between gap-3 rounded-[16px]
-                  border border-[#EEF2F7] bg-[#FAFCFE]
-                  px-4 py-3.5 transition hover:bg-[#F5F8FC]
+                  flex items-start justify-between gap-3 rounded-[14px]
+                  border border-[#EEF2F7] bg-[#F8FBFF]
+                  px-4 py-3.5 transition-colors duration-200
+                  hover:bg-[#F4F8FC]
                 "
               >
-                <div className="flex min-w-0 items-start gap-3">
+                <div className="flex min-w-0 flex-1 items-start gap-3">
                   <div
-                    className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${IconData.bg}`}
+                    className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] ${IconData.bg}`}
                   >
-                    <Icon className={`h-4.5 w-4.5 ${IconData.iconColor}`} />
+                    <Icon className={`h-[18px] w-[18px] ${IconData.iconColor}`} />
                   </div>
 
-                  <div className="min-w-0">
-                    <p className="truncate text-[14px] font-semibold text-[#111827]">
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-[15px] font-medium leading-[20px] text-[#2B2B2B]">
                       {item.title}
                     </p>
-                    <p className="mt-1 line-clamp-2 text-[12px] leading-5 text-[#6B7280]">
+                    <p className="mt-1 line-clamp-2 text-[13px] leading-[18px] text-[#9AA0AA]">
                       {item.description}
                     </p>
                   </div>
                 </div>
 
-                <span className="shrink-0 whitespace-nowrap text-[12px] font-medium text-[#9AA4B2]">
+                <span className="shrink-0 whitespace-nowrap pt-1 text-[12px] font-medium text-[#A1A1AA]">
                   {formatRelativeTime(item.time || "")}
                 </span>
-              </div>
+              </article>
             );
           })
         ) : (
-          <div className="flex h-[240px] items-center justify-center rounded-[16px] border border-dashed border-[#E5EAF1] bg-[#FAFCFE] text-sm text-[#8A94A6]">
+          <div className="flex min-h-[260px] items-center justify-center rounded-[16px] border border-dashed border-[#E5EAF1] bg-[#FAFCFE] px-4 text-center text-sm text-[#8A94A6]">
             No recent activities found
           </div>
         )}
       </div>
-    </div>
+    </section>
   );
 }

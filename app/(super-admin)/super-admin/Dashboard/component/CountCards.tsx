@@ -1,11 +1,6 @@
 "use client";
 
-import {
-  Users,
-  Boxes,
-  Building2,
-  TrendingUp,
-} from "lucide-react";
+import { Users } from "lucide-react";
 import { BsBoxSeam } from "react-icons/bs";
 import { LuBadgePercent } from "react-icons/lu";
 import { FaChartLine } from "react-icons/fa6";
@@ -38,93 +33,80 @@ function formatNumber(value: number | string, isCurrency = false) {
   if (!Number.isFinite(num)) return isCurrency ? "₹0" : "0";
 
   if (isCurrency) {
+    if (num >= 10000000) return `₹${(num / 10000000).toFixed(1)}Cr`;
+    if (num >= 100000) return `₹${(num / 100000).toFixed(1)}L`;
     return new Intl.NumberFormat("en-IN", {
       style: "currency",
       currency: "INR",
       maximumFractionDigits: 0,
-      notation: "compact",
     }).format(num);
   }
 
-  return new Intl.NumberFormat("en-IN", {
-    notation: "compact",
-    maximumFractionDigits: 1,
-  }).format(num);
+  return new Intl.NumberFormat("en-IN").format(num);
 }
 
-export default function DashboardStats({
-  data,
-  loading = false,
-}: DashboardProps) {
+export default function DashboardStats({ data, loading = false }: DashboardProps) {
   const stats: StatsItem[] = [
     {
       title: "Total Users",
       value: data?.stats?.totalUsers ?? 0,
       icon: Users,
-      iconWrap: "bg-[#EEF5FF]",
+      iconWrap: "bg-[#EFF6FF]",
       iconColor: "text-[#3B82F6]",
     },
     {
       title: "Total Stock",
       value: data?.stats?.totalStock ?? 0,
       icon: BsBoxSeam,
-      iconWrap: "bg-[#EEF9F2]",
-      iconColor: "text-[#22C55E]",
+      iconWrap: "bg-[#EEF7FF]",
+      iconColor: "text-[#3B82F6]",
     },
     {
       title: "Total Branches",
       value: data?.stats?.totalBranches ?? 0,
       icon: LuBadgePercent,
-      iconWrap: "bg-[#F5F3FF]",
-      iconColor: "text-[#8B5CF6]",
+      iconWrap: "bg-[#EFF6FF]",
+      iconColor: "text-[#3B82F6]",
     },
     {
       title: "Total Stock Value",
       value: data?.stats?.totalStockValue ?? 0,
       icon: FaChartLine,
-      iconWrap: "bg-[#FFF4E8]",
-      iconColor: "text-[#F97316]",
+      iconWrap: "bg-[#DCFCE7]",
+      iconColor: "text-[#22C55E]",
       isCurrency: true,
     },
   ];
 
   return (
-    <section className="grid max-[650px]:grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4 mx-auto">
+    <section className="grid grid-cols-2 gap-4 sm:grid-cols-2 2xl:grid-cols-4">
       {stats.map((item, index) => (
-        <div
+        <article
           key={index}
-          className="
-            rounded-[20px] border border-[#E8EEF4] bg-white
-            px-5 py-5 sm:px-6 sm:py-6
-            shadow-[0px_10px_30px_rgba(15,23,42,0.05)]
-            transition-all duration-200 shadow-[1px_1px_4px_rgba(0,0,0,0.1)]
-            hover:-translate-y-[1px] hover:shadow-[0px_16px_40px_rgba(15,23,42,0.07)] h-[153px] max-w-[272px]
-          "
+          className="min-h-[160px] rounded-[20px] border border-[#E8EDF3] bg-white px-4 py-4 shadow-[0_1px_3px_rgba(16,24,40,0.08),0_1px_2px_rgba(16,24,40,0.04)] sm:px-5 sm:py-5"
         >
-          <div className="flex items-start justify-between gap-4 flex-col-reverse">
-            <div className="min-w-0">
-              <p className="text-[12px] font-[400] text-[#949494]">
+          <div className="flex h-full flex-col justify-between">
+            <div
+              className={`flex h-12 w-12 items-center justify-center rounded-[12px] ${item.iconWrap}`}
+            >
+              <item.icon className={`h-5 w-5 ${item.iconColor}`} strokeWidth={2} />
+            </div>
+
+            <div className="pt-8">
+              <p className="text-[14px] font-normal leading-[20px] text-[#8B8B8B]">
                 {item.title}
               </p>
 
-              <div className="mt-3">
-                {loading ? (
-                  <div className="h-9 w-28 animate-pulse rounded-lg bg-[#EEF2F7]" />
-                ) : (
-                  <h2 className="truncate text-[28px] font-[400] leading-none tracking-[-0.03em] text-[#000000]">
-                    {formatNumber(item.value, item.isCurrency)}
-                  </h2>
-                )}
-              </div>
-            </div>
-
-            <div
-              className={`flex h-[24px] w-[24px] shrink-0 items-center justify-center rounded-[16px] ${item.iconWrap}`}
-            >
-              <item.icon className={`h-6 w-6 ${item.iconColor}`} />
+              {loading ? (
+                <div className="mt-3 h-10 w-28 animate-pulse rounded-lg bg-[#EEF2F7]" />
+              ) : (
+                <h2 className="mt-2 text-[28px] font-normal leading-[34px] tracking-[-0.02em] text-[#111111] md:text-[32px]">
+                  {formatNumber(item.value, item.isCurrency)}
+                </h2>
+              )}
             </div>
           </div>
-        </div>
+        </article>
       ))}
     </section>
   );

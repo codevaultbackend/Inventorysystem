@@ -184,10 +184,10 @@ function normalizeItems(items: RawItem[], branchId: string): InventoryRow[] {
       return {
         id: String(
           item?.id ??
-            item?.itemId ??
-            item?.item_id ??
-            item?.item ??
-            `${branchId}-${index + 1}`
+          item?.itemId ??
+          item?.item_id ??
+          item?.item ??
+          `${branchId}-${index + 1}`
         ),
         itemName: String(resolvedName),
         name: String(resolvedName),
@@ -273,8 +273,8 @@ export default function BranchDetailsPage() {
       } catch (err: any) {
         setError(
           err?.response?.data?.message ||
-            err?.message ||
-            "Failed to load branch details"
+          err?.message ||
+          "Failed to load branch details"
         );
       } finally {
         setLoading(false);
@@ -390,7 +390,7 @@ export default function BranchDetailsPage() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="w-full min-w-0 space-y-8">
       <div className="rounded-2xl border border-[#EEF2F6] bg-white p-6 shadow-sm">
         <h1 className="text-[24px] font-semibold text-[#0F172A] md:text-[28px]">
           {dashboardData?.branch?.name || `Branch ${branchId}`}
@@ -408,12 +408,12 @@ export default function BranchDetailsPage() {
         />
       </div>
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-        <div className="rounded-2xl border border-[#EEF2F6] bg-white p-6 shadow-sm">
+      <div className="grid w-full min-w-0 grid-cols-1 gap-6 xl:grid-cols-2">
+        <div className="min-w-0 rounded-2xl border border-[#EEF2F6] bg-white p-6 shadow-sm">
           <StockTrendBar data={stockTrendData} />
         </div>
 
-        <div className="rounded-2xl border border-[#EEF2F6] bg-white p-6 shadow-sm">
+        <div className="min-w-0 rounded-2xl border border-[#EEF2F6] bg-white p-6 shadow-sm">
           <SalesTrendLine data={salesTrendData} />
         </div>
       </div>

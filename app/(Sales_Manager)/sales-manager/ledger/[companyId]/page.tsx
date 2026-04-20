@@ -274,7 +274,7 @@ export default function CompanyLedgerEntriesPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#F6F8FB] p-3 sm:p-4 lg:p-6">
+      <div className="min-h-screen bg-[#F6F8FB] ">
         <div className="mx-auto max-w-[1400px] rounded-[24px] bg-[#F8FAFC] p-4 shadow-[0_20px_50px_rgba(15,23,42,0.06)] sm:p-6">
           <div className="animate-pulse space-y-4">
             <div className="h-[32px] w-[260px] rounded bg-white" />

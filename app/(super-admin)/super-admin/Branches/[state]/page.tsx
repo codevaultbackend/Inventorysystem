@@ -44,7 +44,7 @@ type StateDashboardPayload = {
 
 function HeaderSkeleton() {
   return (
-    <div className="bg-white rounded-2xl border border-[#EEF2F6] shadow-sm p-6 animate-pulse">
+    <div className="rounded-2xl border border-[#EEF2F6] bg-white p-6 shadow-sm animate-pulse">
       <div className="h-8 w-52 rounded-md bg-[#E9EEF5]" />
       <div className="mt-3 h-4 w-72 max-w-full rounded-md bg-[#E9EEF5]" />
     </div>
@@ -91,7 +91,7 @@ function ChartSkeleton() {
 
 function BranchOverviewSkeleton() {
   return (
-    <div className="w-full rounded-[24px] border border-[#E6EDF5] bg-white p-4 sm:p-5 lg:p-6 shadow-sm animate-pulse">
+    <div className="w-full rounded-[24px] border border-[#E6EDF5] bg-white p-4 shadow-sm animate-pulse sm:p-5 lg:p-6">
       <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between gap-3">
           <div className="h-7 w-44 rounded-md bg-[#E9EEF5]" />
@@ -263,39 +263,38 @@ export default function StatePage() {
   if (error) return <div className="p-6 text-red-600">{error}</div>;
 
   return (
-    <div className="space-y-6 mb-[16px]">
+    <div className="mb-[16px] w-full space-y-6">
       {loading ? (
         <>
           <HeaderSkeleton />
-
           <OverviewCardsSkeleton />
 
-          <div className="grid xl:grid-cols-2 sm:grid-cols-1 max-[768px]:grid-cols-1 justify-between gap-[16px]">
+          <div className="grid grid-cols-1 gap-4 md:gap-5 xl:grid-cols-2">
             <ChartSkeleton />
             <ChartSkeleton />
           </div>
 
-          <div className="flex xl:grid-cols-2 sm:grid-cols-1 justify-between gap-[16px]">
+          <div className="w-full">
             <BranchOverviewSkeleton />
           </div>
         </>
       ) : (
         <>
-          <div className="bg-white rounded-2xl border border-[#EEF2F6] shadow-sm p-6">
-            <h1 className="text-[24px] md:text-[28px] font-semibold text-[#0F172A]">
+          <div className="rounded-2xl border border-[#EEF2F6] bg-white p-6 shadow-sm">
+            <h1 className="text-[24px] font-semibold text-[#0F172A] md:text-[28px]">
               {stateName}
             </h1>
-            <p className="text-[13px] text-[#64748B] mt-1">
+            <p className="mt-1 text-[13px] text-[#64748B]">
               State level dashboard and branch analytics
             </p>
           </div>
 
           {!tableData.length && emptyReason ? (
-            <div className="bg-white rounded-2xl border border-[#FDE68A] shadow-sm p-6">
+            <div className="rounded-2xl border border-[#FDE68A] bg-white p-6 shadow-sm">
               <h3 className="text-[18px] font-semibold text-[#92400E]">
                 No data available
               </h3>
-              <p className="text-sm text-[#78350F] mt-2">{emptyReason}</p>
+              <p className="mt-2 text-sm text-[#78350F]">{emptyReason}</p>
             </div>
           ) : null}
 
@@ -305,12 +304,12 @@ export default function StatePage() {
             branchSummary={branchSummary}
           />
 
-          <div className="grid xl:grid-cols-2 sm:grid-cols-1 max-[768px]:grid-cols-1 justify-between gap-[16px]">
+          <div className="grid grid-cols-1 gap-4 md:gap-5 xl:grid-cols-2">
             <StockTrendBar data={stockTrendData} />
             <SalesTrendLine data={salesTrendData} />
           </div>
 
-          <div className="flex xl:grid-cols-2 sm:grid-cols-1 justify-between gap-[16px]">
+          <div className="w-full min-w-0">
             <BranchOverview data={tableData} />
           </div>
         </>

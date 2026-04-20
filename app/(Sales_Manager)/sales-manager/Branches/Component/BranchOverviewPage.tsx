@@ -1,133 +1,19 @@
 "use client";
 
+import React from "react";
 import {
   ShoppingCart,
   FileText,
   TrendingUp,
   Users,
   IndianRupee,
+  BadgeDollarSign,
   BarChart3,
+  Settings2,
+  Boxes,
+  Package,
+  LucideIcon,
 } from "lucide-react";
-import { FaArrowTrendUp, FaArrowTrendDown } from "react-icons/fa6";
-import { formatCurrency, formatNumber } from "@/app/lib/salesDashboardApi";
-
-type CardItem = {
-  title: string;
-  value: number;
-  icon: React.ElementType;
-  type?: "number" | "currency";
-  trend?: string;
-  trendType?: "up" | "down" | "neutral";
-};
-
-type Props = {
-  cards: CardItem[];
-};
-
-export default function BranchOverviewPage({ cards }: Props) {
-  const renderValue = (item: CardItem) => {
-    if (item.type === "currency") return formatCurrency(item.value);
-    return formatNumber(item.value);
-  };
-
-  return (
-    <div className="grid grid-cols-1 gap-[14px] sm:grid-cols-2 xl:grid-cols-4">
-      {cards.map((item, index) => {
-        const Icon = item.icon;
-
-        return (
-          <div
-            key={`${item.title}-${index}`}
-            className="
-              group relative overflow-hidden
-              rounded-[26px]
-              border border-[#E7ECF2]
-              bg-white
-              px-[16px] pb-[14px] pt-[16px]
-              shadow-[0_1px_2px_rgba(16,24,40,0.04),0_8px_18px_rgba(16,24,40,0.06)]
-              transition-all duration-200
-              hover:shadow-[0_2px_6px_rgba(16,24,40,0.06),0_14px_28px_rgba(16,24,40,0.08)]
-              min-h-[154px]
-              sm:px-[18px] sm:pb-[16px] sm:pt-[16px]
-              xl:min-h-[156px]
-            "
-            style={{
-              borderRadius: "24px",
-            }}
-          >
-            <div className="flex h-full flex-col">
-              <div
-                className="
-                  mb-[18px]
-                  flex h-[50px] w-[50px] items-center justify-center
-                  rounded-[14px]
-                  border border-[#EEF2F6]
-                  bg-[#F4F7FB]
-                  text-[#3B82F6]
-                  shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]
-                "
-              >
-                <Icon className="h-[22px] w-[22px] stroke-[2]" />
-              </div>
-
-              <div className="mt-auto">
-                <p
-                  className="
-                    mb-[8px]
-                    line-clamp-1
-                    text-[14px] font-medium leading-[20px]
-                    text-[#98A2B3]
-                    tracking-[-0.01em]
-                  "
-                >
-                  {item.title}
-                </p>
-
-                <div className="flex items-end justify-between gap-3">
-                  <h3
-                    className="
-                      min-w-0 flex-1 truncate
-                      text-[28px] font-semibold leading-[1.05]
-                      tracking-[-0.03em]
-                      text-[#111827]
-                      sm:text-[30px]
-                      xl:text-[29px]
-                    "
-                  >
-                    {renderValue(item)}
-                  </h3>
-
-                  {item.trend ? (
-                    <span
-                      className={`mb-[4px] inline-flex shrink-0 items-center gap-[6px] text-[13px] font-semibold leading-none ${
-                        item.trendType === "down"
-                          ? "text-[#EF4444]"
-                          : item.trendType === "neutral"
-                          ? "text-[#94A3B8]"
-                          : "text-[#22C55E]"
-                      }`}
-                    >
-                      {item.trendType === "down" ? (
-                        <FaArrowTrendDown className="h-[14px] w-[14px]" />
-                      ) : item.trendType === "neutral" ? (
-                        <FaArrowTrendUp className="h-[14px] w-[14px] opacity-70" />
-                      ) : (
-                        <FaArrowTrendUp className="h-[14px] w-[14px]" />
-                      )}
-                      <span className="whitespace-nowrap">{item.trend}</span>
-                    </span>
-                  ) : null}
-                </div>
-              </div>
-            </div>
-
-            <div className="pointer-events-none absolute inset-x-0 top-0 h-[1px] bg-[linear-gradient(90deg,rgba(255,255,255,0),rgba(255,255,255,0.95),rgba(255,255,255,0))]" />
-          </div>
-        );
-      })}
-    </div>
-  );
-}
 
 export const DashboardIcons = {
   ShoppingCart,
@@ -135,5 +21,106 @@ export const DashboardIcons = {
   TrendingUp,
   Users,
   IndianRupee,
+  BadgeDollarSign,
   BarChart3,
+  Settings2,
+  Boxes,
+  Package,
+} as const satisfies Record<string, LucideIcon>;
+
+export type DashboardCardItem = {
+  title: string;
+  value: number | string;
+  icon?: LucideIcon | null;
+  trend?: string;
+  trendType?: "up" | "down";
 };
+
+type Props = {
+  cards?: DashboardCardItem[];
+  loading?: boolean;
+};
+
+function formatCardValue(value: number | string) {
+  if (typeof value === "string") return value;
+  if (!Number.isFinite(value)) return "0";
+  return new Intl.NumberFormat("en-IN").format(value);
+}
+
+function CardSkeleton() {
+  return (
+    <div className="rounded-[22px] border border-[#E8EDF3] bg-white p-5 shadow-[0px_8px_24px_rgba(16,24,40,0.06)]">
+      <div className="flex h-full min-h-[132px] flex-col">
+        <div className="h-[48px] w-[48px] animate-pulse rounded-[12px] bg-[#F2F4F7]" />
+        <div className="mt-auto">
+          <div className="h-4 w-24 animate-pulse rounded bg-[#F2F4F7]" />
+          <div className="mt-4 h-9 w-28 animate-pulse rounded bg-[#F2F4F7]" />
+          <div className="mt-4 h-4 w-20 animate-pulse rounded bg-[#F2F4F7]" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SafeIcon({ icon: Icon }: { icon?: LucideIcon | null }) {
+  const FinalIcon = Icon ?? ShoppingCart;
+  return <FinalIcon className="h-[22px] w-[22px] stroke-[2] text-[#2F80ED]" />;
+}
+
+export default function BranchOverviewPage({
+  cards = [],
+  loading = false,
+}: Props) {
+  const safeCards = Array.isArray(cards) ? cards : [];
+  const shouldShowSkeletons = loading || safeCards.length === 0;
+
+  return (
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      {shouldShowSkeletons
+        ? Array.from({ length: 4 }).map((_, index) => (
+            <CardSkeleton key={index} />
+          ))
+        : safeCards.map((card, index) => {
+            const isDown = card?.trendType === "down";
+
+            return (
+              <div
+                key={`${card?.title || "card"}-${index}`}
+                className="rounded-[22px] border border-[#E8EDF3] bg-white p-5 shadow-[0px_8px_24px_rgba(16,24,40,0.06)]"
+              >
+                <div className="flex h-full min-h-[132px] flex-col">
+                  <div className="flex h-[48px] w-[48px] items-center justify-center rounded-[12px] bg-[#F8FBFF]">
+                    <SafeIcon icon={card?.icon} />
+                  </div>
+
+                  <div className="mt-auto">
+                    <p className="text-[14px] font-medium leading-[20px] text-[#98A2B3]">
+                      {card?.title || "-"}
+                    </p>
+
+                    <div className="mt-3 flex items-end justify-between gap-3">
+                      <h3 className="text-[26px] font-semibold leading-none tracking-[-0.02em] text-[#111827]">
+                        {formatCardValue(card?.value ?? 0)}
+                      </h3>
+
+                      {card?.trend ? (
+                        <div
+                          className={`flex items-center gap-1 text-[14px] font-semibold ${
+                            isDown ? "text-[#F04438]" : "text-[#22C55E]"
+                          }`}
+                        >
+                          <TrendingUp
+                            className={`h-4 w-4 ${isDown ? "rotate-180" : ""}`}
+                          />
+                          <span>{card.trend}</span>
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+    </div>
+  );
+}

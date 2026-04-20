@@ -158,8 +158,12 @@ export default function Branches() {
 
   return (
     <div className="space-y-6 mb-[16px]">
-      <div className="flex xl:grid-cols-2 sm:grid-cols-1 justify-between gap-[16px]">
-        {loading ? <BranchOverviewSkeleton /> : <BranchOverview data={tableData} />}
+      <div className="w-full">
+        {loading ? (
+          <BranchOverviewSkeleton />
+        ) : (
+          <BranchOverview data={tableData} />
+        )}
       </div>
     </div>
   );
