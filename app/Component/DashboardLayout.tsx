@@ -50,7 +50,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
       <GlobalSearchNavigator />
 
-      <div className="flex flex-col gap-4 px-4 pb-6 pt-4 lg:flex-row lg:gap-[16px] lg:px-6">
+      <div className="flex flex-col gap-2 lg:gap-4 px-4 pb-6 pt-4 lg:flex-row lg:gap-[16px] lg:px-6">
         <Sidebar role={role} />
 
         <main

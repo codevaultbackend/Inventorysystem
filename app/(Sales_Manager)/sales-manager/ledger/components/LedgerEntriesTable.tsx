@@ -55,9 +55,9 @@ function DesktopHeaderCell({
   return (
     <th
       className={[
-        "sticky top-0 z-20 h-[46px] whitespace-nowrap border-b border-[#C6D8EA] bg-[#D8E9F8] px-[18px] text-left text-[11px] font-semibold leading-none text-[#1F2937]",
-        stickyLeft ? "left-0 z-30" : "",
-        stickyRight ? "right-0 z-30 text-center" : "",
+        "sticky top-0 z-20 h-[48px] whitespace-nowrap border-b border-[#C6D8EA] bg-[#D8E9F8] px-4 text-left text-[11px] font-semibold leading-none text-[#1F2937] sm:px-[18px]",
+        stickyLeft ? "left-0 z-30 shadow-[1px_0_0_0_#C6D8EA]" : "",
+        stickyRight ? "right-0 z-30 text-center shadow-[-1px_0_0_0_#C6D8EA]" : "",
         className,
       ].join(" ")}
     >
@@ -82,9 +82,9 @@ function DesktopCell({
   return (
     <td
       className={[
-        "px-[18px] text-[12px]",
-        stickyLeft ? `sticky left-0 z-10 ${rowBg}` : "",
-        stickyRight ? `sticky right-0 z-10 ${rowBg}` : "",
+        "px-4 text-[12px] sm:px-[18px]",
+        stickyLeft ? `sticky left-0 z-10 ${rowBg} shadow-[1px_0_0_0_#EEF2F6]` : "",
+        stickyRight ? `sticky right-0 z-10 ${rowBg} shadow-[-1px_0_0_0_#EEF2F6]` : "",
         className,
       ].join(" ")}
     >
@@ -98,11 +98,30 @@ function EmptyStateDesktop() {
     <tr>
       <td
         colSpan={8}
-        className="px-6 py-12 text-center text-[14px] font-medium text-[#6B7280]"
+        className="px-6 py-14 text-center text-[14px] font-medium text-[#6B7280]"
       >
         No ledger entries found.
       </td>
     </tr>
+  );
+}
+
+function LabelValue({
+  label,
+  value,
+  valueClassName = "",
+}: {
+  label: string;
+  value: React.ReactNode;
+  valueClassName?: string;
+}) {
+  return (
+    <div className="rounded-[10px] border border-[#E9EEF5] bg-white px-3 py-2.5">
+      <p className="text-[11px] font-medium text-[#667085]">{label}</p>
+      <div className={["mt-1 text-[12px] font-semibold text-[#111827]", valueClassName].join(" ")}>
+        {value}
+      </div>
+    </div>
   );
 }
 
@@ -113,34 +132,50 @@ export default function LedgerEntriesTable({
   busyAction,
 }: Props) {
   const companyLabel =
-    company.companyShort || company.companyName || `Client ${company.id}`;
+    company.companyName?.trim() ||
+    company.companyShort?.trim() ||
+    `Client ${company.id}`;
 
   const hasEntries = company.entries.length > 0;
 
   return (
-    <section className="overflow-hidden rounded-[12px] border border-[#CDD6E1] bg-white shadow-none">
-      <div className="border-b border-[#D9E1EA] px-[18px] py-[18px] sm:px-[22px] sm:py-[20px]">
-        <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:gap-[10px]">
-            <h2 className="whitespace-nowrap text-[15px] font-semibold leading-none text-[#111827]">
-              Company Name :
-            </h2>
-            <p className="truncate text-[13px] font-medium leading-none text-[#1F2937]">
-              {companyLabel}
+    <section className="overflow-hidden rounded-[14px] border border-[#CDD6E1] bg-white">
+      <div className="border-b border-[#D9E1EA] px-4 py-4 sm:px-5 sm:py-5 lg:px-[22px]">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="min-w-0">
+            <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:gap-[10px]">
+              <h2 className="whitespace-nowrap text-[15px] font-semibold leading-none text-[#111827]">
+                Company Name :
+              </h2>
+              <p className="truncate text-[13px] font-medium leading-none text-[#1F2937]">
+                {companyLabel}
+              </p>
+            </div>
+
+            <p className="mt-2 text-[12px] text-[#667085]">
+              Review all ledger transactions, invoice actions, and payment breakdowns in one place.
             </p>
           </div>
 
-          <div className="hidden lg:flex items-center gap-2 text-[12px] text-[#6B7280]">
-            <span className="rounded-full bg-[#F3F6FA] px-3 py-1 font-medium text-[#475467]">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="inline-flex items-center rounded-full bg-[#F3F6FA] px-3 py-1 text-[12px] font-medium text-[#475467]">
               Total Entries: {company.entries.length}
+            </span>
+
+            <span className="inline-flex items-center rounded-full bg-[#EEF6FF] px-3 py-1 text-[12px] font-medium text-[#0F5EA8] md:hidden">
+              Swipe to explore
             </span>
           </div>
         </div>
       </div>
 
-      <div className="hidden sm:block">
+      <div className="hidden md:block">
+        <div className="border-b border-[#EEF2F6] px-4 py-3 text-[12px] text-[#667085] lg:px-[22px]">
+          Scroll horizontally to view complete details. Header stays fixed for easier reading.
+        </div>
+
         <div className="overflow-x-auto">
-          <div className="min-w-[1120px] xl:min-w-[1240px]">
+          <div className="min-w-[1060px] lg:min-w-[1120px] xl:min-w-[1240px]">
             <div className="max-h-[560px] overflow-y-auto overflow-x-hidden">
               <table className="w-full border-collapse">
                 <thead>
@@ -148,25 +183,32 @@ export default function LedgerEntriesTable({
                     <DesktopHeaderCell stickyLeft className="min-w-[140px]">
                       Entry ID
                     </DesktopHeaderCell>
+
                     <DesktopHeaderCell className="min-w-[180px]">
-                      Transactions ID
+                      Transaction ID
                     </DesktopHeaderCell>
+
                     <DesktopHeaderCell className="min-w-[180px]">
                       Client
                     </DesktopHeaderCell>
-                    <DesktopHeaderCell className="min-w-[180px]">
+
+                    <DesktopHeaderCell className="min-w-[190px]">
                       Date &amp; Time
                     </DesktopHeaderCell>
+
                     <DesktopHeaderCell className="min-w-[150px]">
                       Received Amt.
                     </DesktopHeaderCell>
+
                     <DesktopHeaderCell className="min-w-[150px]">
                       Pending Amt.
                     </DesktopHeaderCell>
+
                     <DesktopHeaderCell className="min-w-[140px]">
                       Amount
                     </DesktopHeaderCell>
-                    <DesktopHeaderCell stickyRight className="min-w-[170px]">
+
+                    <DesktopHeaderCell stickyRight className="min-w-[188px]">
                       Action
                     </DesktopHeaderCell>
                   </tr>
@@ -189,46 +231,48 @@ export default function LedgerEntriesTable({
                       return (
                         <tr
                           key={`${company.id}-${entry.entryId}-${entry.transactionId}`}
-                          className={`${rowBg} border-b border-[#EEF2F6] transition-colors hover:bg-[#F6F9FC]`}
+                          className={`${rowBg} border-b border-[#EEF2F6] align-top transition-colors hover:bg-[#F6F9FC]`}
                         >
                           <DesktopCell
                             stickyLeft
                             rowBg={rowBg}
-                            className="h-[68px] font-semibold text-[#374151]"
+                            className="h-[72px] font-semibold text-[#374151]"
                           >
-                            <span className="inline-flex rounded-[6px] bg-[#F3F6FA] px-2 py-1 text-[11px] font-semibold text-[#374151]">
-                              LE{String(entry.entryId).padStart(6, "0")}
-                            </span>
+                            <div className="py-4">
+                              <span className="inline-flex rounded-[6px] bg-[#F3F6FA] px-2 py-1 text-[11px] font-semibold text-[#374151]">
+                                LE{String(entry.entryId).padStart(6, "0")}
+                              </span>
+                            </div>
                           </DesktopCell>
 
                           <DesktopCell className="font-medium text-[#748092]">
-                            <div className="max-w-[160px] truncate xl:max-w-none">
+                            <div className="max-w-[180px] break-words py-4 leading-[1.45]">
                               {entry.transactionId}
                             </div>
                           </DesktopCell>
 
                           <DesktopCell className="font-medium text-[#374151]">
-                            <div className="max-w-[170px] truncate xl:max-w-none">
+                            <div className="max-w-[180px] break-words py-4 leading-[1.45]">
                               {entry.client}
                             </div>
                           </DesktopCell>
 
                           <DesktopCell className="font-medium text-[#6B7280]">
-                            <div className="max-w-[170px] truncate xl:max-w-none">
+                            <div className="max-w-[190px] break-words py-4 leading-[1.45]">
                               {entry.dateTime}
                             </div>
                           </DesktopCell>
 
                           <DesktopCell className="font-semibold text-[#16A34A]">
-                            {formatMoney(entry.receivedAmount)}
+                            <div className="py-4">{formatMoney(entry.receivedAmount)}</div>
                           </DesktopCell>
 
                           <DesktopCell className="font-semibold text-[#D97706]">
-                            {formatMoney(entry.pendingAmount)}
+                            <div className="py-4">{formatMoney(entry.pendingAmount)}</div>
                           </DesktopCell>
 
                           <DesktopCell className="font-semibold text-[#16A34A]">
-                            {formatMoney(entry.amount)}
+                            <div className="py-4">{formatMoney(entry.amount)}</div>
                           </DesktopCell>
 
                           <DesktopCell
@@ -236,32 +280,34 @@ export default function LedgerEntriesTable({
                             rowBg={rowBg}
                             className="text-center"
                           >
-                            <div className="flex items-center justify-center gap-[8px]">
-                              <button
-                                type="button"
-                                onClick={() => onViewInvoice?.(entry)}
-                                disabled={!!busyAction}
-                                className="inline-flex h-[30px] min-w-[84px] items-center justify-center gap-[6px] rounded-[6px] border border-[#E5E7EB] bg-white px-[12px] text-[11px] font-medium text-[#374151] transition hover:bg-[#F8FAFC] disabled:cursor-not-allowed disabled:opacity-70"
-                              >
-                                <Eye
-                                  className="h-[13px] w-[13px]"
-                                  strokeWidth={1.9}
-                                />
-                                {isViewing ? "Opening..." : "View"}
-                              </button>
+                            <div className="flex min-h-[72px] items-center justify-center py-3">
+                              <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-center">
+                                <button
+                                  type="button"
+                                  onClick={() => onViewInvoice?.(entry)}
+                                  disabled={!!busyAction}
+                                  className="inline-flex h-[32px] min-w-[88px] items-center justify-center gap-[6px] rounded-[8px] border border-[#E5E7EB] bg-white px-[12px] text-[11px] font-medium text-[#374151] transition hover:bg-[#F8FAFC] disabled:cursor-not-allowed disabled:opacity-70"
+                                >
+                                  <Eye
+                                    className="h-[13px] w-[13px]"
+                                    strokeWidth={1.9}
+                                  />
+                                  {isViewing ? "Opening..." : "View"}
+                                </button>
 
-                              <button
-                                type="button"
-                                onClick={() => onDownloadInvoice?.(entry)}
-                                disabled={!!busyAction}
-                                className="inline-flex h-[30px] min-w-[108px] items-center justify-center gap-[6px] rounded-[6px] border border-[#E5E7EB] bg-white px-[12px] text-[11px] font-medium text-[#374151] transition hover:bg-[#F8FAFC] disabled:cursor-not-allowed disabled:opacity-70"
-                              >
-                                <Download
-                                  className="h-[13px] w-[13px]"
-                                  strokeWidth={1.9}
-                                />
-                                {isDownloading ? "Downloading..." : "Download"}
-                              </button>
+                                <button
+                                  type="button"
+                                  onClick={() => onDownloadInvoice?.(entry)}
+                                  disabled={!!busyAction}
+                                  className="inline-flex h-[32px] min-w-[112px] items-center justify-center gap-[6px] rounded-[8px] border border-[#E5E7EB] bg-white px-[12px] text-[11px] font-medium text-[#374151] transition hover:bg-[#F8FAFC] disabled:cursor-not-allowed disabled:opacity-70"
+                                >
+                                  <Download
+                                    className="h-[13px] w-[13px]"
+                                    strokeWidth={1.9}
+                                  />
+                                  {isDownloading ? "Downloading..." : "Download"}
+                                </button>
+                              </div>
                             </div>
                           </DesktopCell>
                         </tr>
@@ -277,7 +323,7 @@ export default function LedgerEntriesTable({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-3 p-4 sm:hidden">
+      <div className="grid grid-cols-1 gap-4 p-4 md:hidden">
         {hasEntries ? (
           company.entries.map((entry) => {
             const isViewing =
@@ -291,71 +337,65 @@ export default function LedgerEntriesTable({
             return (
               <div
                 key={`${company.id}-${entry.entryId}-${entry.transactionId}-mobile`}
-                className="rounded-[12px] border border-[#E5E7EB] bg-[#FCFCFD] p-4"
+                className="rounded-[14px] border border-[#E5E7EB] bg-[#FCFCFD] p-4 shadow-[0_1px_2px_rgba(16,24,40,0.04)]"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <p className="text-[13px] font-semibold text-[#111827]">
                       LE{String(entry.entryId).padStart(6, "0")}
                     </p>
-                    <p className="mt-1 truncate text-[12px] text-[#6B7280]">
+                    <p className="mt-1 break-words text-[12px] text-[#6B7280]">
                       {entry.transactionId}
                     </p>
                   </div>
 
-                  <div className="flex shrink-0 items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => onViewInvoice?.(entry)}
-                      disabled={!!busyAction}
-                      className="inline-flex h-[30px] items-center gap-1 rounded-[6px] border border-[#E5E7EB] bg-white px-3 text-[11px] font-medium text-[#374151] disabled:cursor-not-allowed disabled:opacity-70"
-                    >
-                      <Eye className="h-[12px] w-[12px]" strokeWidth={1.9} />
-                      {isViewing ? "Opening..." : "View"}
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => onDownloadInvoice?.(entry)}
-                      disabled={!!busyAction}
-                      className="inline-flex h-[30px] items-center gap-1 rounded-[6px] border border-[#E5E7EB] bg-white px-3 text-[11px] font-medium text-[#374151] disabled:cursor-not-allowed disabled:opacity-70"
-                    >
-                      <Download
-                        className="h-[12px] w-[12px]"
-                        strokeWidth={1.9}
-                      />
-                      {isDownloading ? "Downloading..." : "Download"}
-                    </button>
+                  <div className="shrink-0 rounded-full bg-[#F3F6FA] px-2.5 py-1 text-[11px] font-medium text-[#475467]">
+                    Entry
                   </div>
                 </div>
 
-                <div className="mt-3 space-y-1 text-[12px] text-[#4B5563]">
-                  <p>
-                    <span className="font-medium text-[#111827]">Client:</span>{" "}
-                    {entry.client}
-                  </p>
-                  <p>
-                    <span className="font-medium text-[#111827]">Date:</span>{" "}
-                    {entry.dateTime}
-                  </p>
-                  <p>
-                    <span className="font-medium text-[#111827]">Received:</span>{" "}
-                    <span className="font-semibold text-[#16A34A]">
-                      {formatMoney(entry.receivedAmount)}
-                    </span>
-                  </p>
-                  <p>
-                    <span className="font-medium text-[#111827]">Pending:</span>{" "}
-                    <span className="font-semibold text-[#D97706]">
-                      {formatMoney(entry.pendingAmount)}
-                    </span>
-                  </p>
-                  <p>
-                    <span className="font-medium text-[#111827]">Amount:</span>{" "}
-                    <span className="font-semibold text-[#16A34A]">
-                      {formatMoney(entry.amount)}
-                    </span>
-                  </p>
+                <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  <LabelValue label="Client" value={entry.client} />
+                  <LabelValue label="Date & Time" value={entry.dateTime} />
+                  <LabelValue
+                    label="Received Amount"
+                    value={formatMoney(entry.receivedAmount)}
+                    valueClassName="text-[#16A34A]"
+                  />
+                  <LabelValue
+                    label="Pending Amount"
+                    value={formatMoney(entry.pendingAmount)}
+                    valueClassName="text-[#D97706]"
+                  />
+                  <div className="sm:col-span-2">
+                    <LabelValue
+                      label="Total Amount"
+                      value={formatMoney(entry.amount)}
+                      valueClassName="text-[#16A34A]"
+                    />
+                  </div>
+                </div>
+
+                <div className="mt-4 grid grid-cols-1 gap-2 xs:grid-cols-2">
+                  <button
+                    type="button"
+                    onClick={() => onViewInvoice?.(entry)}
+                    disabled={!!busyAction}
+                    className="inline-flex h-[38px] w-full items-center justify-center gap-2 rounded-[8px] border border-[#E5E7EB] bg-white px-3 text-[12px] font-medium text-[#374151] transition hover:bg-[#F8FAFC] disabled:cursor-not-allowed disabled:opacity-70"
+                  >
+                    <Eye className="h-[14px] w-[14px]" strokeWidth={1.9} />
+                    {isViewing ? "Opening..." : "View Invoice"}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => onDownloadInvoice?.(entry)}
+                    disabled={!!busyAction}
+                    className="inline-flex h-[38px] w-full items-center justify-center gap-2 rounded-[8px] border border-[#E5E7EB] bg-white px-3 text-[12px] font-medium text-[#374151] transition hover:bg-[#F8FAFC] disabled:cursor-not-allowed disabled:opacity-70"
+                  >
+                    <Download className="h-[14px] w-[14px]" strokeWidth={1.9} />
+                    {isDownloading ? "Downloading..." : "Download"}
+                  </button>
                 </div>
               </div>
             );

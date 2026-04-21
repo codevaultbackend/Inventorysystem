@@ -275,7 +275,7 @@ export default function CompanyLedgerEntriesPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-[#F6F8FB] ">
-        <div className="mx-auto max-w-[1400px] rounded-[24px] bg-[#F8FAFC] p-4 shadow-[0_20px_50px_rgba(15,23,42,0.06)] sm:p-6">
+        <div className="mx-auto max-w-[1400px] rounded-[24px] bg-[#F8FAFC] p-4 shadow-[0_20px_50px_rgba(15,23,42,0.06)]">
           <div className="animate-pulse space-y-4">
             <div className="h-[32px] w-[260px] rounded bg-white" />
             <div className="h-[60px] rounded-[12px] bg-white" />
@@ -288,7 +288,7 @@ export default function CompanyLedgerEntriesPage() {
 
   if (error || !company) {
     return (
-      <div className="min-h-screen bg-[#F6F8FB] p-3 sm:p-4 lg:p-6">
+      <div className="min-h-screen bg-[#F6F8FB] ">
         <div className="mx-auto flex min-h-[420px] max-w-[1400px] items-center justify-center rounded-[24px] bg-[#F8FAFC] p-6 text-center shadow-[0_20px_50px_rgba(15,23,42,0.06)]">
           <div>
             <h2 className="text-[24px] font-semibold text-[#111827]">
@@ -304,8 +304,8 @@ export default function CompanyLedgerEntriesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F6F8FB] p-3 sm:p-4 lg:p-6">
-      <div className="mx-auto max-w-[1400px] rounded-[24px] bg-[#F8FAFC] p-4 shadow-[0_20px_50px_rgba(15,23,42,0.06)] sm:p-6">
+    <div className="min-h-screen  ">
+      <div className="mx-auto max-w-[1400px] rounded-[24px] shadow-[0_20px_50px_rgba(15,23,42,0.06)] ">
         <div className="mb-4">
           <h1 className="text-[20px] font-semibold tracking-[-0.02em] text-[#111827] sm:text-[24px]">
             {pageTitle}

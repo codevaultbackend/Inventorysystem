@@ -1,16 +1,89 @@
 "use client";
 
 import Image from "next/image";
-import { Search, Settings } from "lucide-react";
+import { Search } from "lucide-react";
+import { usePathname } from "next/navigation";
 import { useApp } from "../context/AppContext";
 import { useAuth } from "../context/AuthContext";
 import ToggleNav from "../svgIcons/ToggleNav";
 import Link from "next/link";
+import GlobalNotificationCenter from "../(super-admin)/component/DashboardNotificationToast";
+import { useEffect, useMemo, useState } from "react";
+
+const API_BASE =
+  process.env.NEXT_PUBLIC_API_BASE_URL ||
+  process.env.REACT_APP_API_URL ||
+  "";
+
+function getToken() {
+  if (typeof window === "undefined") return "";
+
+  return (
+    localStorage.getItem("token") ||
+    localStorage.getItem("accessToken") ||
+    localStorage.getItem("authToken") ||
+    document.cookie
+      .split("; ")
+      .find((row) => row.startsWith("token="))
+      ?.split("=")[1] ||
+    ""
+  );
+}
+
+async function apiRequest(url, options = {}) {
+  const token = getToken();
+
+  const res = await fetch(`${API_BASE}${url}`, {
+    ...options,
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(options.headers || {}),
+    },
+    cache: "no-store",
+  });
+
+  const data = await res.json().catch(() => null);
+
+  if (!res.ok) {
+    throw new Error(data?.message || data?.error || "Something went wrong");
+  }
+
+  return data;
+}
+
+async function getProfileApi() {
+  return apiRequest("/profile/get-profile", {
+    method: "GET",
+  });
+}
 
 export default function TopBar() {
   const { setCollapsed, setMobileOpen, globalSearch, setGlobalSearch } =
     useApp();
   const { user } = useAuth();
+  const pathname = usePathname();
+
+  const [profile, setProfile] = useState(null);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchProfile = async () => {
+      try {
+        const res = await getProfileApi();
+        if (!isMounted) return;
+        setProfile(res?.data || null);
+      } catch (error) {
+        console.error("TOPBAR PROFILE FETCH ERROR:", error);
+      }
+    };
+
+    fetchProfile();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const handleToggle = () => {
     if (window.innerWidth < 1140) {
@@ -20,39 +93,69 @@ export default function TopBar() {
     }
   };
 
+  const displayName = profile?.name || user?.name || "User";
+  const displayRole = profile?.role || user?.role || "Role";
+  const displayImage =
+    profile?.profile_image || "https://i.pravatar.cc/40?img=3";
+
+  const normalizedRole = String(profile?.role || user?.role || "")
+    .toLowerCase()
+    .trim();
+
+  const canShowNotifications =
+    normalizedRole === "super_admin" &&
+    (pathname === "/super-admin" || pathname.startsWith("/super-admin/"));
+
+  const roleLabel = useMemo(() => {
+    return String(displayRole || "Role").replaceAll("_", " ");
+  }, [displayRole]);
+
   return (
     <header
       className="
-        relative z-[1]
-        flex h-[72px] w-full items-center justify-between
-        rounded-[12px] bg-white px-4 shadow-[1px_1px_4px_rgba(0,0,0,0.1)]
-        lg:px-6
+        relative z-[50]
+        flex h-[64px] w-full items-center justify-between
+        rounded-[20px] bg-white
+        px-4 sm:px-5 lg:px-6
+        shadow-[0_1px_2px_rgba(16,24,40,0.04),0_1px_3px_rgba(16,24,40,0.08)]
       "
     >
-      <div className="flex items-center gap-4">
-        <span className="whitespace-nowrap text-[16px] font-[500] text-[#0A58A6]">
+      {/* LEFT */}
+      <div className="flex min-w-0 shrink-0 items-center gap-3 sm:gap-4 lg:gap-5">
+        <span
+          className="
+            truncate whitespace-nowrap text-[16px] font-[500] leading-none text-[#0A58A6]
+            sm:text-[18px] lg:text-[20px]
+          "
+        >
           Athratech Pvt Limited
         </span>
 
+        {/* desktop only toggle */}
         <button
+          type="button"
           onClick={handleToggle}
           className="
-            hidden h-10 w-10 items-center justify-center rounded-lg border border-[#E5E7EB]
-            bg-white transition hover:bg-[#F3F4F6] lg:flex
+            hidden h-9 w-9 items-center justify-center rounded-[10px]
+            bg-transparent transition hover:bg-[#F8FAFC]
+            lg:flex
           "
+          aria-label="Toggle navigation"
         >
-          <ToggleNav className="h-5 w-5 text-[#374151]" />
+          <ToggleNav className="h-5 w-5 text-[#111827]" />
         </button>
       </div>
 
-      <div className="hidden max-w-[920px] flex-1 px-6 lg:flex">
+      {/* CENTER SEARCH */}
+      <div className="hidden min-w-0 flex-1 px-4 lg:flex xl:px-6">
         <div
           className="
-            flex h-[44px] w-full items-center gap-2 rounded-xl border border-[#EEF2F6]
-            bg-[#F8FAFC] px-4
+            flex h-[40px] w-full items-center gap-3
+            rounded-[10px] border border-[#EEF2F6] bg-[#F8FAFC]
+            px-4
           "
         >
-          <Search size={18} className="text-[#94A3B8]" />
+          <Search size={18} className="shrink-0 text-[#9CA3AF]" />
 
           <input
             type="text"
@@ -60,42 +163,45 @@ export default function TopBar() {
             value={globalSearch}
             onChange={(e) => setGlobalSearch(e.target.value)}
             className="
-    w-full bg-transparent text-[14px] text-[#0F172A] outline-none
-    placeholder:text-[#94A3B8]
-  "
+              w-full bg-transparent text-[15px] font-normal text-[#111827] outline-none
+              placeholder:text-[#A3A3A3]
+            "
           />
         </div>
       </div>
 
-      <div className="flex items-center gap-4">
-        <Link href="/profile" className="lg:hidden">
-          <button
-            className="
-              flex h-10 w-10 items-center justify-center rounded-lg
-              transition hover:bg-[#F3F4F6]
-            "
-          >
-            <Settings size={18} className="text-[#374151]" />
-          </button>
-        </Link>
+      {/* RIGHT */}
+      <div className="flex min-w-0 shrink-0 items-center gap-2 sm:gap-3 lg:gap-4">
+        <div className="flex shrink-0 items-center justify-center">
+          {canShowNotifications ? (
+            <GlobalNotificationCenter defaultOpenUrl="/super-admin/dashboard" />
+          ) : null}
+        </div>
 
-        <Link href="/profile">
-          <div className="flex cursor-pointer items-center gap-3">
+        <Link href="/profile" className="min-w-0">
+          <div className="flex min-w-0 cursor-pointer items-center gap-2.5 sm:gap-3">
             <Image
-              src="https://i.pravatar.cc/40?img=3"
+              src={displayImage}
               alt="profile"
-              width={36}
-              height={36}
-              className="rounded-full"
+              width={40}
+              height={40}
+              unoptimized
+              className="h-[36px] w-[36px] rounded-full object-cover sm:h-[40px] sm:w-[40px]"
             />
 
-            <div className="hidden leading-tight md:block">
-              <p className="text-[14px] font-medium text-[#0F172A]">
-                {user?.name || "User"}
+            <div className="hidden min-w-0 leading-tight md:block">
+              <p className="truncate text-[15px] font-[500] leading-[1.1] text-[#111827] lg:text-[16px]">
+                {displayName}
               </p>
 
-              <p className="mt-1 rounded-full bg-[#F2F8FF] px-2 py-[2px] text-center text-[10px] capitalize text-[#131313]">
-                {user?.role?.replaceAll("_", " ") || "Role"}
+              <p
+                className="
+                  mt-1 inline-flex max-w-full items-center rounded-full
+                  bg-[#F2F4F7] px-[10px] py-[3px]
+                  text-[11px] font-[400] capitalize leading-none text-[#344054]
+                "
+              >
+                <span className="truncate">{roleLabel}</span>
               </p>
             </div>
           </div>

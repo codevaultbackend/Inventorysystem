@@ -85,3 +85,6 @@
 .desktop-table-scroll::-webkit-scrollbar-thumb:hover {
   background: #aebdce;
 }
+body{
+  outline: 0;
+}

@@ -8,6 +8,9 @@ import {
   DollarSign,
   AlertTriangle,
   LucideIcon,
+  KeyRound,
+  Shield,
+  CheckCircle2,
 } from "lucide-react";
 
 type ActivityItem = {
@@ -18,7 +21,14 @@ type ActivityItem = {
   time?: string;
   createdAt?: string;
   created_at?: string;
+  updatedAt?: string;
+  updated_at?: string;
   type?: string;
+  action?: string;
+  details?: string;
+  ref_type?: string;
+  category?: string;
+  name?: string;
 };
 
 type Props = {
@@ -31,70 +41,123 @@ function getActivityIcon(type?: string): {
   bg: string;
   iconColor: string;
 } {
-  switch ((type || "").toLowerCase()) {
-    case "user":
-    case "login":
-    case "signup":
-      return {
-        icon: User,
-        bg: "bg-[#EEF2FF]",
-        iconColor: "text-[#4F46E5]",
-      };
+  const value = (type || "").toLowerCase();
 
-    case "stock":
-    case "inventory":
-    case "product":
-      return {
-        icon: Package,
-        bg: "bg-[#ECFDF5]",
-        iconColor: "text-[#16A34A]",
-      };
-
-    case "settings":
-    case "setting":
-    case "config":
-      return {
-        icon: Settings,
-        bg: "bg-[#F3E8FF]",
-        iconColor: "text-[#9333EA]",
-      };
-
-    case "sale":
-    case "sales":
-    case "payment":
-    case "transaction":
-      return {
-        icon: DollarSign,
-        bg: "bg-[#FEF3C7]",
-        iconColor: "text-[#D97706]",
-      };
-
-    case "alert":
-    case "warning":
-    case "error":
-      return {
-        icon: AlertTriangle,
-        bg: "bg-[#FEE2E2]",
-        iconColor: "text-[#DC2626]",
-      };
-
-    default:
-      return {
-        icon: Package,
-        bg: "bg-[#ECFDF5]",
-        iconColor: "text-[#16A34A]",
-      };
+  if (
+    value.includes("password_reset") ||
+    value.includes("otp") ||
+    value.includes("reset")
+  ) {
+    return {
+      icon: KeyRound,
+      bg: "bg-[#F3E8FF]",
+      iconColor: "text-[#9333EA]",
+    };
   }
+
+  if (
+    value.includes("security") ||
+    value.includes("access") ||
+    value.includes("login")
+  ) {
+    return {
+      icon: Shield,
+      bg: "bg-[#EEF2FF]",
+      iconColor: "text-[#4F46E5]",
+    };
+  }
+
+  if (
+    value.includes("user") ||
+    value.includes("signup") ||
+    value.includes("register")
+  ) {
+    return {
+      icon: User,
+      bg: "bg-[#EEF2FF]",
+      iconColor: "text-[#4F46E5]",
+    };
+  }
+
+  if (
+    value.includes("stock") ||
+    value.includes("inventory") ||
+    value.includes("product")
+  ) {
+    return {
+      icon: Package,
+      bg: "bg-[#ECFDF5]",
+      iconColor: "text-[#16A34A]",
+    };
+  }
+
+  if (
+    value.includes("settings") ||
+    value.includes("setting") ||
+    value.includes("config")
+  ) {
+    return {
+      icon: Settings,
+      bg: "bg-[#F3E8FF]",
+      iconColor: "text-[#9333EA]",
+    };
+  }
+
+  if (
+    value.includes("sale") ||
+    value.includes("sales") ||
+    value.includes("payment") ||
+    value.includes("transaction")
+  ) {
+    return {
+      icon: DollarSign,
+      bg: "bg-[#FEF3C7]",
+      iconColor: "text-[#D97706]",
+    };
+  }
+
+  if (
+    value.includes("success") ||
+    value.includes("completed") ||
+    value.includes("approved")
+  ) {
+    return {
+      icon: CheckCircle2,
+      bg: "bg-[#ECFDF5]",
+      iconColor: "text-[#16A34A]",
+    };
+  }
+
+  if (
+    value.includes("alert") ||
+    value.includes("warning") ||
+    value.includes("error") ||
+    value.includes("reject")
+  ) {
+    return {
+      icon: AlertTriangle,
+      bg: "bg-[#FEE2E2]",
+      iconColor: "text-[#DC2626]",
+    };
+  }
+
+  return {
+    icon: Package,
+    bg: "bg-[#ECFDF5]",
+    iconColor: "text-[#16A34A]",
+  };
 }
 
 function formatRelativeTime(dateString: string) {
   if (!dateString) return "Recently";
 
   const date = new Date(dateString);
-  if (Number.isNaN(date.getTime())) return dateString;
+  if (Number.isNaN(date.getTime())) return "Recently";
 
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
+
+  if (diffMs < 0) return "Recently";
 
   const minutes = Math.floor(diffMs / (1000 * 60));
   const hours = Math.floor(diffMs / (1000 * 60 * 60));
@@ -102,29 +165,122 @@ function formatRelativeTime(dateString: string) {
 
   if (minutes < 1) return "Just now";
   if (minutes < 60) return `${minutes} min ago`;
-  if (hours < 24) return `${hours} hr ago`;
+  if (hours < 24) return `${hours} hr${hours > 1 ? "s" : ""} ago`;
   return `${days} day${days > 1 ? "s" : ""} ago`;
 }
 
+function toTitleCase(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function deriveType(item: any) {
+  const action = String(item?.action || "").toLowerCase();
+  const refType = String(item?.ref_type || "").toLowerCase();
+  const type = String(item?.type || "").toLowerCase();
+  const category = String(item?.category || "").toLowerCase();
+
+  if (type) return type;
+  if (category) return category;
+
+  if (refType.includes("password_reset")) return "password_reset";
+
+  if (
+    action.includes("password") ||
+    action.includes("reset") ||
+    action.includes("otp")
+  ) {
+    return "password_reset";
+  }
+
+  if (action.includes("login") || action.includes("access")) {
+    return "security";
+  }
+
+  if (
+    action.includes("sale") ||
+    action.includes("transaction") ||
+    action.includes("payment")
+  ) {
+    return "sales";
+  }
+
+  if (
+    action.includes("stock") ||
+    action.includes("inventory") ||
+    action.includes("product")
+  ) {
+    return "inventory";
+  }
+
+  if (
+    action.includes("success") ||
+    action.includes("completed") ||
+    action.includes("approved")
+  ) {
+    return "success";
+  }
+
+  if (
+    action.includes("warning") ||
+    action.includes("error") ||
+    action.includes("reject")
+  ) {
+    return "warning";
+  }
+
+  return item?.action || item?.ref_type || "";
+}
+
+function deriveTitle(item: any) {
+  if (item?.title && String(item.title).trim()) return String(item.title).trim();
+
+  if (item?.action && String(item.action).trim()) {
+    return toTitleCase(String(item.action).trim());
+  }
+
+  if (item?.name && String(item.name).trim()) return String(item.name).trim();
+
+  return "Activity";
+}
+
+function deriveDescription(item: any) {
+  if (item?.description && String(item.description).trim()) {
+    return String(item.description).trim();
+  }
+
+  if (item?.message && String(item.message).trim()) {
+    return String(item.message).trim();
+  }
+
+  if (item?.details && String(item.details).trim()) {
+    return String(item.details).trim();
+  }
+
+  return "Latest system activity and updates";
+}
+
 function normalizeActivities(payload: any): ActivityItem[] {
-  const raw =
-    (Array.isArray(payload) && payload) ||
-    payload?.data ||
-    payload?.activities ||
-    payload?.recentActivities ||
-    payload?.result ||
-    [];
+  const raw = Array.isArray(payload)
+    ? payload
+    : Array.isArray(payload?.data)
+    ? payload.data
+    : Array.isArray(payload?.activities)
+    ? payload.activities
+    : Array.isArray(payload?.recentActivities)
+    ? payload.recentActivities
+    : Array.isArray(payload?.result)
+    ? payload.result
+    : [];
 
   if (!Array.isArray(raw)) return [];
 
   return raw.map((item: any, index: number) => ({
     id: item?.id ?? index,
-    title: item?.title || item?.action || item?.name || "Activity",
-    description:
-      item?.description ||
-      item?.message ||
-      item?.details ||
-      "Latest system activity and updates",
+    title: deriveTitle(item),
+    description: deriveDescription(item),
     time:
       item?.time ||
       item?.createdAt ||
@@ -132,7 +288,14 @@ function normalizeActivities(payload: any): ActivityItem[] {
       item?.updatedAt ||
       item?.updated_at ||
       "",
-    type: item?.type || item?.category || "",
+    createdAt: item?.createdAt || item?.created_at || "",
+    created_at: item?.created_at || "",
+    updatedAt: item?.updatedAt || item?.updated_at || "",
+    updated_at: item?.updated_at || "",
+    type: deriveType(item),
+    action: item?.action || "",
+    details: item?.details || "",
+    ref_type: item?.ref_type || "",
   }));
 }
 
@@ -144,10 +307,12 @@ export default function RecentActivities({
   const [apiLoading, setApiLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const hasExternalData = Array.isArray(data);
+  const hasUsableExternalData = Array.isArray(data) && data.length > 0;
 
   useEffect(() => {
-    if (hasExternalData) return;
+    if (hasUsableExternalData) return;
+
+    let isMounted = true;
 
     const fetchActivities = async () => {
       try {
@@ -157,7 +322,7 @@ export default function RecentActivities({
         const API_BASE =
           process.env.NEXT_PUBLIC_API_BASE_URL ||
           process.env.NEXT_PUBLIC_API_URL ||
-          "https://ims-swp9.onrender.com";
+          "https://ims-backend-nm9g.onrender.com";
 
         const token =
           (typeof window !== "undefined" &&
@@ -175,9 +340,11 @@ export default function RecentActivities({
             "Content-Type": "application/json",
             ...(token ? { Authorization: `Bearer ${token}` } : {}),
           },
+          cache: "no-store",
         });
 
-        const json = await res.json().catch(() => null);
+        const text = await res.text();
+        const json = text ? JSON.parse(text) : null;
 
         if (!res.ok) {
           throw new Error(
@@ -185,26 +352,35 @@ export default function RecentActivities({
           );
         }
 
+        if (!isMounted) return;
+
         setActivities(normalizeActivities(json));
       } catch (err: any) {
+        if (!isMounted) return;
         setError(err?.message || "Failed to fetch recent activities");
         setActivities([]);
       } finally {
-        setApiLoading(false);
+        if (isMounted) {
+          setApiLoading(false);
+        }
       }
     };
 
     fetchActivities();
-  }, [hasExternalData]);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [hasUsableExternalData]);
 
   const finalLoading = loading || apiLoading;
 
   const finalData = useMemo(() => {
-    if (hasExternalData) {
+    if (hasUsableExternalData) {
       return normalizeActivities(data);
     }
     return activities;
-  }, [hasExternalData, data, activities]);
+  }, [hasUsableExternalData, data, activities]);
 
   return (
     <section

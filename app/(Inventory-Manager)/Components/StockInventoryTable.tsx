@@ -228,7 +228,7 @@ export default function StockInventoryTable({
                             rounded-full
                             text-[11px]
                             font-medium
-                            ${
+                            ₹{
                               statusColors[value] ||
                               "bg-gray-100 text-gray-600"
                             }

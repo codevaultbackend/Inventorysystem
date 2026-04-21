@@ -15,57 +15,53 @@ type LedgerApiShape = {
   success?: boolean;
   message?: string;
   clients?: any[];
-  data?: {
-    clients?: any[];
-    ledger?: any[];
-    companies?: any[];
-    rows?: any[];
-  };
-  ledger?: any[];
-  companies?: any[];
-  rows?: any[];
 };
 
 function getStoredToken() {
   if (typeof window === "undefined") return "";
 
-  return (
+  const localToken =
     localStorage.getItem("accessToken") ||
     localStorage.getItem("token") ||
     localStorage.getItem("authToken") ||
     localStorage.getItem("ims_token") ||
     localStorage.getItem("imsToken") ||
-    localStorage.getItem("jwt") ||
-    ""
-  );
+    localStorage.getItem("jwt");
+
+  if (localToken) return localToken;
+
+  const cookieToken = document.cookie
+    .split("; ")
+    .find((row) => row.startsWith("token="))
+    ?.split("=")[1];
+
+  return cookieToken || "";
+}
+
+function clearStoredTokens() {
+  if (typeof window === "undefined") return;
+
+  localStorage.removeItem("accessToken");
+  localStorage.removeItem("token");
+  localStorage.removeItem("authToken");
+  localStorage.removeItem("ims_token");
+  localStorage.removeItem("imsToken");
+  localStorage.removeItem("jwt");
 }
 
 function getApiBaseUrl() {
   return (
     process.env.NEXT_PUBLIC_API_BASE_URL ||
     process.env.NEXT_PUBLIC_API_URL ||
-    "https://ims-swp9.onrender.com"
+    process.env.NEXT_PUBLIC_BACKEND_URL ||
+    "https://ims-backend-nm9g.onrender.com"
   ).replace(/\/+$/, "");
-}
-
-function extractLedgerArray(payload: LedgerApiShape): any[] {
-  if (Array.isArray(payload?.clients)) return payload.clients;
-  if (Array.isArray(payload?.data?.clients)) return payload.data.clients;
-  if (Array.isArray(payload?.ledger)) return payload.ledger;
-  if (Array.isArray(payload?.data?.ledger)) return payload.data.ledger;
-  if (Array.isArray(payload?.companies)) return payload.companies;
-  if (Array.isArray(payload?.data?.companies)) return payload.data.companies;
-  if (Array.isArray(payload?.rows)) return payload.rows;
-  if (Array.isArray(payload?.data?.rows)) return payload.data.rows;
-  return [];
 }
 
 export default function LedgerPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [companies, setCompanies] = useState<LedgerCompany[]>([]);
-
-  const baseUrl = getApiBaseUrl();
 
   useEffect(() => {
     let ignore = false;
@@ -75,52 +71,30 @@ export default function LedgerPage() {
         setLoading(true);
         setError("");
 
+        const baseUrl = getApiBaseUrl();
         const token = getStoredToken();
 
-        const headers = token
-          ? {
-              Authorization: `Bearer ${token}`,
-            }
-          : undefined;
-
-        const endpoints = [
+        const res = await axios.get<LedgerApiShape>(
           `${baseUrl}/sales/get-ladger`,
-          `${baseUrl}/sales/get-ledger`,
-        ];
-
-        let lastError: any = null;
-        let responseData: LedgerApiShape | null = null;
-
-        for (const endpoint of endpoints) {
-          try {
-            const res = await axios.get<LedgerApiShape>(endpoint, {
-              headers,
-              withCredentials: true,
-            });
-
-            responseData = res.data;
-            break;
-          } catch (err: any) {
-            lastError = err;
-
-            const status = err?.response?.status;
-
-            if (status === 401 || status === 403) {
-              throw err;
-            }
-
-            if (status && status !== 404) {
-              throw err;
-            }
+          {
+            headers: token
+              ? {
+                  Authorization: `Bearer ${token}`,
+                }
+              : undefined,
+            withCredentials: true,
           }
+        );
+
+        if (!res.data?.success) {
+          throw new Error(res.data?.message || "Failed to load ledger data.");
         }
 
-        if (!responseData) {
-          throw lastError || new Error("Failed to load ledger data.");
-        }
+        const rawClients = Array.isArray(res.data?.clients)
+          ? res.data.clients
+          : [];
 
-        const rawClients = extractLedgerArray(responseData);
-        const normalized = normalizeLedgerClients(rawClients || []);
+        const normalized = normalizeLedgerClients(rawClients);
 
         if (!ignore) {
           setCompanies(normalized);
@@ -135,15 +109,12 @@ export default function LedgerPage() {
 
         if (!ignore) {
           setError(message);
+          setCompanies([]);
         }
 
         if (err?.response?.status === 401 && typeof window !== "undefined") {
-          localStorage.removeItem("accessToken");
-          localStorage.removeItem("token");
-          localStorage.removeItem("authToken");
-          localStorage.removeItem("ims_token");
-          localStorage.removeItem("imsToken");
-          localStorage.removeItem("jwt");
+          clearStoredTokens();
+          window.location.href = "/login";
         }
       } finally {
         if (!ignore) {
@@ -157,19 +128,18 @@ export default function LedgerPage() {
     return () => {
       ignore = true;
     };
-  }, [baseUrl]);
+  }, []);
 
-  const activeCompanies = useMemo(
-    () =>
-      companies.filter(
-        (company) =>
-          Number(company.totalEntries) > 0 ||
-          Number(company.totalAmt) > 0 ||
-          Number(company.pendingAmt) > 0 ||
-          Number(company.revenue) > 0
-      ),
-    [companies]
-  );
+  const activeCompanies = useMemo(() => {
+    return companies.filter((company) => {
+      return (
+        Number(company.totalEntries || 0) > 0 ||
+        Number(company.totalAmt || 0) > 0 ||
+        Number(company.pendingAmt || 0) > 0 ||
+        Number(company.revenue || 0) > 0
+      );
+    });
+  }, [companies]);
 
   const stats = useMemo(() => {
     const totalEntries = activeCompanies.reduce(
@@ -193,8 +163,8 @@ export default function LedgerPage() {
     );
 
     return {
-      monthlyRevenueTop: "₹0",
-      monthlyRevenuePercent: totalAmount > 0 ? "Active" : "0",
+      monthlyRevenueTop: `₹${Number(totalAmount || 0).toLocaleString("en-IN")}`,
+      monthlyRevenuePercent: `${activeCompanies.length} active`,
       monthlyRevenueLabel: "Month’s Revenue",
       activeClients: activeCompanies.length,
       pendingAmount: totalPending,
@@ -231,7 +201,7 @@ export default function LedgerPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen  ">
+      <div className="min-h-screen">
         <div className="mx-auto flex min-h-[420px] max-w-[1400px] items-center justify-center rounded-[24px] bg-[#F8FAFC] p-6 text-center shadow-[0_20px_50px_rgba(15,23,42,0.06)]">
           <div>
             <h2 className="text-[24px] font-semibold text-[#111827]">
@@ -245,12 +215,11 @@ export default function LedgerPage() {
   }
 
   return (
-    <div className="min-h-screen p-1 ">
-      <div className="mx-auto max-w-[1400px] rounded-[24px] ">
+    <div className="min-h-screen p-1">
+      <div className="mx-auto max-w-[1400px] rounded-[24px]">
         <div className="space-y-5">
           <LedgerStatsCards stats={stats} />
           <LedgerInfoBanner />
-
           {activeCompanies.length === 0 ? (
             <LedgerEmptyState />
           ) : (

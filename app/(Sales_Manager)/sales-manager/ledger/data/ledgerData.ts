@@ -25,19 +25,9 @@ type LedgerClientApiItem = {
   revenue: number | string;
 };
 
-type LedgerBranchApiItem = {
-  branchId: number;
-  totalClients?: number;
-  totalEntries?: number;
-  totalAmount?: number;
-  pendingAmount?: number;
-  revenue?: number;
-  clients?: LedgerClientApiItem[];
-};
-
 export type LedgerApiResponse = {
   success: boolean;
-  clients: LedgerBranchApiItem[];
+  clients: LedgerClientApiItem[];
 };
 
 function toNumber(value: unknown): number {
@@ -55,37 +45,46 @@ export function formatMoney(value: number | string | null | undefined) {
   }).format(num);
 }
 
-function getCompanyShortName(companyName?: string | null) {
-  if (!companyName) return "NA";
+function getCompanyShortName(companyName?: string | null, email?: string | null) {
+  const safeName = typeof companyName === "string" ? companyName.trim() : "";
 
-  const words = companyName.trim().split(/\s+/).filter(Boolean);
+  if (safeName) {
+    const words = safeName.split(/\s+/).filter(Boolean);
 
-  if (words.length === 1) {
-    return words[0].slice(0, 2).toUpperCase();
+    if (words.length === 1) {
+      return words[0].slice(0, 2).toUpperCase();
+    }
+
+    return words
+      .slice(0, 2)
+      .map((word) => word[0]?.toUpperCase() || "")
+      .join("");
   }
 
-  return words
-    .slice(0, 2)
-    .map((word) => word[0]?.toUpperCase() || "")
-    .join("");
+  const safeEmail = typeof email === "string" ? email.trim() : "";
+  if (safeEmail) {
+    return safeEmail.slice(0, 2).toUpperCase();
+  }
+
+  return "NA";
 }
 
 export function normalizeLedgerClients(
-  branches: LedgerBranchApiItem[] = []
+  clients: LedgerClientApiItem[] = []
 ): LedgerCompany[] {
-  return branches.flatMap((branch) =>
-    (branch.clients || []).map((client) => ({
-      clientId: toNumber(client.clientId),
-      companyName: client.companyName ?? "Unnamed Company",
-      companyShort: getCompanyShortName(client.companyName),
-      email: client.email ?? "N/A",
-      phone: client.phone ?? "N/A",
-      branchId: toNumber(client.branchId),
-      gstNumber: client.gstNumber ?? "N/A",
-      totalEntries: toNumber(client.totalEntries),
-      totalAmt: toNumber(client.totalAmount),
-      pendingAmt: toNumber(client.pendingAmount),
-      revenue: toNumber(client.revenue),
-    }))
-  );
+  if (!Array.isArray(clients)) return [];
+
+  return clients.map((client) => ({
+    clientId: toNumber(client.clientId),
+    companyName: client.companyName ?? null,
+    companyShort: getCompanyShortName(client.companyName, client.email),
+    email: client.email?.trim() || "N/A",
+    phone: client.phone?.trim() || "N/A",
+    branchId: toNumber(client.branchId),
+    gstNumber: client.gstNumber?.trim() || "N/A",
+    totalEntries: toNumber(client.totalEntries),
+    totalAmt: toNumber(client.totalAmount),
+    pendingAmt: toNumber(client.pendingAmount),
+    revenue: toNumber(client.revenue),
+  }));
 }

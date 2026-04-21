@@ -53,7 +53,7 @@ export default function InventoryTable({
     return stateLocation.map((l: any, index: number) => ({
       branch: l.branchName || "NA",
       category: l.category || "NA",
-      hsn: `LOC-${index + 1}`,
+      hsn: `LOC-₹{index + 1}`,
       current: Number(l.currentStock || 0),
       stockIn: Number(l.stockIn || 0),
       stockOut: Number(l.stockOut || 0),

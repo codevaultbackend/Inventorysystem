@@ -94,8 +94,8 @@ function getRouteByRole(role: Role | null): string {
     inventory_manager: "/inventory-manager/admin-dashboard",
     super_stock_manager: "/stock-manager",
     stock_manager: "/stock-manager",
-    sales_manager: "/sales-manager/Dashboard",
-    super_sales_manager: "/sales-manager/admin_dash",
+    sales_manager: "/sales-manager/admin_dash",
+    super_sales_manager: "/sales-manager/Dashboard",
     purchase_manager: "/purchase-manager",
     finance: "/finance",
   };
@@ -212,9 +212,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const BaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL
+
   const login = useCallback(
     async (email: string, password: string) => {
-      const res = await axios.post("https://ims-swp9.onrender.com/sql/login", {
+      const res = await axios.post(`${BaseUrl}/sql/login`, {
         email,
         password,
       });

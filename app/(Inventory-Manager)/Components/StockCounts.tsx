@@ -98,7 +98,7 @@ export default function StockCount({
               md:text-[14px]
               font-[600]
               whitespace-nowrap
-              ${
+              ₹{
                 trend === "up"
                   ? "text-[#16A34A]"
                   : "text-[#DC2626]"

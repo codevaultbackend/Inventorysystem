@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 import Exclmationerror from "../../svgIcons/Exclmationerror";
 import { useAuth } from "@/app/context/AuthContext";
 
@@ -41,9 +42,7 @@ export default function Login() {
       await login(email, password);
     } catch (err: any) {
       setApiError(
-        err?.response?.data?.error ||
-          err?.message ||
-          "Login failed"
+        err?.response?.data?.error || err?.message || "Login failed"
       );
     } finally {
       setLoading(false);
@@ -137,7 +136,7 @@ export default function Login() {
                     password: true,
                   }))
                 }
-                className={`h-[58px] w-full rounded-[12px] border px-4 pr-[96px] outline-none transition ${
+                className={`h-[58px] w-full rounded-[12px] border px-4 pr-[56px] outline-none transition ${
                   touched.password && !passwordValid
                     ? "border-red-500 bg-red-50"
                     : "border-black bg-white"
@@ -147,18 +146,13 @@ export default function Login() {
               <button
                 type="button"
                 onClick={() => setShowPassword((prev) => !prev)}
-                className="absolute right-4 top-1/2 flex -translate-y-1/2 items-center gap-2 text-[14px] font-[500] text-[#5F5F5F] transition hover:text-black"
+                className="absolute right-4 top-1/2 flex h-5 w-5 -translate-y-1/2 items-center justify-center text-[#5F5F5F] transition hover:text-[#5F5F5F]"
+                aria-label={showPassword ? "Hide password" : "Show password"}
               >
                 {showPassword ? (
-                  <>
-                    <i className="fa-solid fa-eye-slash"></i>
-                    <span>Hide</span>
-                  </>
+                  <EyeOff size={18} strokeWidth={2} />
                 ) : (
-                  <>
-                    <i className="fa-regular fa-eye"></i>
-                    <span>View</span>
-                  </>
+                  <Eye size={18} strokeWidth={2} />
                 )}
               </button>
             </div>

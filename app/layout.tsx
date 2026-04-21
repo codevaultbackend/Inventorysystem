@@ -2,6 +2,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { ProfileProvider } from "./context/ProfileContext";
 
 import { AppProvider } from "./context/AppContext";
 import { AuthProvider } from "./context/AuthContext";
@@ -53,13 +54,13 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`₹{geistSans.variable} ₹{geistMono.variable} antialiased`}
       >
         <PwaRegister />
-
+         <ProfileProvider>
         <AuthProvider>
           <AppProvider>{children}</AppProvider>
-        </AuthProvider>
+        </AuthProvider></ProfileProvider>
       </body>
     </html>
   );

@@ -152,7 +152,7 @@ export default function CreateNewPassword() {
                 className={`mt-2 w-full h-[52px] sm:h-[56px]
                   rounded-[12px] bg-white px-4 outline-none border
                   shadow-[0px_2px_0px_rgba(0,0,0,0.06)]
-                  ${
+                  ₹{
                     touchedPassword && !passwordValid
                       ? "border-[#E52727]"
                       : "border-[#111827]"
@@ -174,7 +174,7 @@ export default function CreateNewPassword() {
             <div>
               <label
                 className={`block text-[14px] sm:text-[16px] font-[600]
-                  ${
+                  ₹{
                     touchedConfirm && !confirmValid
                       ? "text-[#E52727]"
                       : "text-[#4B5563]"
@@ -191,7 +191,7 @@ export default function CreateNewPassword() {
                 className={`mt-2 w-full h-[52px] sm:h-[56px]
                   rounded-[12px] bg-white px-4 outline-none border
                   shadow-[0px_2px_0px_rgba(0,0,0,0.06)]
-                  ${
+                  ₹{
                     touchedConfirm && !confirmValid
                       ? "border-[#E52727]"
                       : "border-[#111827]"
@@ -225,7 +225,7 @@ export default function CreateNewPassword() {
               className={`w-full h-[56px] sm:h-[64px]
                 rounded-[12px] text-[16px] sm:text-[18px]
                 font-[600] transition
-                ${
+                ₹{
                   canSubmit
                     ? "bg-[#1148B8] hover:bg-[#0D3EA1] shadow-[0px_8px_16px_rgba(17,72,184,0.20)]"
                     : "bg-[#BDBDBD] cursor-not-allowed shadow-none"

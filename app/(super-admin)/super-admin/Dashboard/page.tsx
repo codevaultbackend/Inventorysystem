@@ -33,10 +33,14 @@ type BranchItem = {
 };
 
 type ActivityItem = {
+  id?: string | number;
   title: string;
   description: string;
   time: string;
   type: string;
+  action?: string;
+  details?: string;
+  ref_type?: string;
 };
 
 const STOCK_COLORS = [
@@ -70,6 +74,73 @@ function formatDateLabel(dateString: string) {
   return date.toLocaleDateString("en-IN", {
     weekday: "short",
   });
+}
+
+function toTitleCase(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function deriveRecentActivityType(item: any) {
+  const type = String(item?.type || "").toLowerCase();
+  const refType = String(item?.ref_type || "").toLowerCase();
+  const action = String(item?.action || "").toLowerCase();
+
+  if (type) return type;
+  if (refType.includes("password_reset")) return "password_reset";
+
+  if (
+    action.includes("password") ||
+    action.includes("reset") ||
+    action.includes("otp")
+  ) {
+    return "password_reset";
+  }
+
+  if (
+    action.includes("sale") ||
+    action.includes("sales") ||
+    action.includes("payment") ||
+    action.includes("transaction")
+  ) {
+    return "sales";
+  }
+
+  if (
+    action.includes("stock") ||
+    action.includes("inventory") ||
+    action.includes("product")
+  ) {
+    return "inventory";
+  }
+
+  if (
+    action.includes("security") ||
+    action.includes("login") ||
+    action.includes("access")
+  ) {
+    return "security";
+  }
+
+  if (
+    action.includes("success") ||
+    action.includes("completed") ||
+    action.includes("approved")
+  ) {
+    return "success";
+  }
+
+  if (
+    action.includes("warning") ||
+    action.includes("error") ||
+    action.includes("reject")
+  ) {
+    return "warning";
+  }
+
+  return "default";
 }
 
 function buildSalesAnalyticsData(
@@ -148,15 +219,19 @@ export default function DashboardPage() {
           item.state ||
           item.branchName ||
           item.name ||
-          `State ${index + 1}`;
+          `Branch ${index + 1}`;
 
         const resolvedId = String(
           item.id ??
-            item.stateId ??
-            item.state_id ??
             item.branchId ??
             item.branch_id ??
+            item.stateId ??
+            item.state_id ??
             index + 1
+        );
+
+        const resolvedState = String(
+          item.state || item.stateName || item.state_name || "Rajasthan"
         );
 
         return {
@@ -167,7 +242,9 @@ export default function DashboardPage() {
           sales: toNumber(item.salesCount ?? item.sales ?? item.sale ?? 0),
           in: toNumber(item.currentStock ?? item.in ?? item.stockIn ?? 0),
           out: toNumber(item.out ?? item.stockOut ?? 0),
-          href: `/super-admin/Branches/${encodeURIComponent(resolvedName)}`,
+          href: `/super-admin/Branches/${encodeURIComponent(
+            resolvedState
+          )}/${encodeURIComponent(resolvedId)}`,
         };
       })
     : [];
@@ -175,11 +252,28 @@ export default function DashboardPage() {
   const recentActivitiesData: ActivityItem[] = Array.isArray(
     data?.recentActivities
   )
-    ? data.recentActivities.map((item: any) => ({
-        title: item.title || "Activity",
-        description: item.description || "System update",
-        time: item.time || item.createdAt || item.date || "",
-        type: item.type || "default",
+    ? data.recentActivities.map((item: any, index: number) => ({
+        id: item?.id ?? index,
+        title:
+          item?.title?.trim() ||
+          (item?.action ? toTitleCase(String(item.action)) : "Activity"),
+        description:
+          item?.description?.trim() ||
+          item?.message?.trim() ||
+          item?.details?.trim() ||
+          "System update",
+        time:
+          item?.time ||
+          item?.createdAt ||
+          item?.created_at ||
+          item?.updatedAt ||
+          item?.updated_at ||
+          item?.date ||
+          "",
+        type: deriveRecentActivityType(item),
+        action: item?.action || "",
+        details: item?.details || "",
+        ref_type: item?.ref_type || "",
       }))
     : [];
 
@@ -202,7 +296,10 @@ export default function DashboardPage() {
 
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)]">
         <BranchOverview data={branchOverviewData} loading={loading} />
-        <RecentActivities data={recentActivitiesData} loading={loading} />
+        <RecentActivities
+          data={recentActivitiesData.slice(0, 4)}
+          loading={loading}
+        />
       </div>
     </section>
   );

@@ -17,7 +17,7 @@ export default function SuperAdminLayout({
           <main className="flex-1  max-[1140px]:pl-0 overflow-y-auto">
             {children}
           </main>
-          <DashboardNotificationToast />
+
 
         </DashboardLayout>
 

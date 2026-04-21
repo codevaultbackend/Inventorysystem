@@ -70,7 +70,7 @@ function toNumber(value: unknown) {
 }
 
 function formatMoney(value: unknown) {
-  return `$${toNumber(value).toLocaleString("en-US", {
+  return `₹${toNumber(value).toLocaleString("en-US", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })}`;

@@ -36,15 +36,9 @@ export default function Layout({ children }: LayoutProps) {
 
   return (
     <StockProvider>
-      <StateLocationProvider>
-        <LocationsProvider>
-          <SuperStockAdminProvider>
-            <DashboardLayout role={role}>
-              {children}
-            </DashboardLayout>
-          </SuperStockAdminProvider>
-        </LocationsProvider>
-      </StateLocationProvider>
+      <DashboardLayout role={role}>
+        {children}
+      </DashboardLayout>
     </StockProvider>
   );
 }

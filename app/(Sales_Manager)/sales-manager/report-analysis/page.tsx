@@ -17,62 +17,76 @@ import QuickStatus from "./components/QuickStatus";
 export type SalesReportResponse = {
   success: boolean;
   cards: {
+    branchId?: number;
     revenue: number;
-    avgordervalue: number;
-    totalorders: string | number;
-    activeclients: string | number;
+    avgOrderValue: number;
+    totalOrders: string | number;
+    activeClients: string | number;
   };
   revenueTrend: {
+    branchId?: number;
     month: string;
     revenue: number;
     orders: string | number;
   }[];
   categoryDistribution: {
+    branchId?: number;
     name: string;
     value: number;
   }[];
   weeklyActivity: {
+    branchId?: number;
     day: string;
     quotations: string | number;
     approved: string | number;
     invoices: string | number;
   }[];
   profitAnalysis: {
+    branchId?: number;
     month: string;
     profit: number;
   }[];
   topProducts: {
+    branchId?: number;
     product_name: string;
     sales: string | number;
     revenue: number;
   }[];
   recentTransactions: {
+    branchId?: number;
     invoice: string;
     client: string | null;
     amount: number;
     status: string;
   }[];
   inventoryStatus: {
+    branchId?: number;
     inStock: string | number;
     lowStock: string | number;
     outOfStock: string | number;
   };
   clientBreakdown: {
+    branchId?: number;
     newClients: string | number;
     returningClients: string | number;
   };
   quickStats: {
+    branchId?: number;
     approvedQuotations: string | number;
     invoicesGenerated: string | number;
     pendingApprovals: string | number;
   };
 };
 
+function toNumber(value: unknown): number {
+  const num = Number(value ?? 0);
+  return Number.isFinite(num) ? num : 0;
+}
+
 export default function ReportAnalysis() {
   const [reportData, setReportData] = useState<SalesReportResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const BaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL
   const [filters, setFilters] = useState({
     date: "",
     type: "",
@@ -87,7 +101,11 @@ export default function ReportAnalysis() {
         setError("");
 
         if (typeof window !== "undefined") {
-          const token = localStorage.getItem("token");
+          const token =
+            localStorage.getItem("token") ||
+            localStorage.getItem("accessToken") ||
+            localStorage.getItem("authToken");
+
           if (!token) {
             throw new Error("No token found. Please login again.");
           }
@@ -101,7 +119,7 @@ export default function ReportAnalysis() {
           params,
         });
 
-        if (!res.data?.success) {
+        if (!res?.data?.success) {
           throw new Error("Invalid report response");
         }
 
@@ -139,78 +157,80 @@ export default function ReportAnalysis() {
     return () => {
       mounted = false;
     };
-  }, [filters]);
+  }, [filters.date, filters.type]);
 
   const normalizedData = useMemo(() => {
     if (!reportData) return null;
 
     return {
       cards: {
-        revenue: Number(reportData.cards?.revenue || 0),
-        avgOrderValue: Number(reportData.cards?.avgordervalue || 0),
-        totalOrders: Number(reportData.cards?.totalorders || 0),
-        activeClients: Number(reportData.cards?.activeclients || 0),
+        revenue: toNumber(reportData.cards?.revenue),
+        avgOrderValue: toNumber(reportData.cards?.avgOrderValue),
+        totalOrders: toNumber(reportData.cards?.totalOrders),
+        activeClients: toNumber(reportData.cards?.activeClients),
       },
 
       revenueTrend: (reportData.revenueTrend || []).map((item) => ({
-        month: item.month,
-        revenue: Number(item.revenue || 0),
-        orders: Number(item.orders || 0),
+        month: item.month || "",
+        revenue: toNumber(item.revenue),
+        orders: toNumber(item.orders),
       })),
 
-      categoryDistribution: (reportData.categoryDistribution || []).map((item) => ({
-        name: item.name,
-        value: Number(item.value || 0),
-      })),
+      categoryDistribution: (reportData.categoryDistribution || []).map(
+        (item) => ({
+          name: item.name || "Unknown",
+          value: toNumber(item.value),
+        })
+      ),
 
       weeklyActivity: (reportData.weeklyActivity || []).map((item) => ({
-        day: item.day,
-        quotations: Number(item.quotations || 0),
-        approved: Number(item.approved || 0),
-        invoices: Number(item.invoices || 0),
+        day: item.day || "",
+        quotations: toNumber(item.quotations),
+        approved: toNumber(item.approved),
+        invoices: toNumber(item.invoices),
       })),
 
       profitAnalysis: (reportData.profitAnalysis || []).map((item) => ({
-        month: item.month,
-        profit: Number(item.profit || 0),
+        month: item.month || "",
+        profit: toNumber(item.profit),
       })),
 
       topProducts: (reportData.topProducts || []).map((item) => ({
-        product_name: item.product_name,
-        sales: Number(item.sales || 0),
-        revenue: Number(item.revenue || 0),
+        product_name: item.product_name || "Unknown Product",
+        sales: toNumber(item.sales),
+        revenue: toNumber(item.revenue),
       })),
 
       recentTransactions: (reportData.recentTransactions || []).map((item) => ({
-        invoice: item.invoice,
+        invoice: item.invoice || "-",
         client: item.client || "Walk-in Client",
-        amount: Number(item.amount || 0),
-        status: item.status,
+        amount: toNumber(item.amount),
+        status: item.status || "unknown",
       })),
 
       inventoryStatus: {
-        inStock: Number(reportData.inventoryStatus?.inStock || 0),
-        lowStock: Number(reportData.inventoryStatus?.lowStock || 0),
-        outOfStock: Number(reportData.inventoryStatus?.outOfStock || 0),
+        inStock: toNumber(reportData.inventoryStatus?.inStock),
+        lowStock: toNumber(reportData.inventoryStatus?.lowStock),
+        outOfStock: toNumber(reportData.inventoryStatus?.outOfStock),
       },
 
       clientBreakdown: {
-        newClients: Number(reportData.clientBreakdown?.newClients || 0),
-        returningClients: Number(reportData.clientBreakdown?.returningClients || 0),
+        newClients: toNumber(reportData.clientBreakdown?.newClients),
+        returningClients: toNumber(reportData.clientBreakdown?.returningClients),
       },
 
       quickStats: {
-        approvedQuotations: Number(reportData.quickStats?.approvedQuotations || 0),
-        invoicesGenerated: Number(reportData.quickStats?.invoicesGenerated || 0),
-        pendingApprovals: Number(reportData.quickStats?.pendingApprovals || 0),
+        approvedQuotations: toNumber(reportData.quickStats?.approvedQuotations),
+        invoicesGenerated: toNumber(reportData.quickStats?.invoicesGenerated),
+        pendingApprovals: toNumber(reportData.quickStats?.pendingApprovals),
       },
     };
   }, [reportData]);
 
   if (loading) {
     return (
-      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="bg-white border border-gray-200 rounded-xl p-8 text-center text-gray-500 shadow-sm">
+      <div className="mx-auto max-w-[1400px] px-4 py-6 sm:px-6 lg:px-8">
+        <div className="rounded-xl border border-gray-200 bg-white p-8 text-center text-gray-500 shadow-sm">
           Loading report analysis...
         </div>
       </div>
@@ -219,8 +239,8 @@ export default function ReportAnalysis() {
 
   if (error || !normalizedData) {
     return (
-      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="bg-white border border-red-200 rounded-xl p-8 text-center text-red-600 shadow-sm">
+      <div className="mx-auto max-w-[1400px] px-4 py-6 sm:px-6 lg:px-8">
+        <div className="rounded-xl border border-red-200 bg-white p-8 text-center text-red-600 shadow-sm">
           {error || "Unable to load report data"}
         </div>
       </div>
@@ -228,25 +248,25 @@ export default function ReportAnalysis() {
   }
 
   return (
-    <div className="max-w-[1400px] mx-auto space-y-6">
+    <div className="mx-auto max-w-[1400px] space-y-6 ">
       <ReportState cards={normalizedData.cards} />
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <RevenueChart data={normalizedData.revenueTrend} />
         <ProductCatChart data={normalizedData.categoryDistribution} />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <WeeklyActivity data={normalizedData.weeklyActivity} />
         <Profit data={normalizedData.profitAnalysis} />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <TopSelling data={normalizedData.topProducts} />
         <RecentTransactions data={normalizedData.recentTransactions} />
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
         <InventoryStatus data={normalizedData.inventoryStatus} />
         <ClientBreakDown data={normalizedData.clientBreakdown} />
         <QuickStatus data={normalizedData.quickStats} />
