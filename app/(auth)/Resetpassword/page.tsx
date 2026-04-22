@@ -25,7 +25,7 @@ export default function ResetPassword() {
   const otpValid = useMemo(() => /^\d{6}$/.test(otp), [otp]);
 
   const API_BASE =
-    process.env.NEXT_PUBLIC_API_BASE_URL || "https://ims-swp9.onrender.com";
+    process.env.NEXT_PUBLIC_API_BASE_URL || "https://ims-backend-nm9g.onrender.com";
 
   const showEmailError = touchedEmail && !emailValid;
   const showOtpError = touchedOtp && !otpValid;

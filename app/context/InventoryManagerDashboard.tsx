@@ -260,9 +260,7 @@ export function InventoryManagerDashboard({
   const [error, setError] = useState("");
 
   const baseUrl =
-    process.env.NEXT_PUBLIC_API_BASE_URL ||
-    process.env.NEXT_PUBLIC_API_URL ||
-    "https://ims-swp9.onrender.com";
+    process.env.NEXT_PUBLIC_API_BASE_URL;
 
   const fetchDashboard = useCallback(async () => {
     try {

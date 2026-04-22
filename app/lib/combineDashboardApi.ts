@@ -4,7 +4,7 @@ import axios from "axios";
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_URL?.replace(/\/+$/, "") ||
-  "https://ims-swp9.onrender.com";
+  "https://ims-backend-nm9g.onrender.com";
 
 const getStoredToken = (): string | null => {
   if (typeof window === "undefined") return null;

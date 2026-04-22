@@ -39,6 +39,7 @@ export function LocationsProvider({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [errorStatus, setErrorStatus] = useState<number | null>(null);
+  const BaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 
   const clearLocationsError = useCallback(() => {
     setError("");
@@ -52,7 +53,7 @@ export function LocationsProvider({
       setErrorStatus(null);
 
       const data = await apiFetch<any>(
-        "https://ims-swp9.onrender.com/stock-manager/locations"
+        `${BaseUrl}/stock-manager/locations`
       );
 
       const normalized = Array.isArray(data)

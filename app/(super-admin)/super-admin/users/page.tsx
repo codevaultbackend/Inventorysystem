@@ -20,15 +20,15 @@ type UserType = {
   email: string;
   phone?: string;
   role?: string;
-  profile?: string;
+  profile_image?: string;
   branch?: string;
   status?: "Active" | "Inactive";
   lastLogin?: string;
 };
 
 const API_BASE =
-  process.env.NEXT_PUBLIC_API_URL?.replace(/\/+$/, "") ||
-  "https://ims-swp9.onrender.com";
+  process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/+$/, "") ||
+  "https://ims-backend-nm9g.onrender.com";
 
 const getStoredToken = (): string | null => {
   if (typeof window === "undefined") return null;
@@ -43,12 +43,6 @@ const getStoredToken = (): string | null => {
   );
 };
 
-const getAvatarUrl = (user: UserType) =>
-  `https://i.pravatar.cc/240?u=${encodeURIComponent(
-    user.email || user.name || String(user.id)
-  )}`;
-
-/* ================= SKELETONS ================= */
 
 function FilterBarSkeleton() {
   return (
@@ -182,12 +176,14 @@ function UsersTableSkeleton() {
   );
 }
 
-/* ================= MAIN PAGE ================= */
 
 export default function UserManagementPage() {
   const { users, loading, error } = useSuperDashboard();
 
+
+
   const tableUsers: UserType[] = Array.isArray(users) ? users : [];
+  console.log(tableUsers)
 
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("All Users");
@@ -339,7 +335,7 @@ export default function UserManagementPage() {
 
   return (
     <>
-      <div className="w-full min-w-0 space-y-5 sm:space-y-6">
+      <div className="w-full min-w-0 space-y-5 sm:space-y-6 ">
         <div className="min-w-0">
           <h1 className="break-words text-[22px] font-semibold leading-[1.2] text-[#0F172A] sm:text-[24px] xl:text-[28px]">
             User Management
@@ -433,11 +429,11 @@ export default function UserManagementPage() {
         ) : (
           <>
             {/* MOBILE */}
-            <div className="grid gap-4 md:hidden">
+            <div className="grid gap-4 md:hidden ">
               <div
                 className="
                   overflow-hidden rounded-2xl border border-[#EEF2F6] bg-white
-                  shadow-[0_6px_20px_rgba(0,0,0,0.04)]
+                  shadow-[0_6px_20px_rgba(0,0,0,0.04)] 
                 "
               >
                 <div className="border-b border-[#F1F5F9] px-4 py-4">
@@ -525,7 +521,6 @@ export default function UserManagementPage() {
                           <TableHead>User</TableHead>
                           <TableHead>Contact</TableHead>
                           <TableHead>Role</TableHead>
-                          <TableHead>Profile</TableHead>
                           <TableHead>Branch</TableHead>
                           <TableHead>Status</TableHead>
                           <TableHead>Last Login</TableHead>
@@ -548,7 +543,7 @@ export default function UserManagementPage() {
                                     aria-label={`Preview ${user.name || "user"} profile image`}
                                   >
                                     <img
-                                      src={getAvatarUrl(user)}
+                                      src={user.profile_image}
                                       className="h-10 w-10 rounded-full object-cover transition duration-200 group-hover:scale-[1.04]"
                                       alt={user.name || "User"}
                                       draggable={false}
@@ -564,7 +559,7 @@ export default function UserManagementPage() {
                                     {user.email ? (
                                       <a
                                         href={`mailto:${user.email}`}
-                                        className="truncate text-[12px] text-[#2563EB] transition hover:text-[#1D4ED8] hover:underline"
+                                        className="truncate text-[12px] !text-[#0F172A] transition hover:text-[#0F172A] hover:underline"
                                         onClick={(e) => e.stopPropagation()}
                                       >
                                         {user.email}
@@ -584,7 +579,7 @@ export default function UserManagementPage() {
                                   {user.phone ? (
                                     <a
                                       href={`tel:${user.phone}`}
-                                      className="truncate text-[#2563EB] transition hover:text-[#1D4ED8] hover:underline"
+                                      className="truncate !text-[#0F172A] transition hover:!text-[#0F172A] hover:underline"
                                       onClick={(e) => e.stopPropagation()}
                                     >
                                       {user.phone}
@@ -603,11 +598,7 @@ export default function UserManagementPage() {
                                 </div>
                               </td>
 
-                              <td className="px-4 py-4 align-middle text-[14px] text-[#475569] sm:px-6">
-                                <div className="min-w-[130px]">
-                                  {user.profile || "Team Member"}
-                                </div>
-                              </td>
+                             
 
                               <td className="px-4 py-4 align-middle text-[14px] text-[#475569] sm:px-6">
                                 <div className="min-w-[160px]">
@@ -678,7 +669,7 @@ function UserMobileCard({
     <div
       className="
         overflow-hidden rounded-2xl border border-[#EEF2F6] bg-white
-        p-4 shadow-[0_6px_20px_rgba(0,0,0,0.04)]
+        p-4 shadow-[0_6px_20px_rgba(0,0,0,0.04)] !min-h-[441px]
       "
     >
       <div className="flex items-start gap-3">
@@ -689,7 +680,7 @@ function UserMobileCard({
           aria-label={`Preview ${user.name || "user"} profile image`}
         >
           <img
-            src={getAvatarUrl(user)}
+            src={user.profile_image}
             className="h-11 w-11 rounded-full object-cover transition duration-200 group-hover:scale-[1.04]"
             alt={user.name || "User"}
             draggable={false}
@@ -707,7 +698,7 @@ function UserMobileCard({
               {user.email ? (
                 <a
                   href={`mailto:${user.email}`}
-                  className="mt-1 block truncate text-[12px] text-[#2563EB] transition hover:text-[#1D4ED8] hover:underline"
+                  className="mt-1 block truncate text-[12px] text-[#0F172A] transition  hover:underline"
                 >
                   {user.email}
                 </a>
@@ -731,7 +722,7 @@ function UserMobileCard({
             user.phone ? (
               <a
                 href={`tel:${user.phone}`}
-                className="text-[#2563EB] transition hover:text-[#1D4ED8] hover:underline"
+                className="!text-[#0F172A] transition hover:text-[#0F172A] hover:underline"
               >
                 {user.phone}
               </a>
@@ -840,7 +831,7 @@ function ImagePreviewModal({
 
           <div className="flex items-center justify-center bg-[#E2E8F0] p-4 sm:p-6">
             <img
-              src={getAvatarUrl(user)}
+              src={user.profile_image}
               alt={user.name || "User"}
               className="max-h-[72vh] w-auto max-w-full rounded-2xl object-contain"
               draggable={false}

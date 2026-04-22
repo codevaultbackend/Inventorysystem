@@ -118,7 +118,7 @@ function getBaseUrl() {
   return (
     process.env.NEXT_PUBLIC_API_BASE_URL ||
     process.env.NEXT_PUBLIC_API_URL ||
-    "https://ims-swp9.onrender.com"
+    "https://ims-backend-nm9g.onrender.com"
   ).replace(/\/+$/, "");
 }
 

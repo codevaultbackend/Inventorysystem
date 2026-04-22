@@ -3,7 +3,7 @@
 import axios from "axios";
 
 const RAW_BASE =
-  process.env.NEXT_PUBLIC_API_URL || "https://ims-swp9.onrender.com";
+  process.env.NEXT_PUBLIC_API_URL || "https://ims-backend-nm9g.onrender.com";
 
 const API_BASE = `${RAW_BASE.replace(/\/+$/, "")}/sales`;
 

@@ -33,7 +33,7 @@ export default function ReportsAnalyticsPage() {
         if (!token) throw new Error("No token found");
 
         const res = await axios.get(
-          "https://ims-swp9.onrender.com/combine/dashboard/reports",
+          "https://ims-backend-nm9g.onrender.com/combine/dashboard/reports",
           {
             headers: {
               Authorization: `Bearer ${token}`,

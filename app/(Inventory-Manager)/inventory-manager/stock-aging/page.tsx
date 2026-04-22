@@ -28,7 +28,7 @@ export default function StockAgingPage() {
         }
 
         const res = await axios.get(
-          "https://ims-swp9.onrender.com/combine/dashboard/aging",
+          "https://ims-backend-nm9g.onrender.com/combine/dashboard/aging",
           {
             headers: {
               Authorization: `Bearer ${token}`,

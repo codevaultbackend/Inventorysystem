@@ -281,7 +281,7 @@ export default function ItemAnalyzePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#F7F9FB] px-2 sm:px-2 lg:px-3">
+      <div className="min-h-screen bg-[#F7F9FB]">
         <div className="mx-auto w-full max-w-[1600px] min-w-0">
           <HeaderSkeleton />
 
@@ -318,7 +318,7 @@ export default function ItemAnalyzePage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F7F9FB] px-2 sm:px-2 lg:px-3">
+    <div className="min-h-screen bg-[#F7F9FB]">
       <div className="mx-auto w-full max-w-[1600px] min-w-0">
         <div className="mb-4 rounded-2xl bg-white p-4 shadow-sm sm:mb-5 sm:p-5">
           <div className="flex min-w-0 flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
@@ -337,23 +337,7 @@ export default function ItemAnalyzePage() {
               </div>
             </div>
 
-            <div className="w-full lg:w-auto">
-              <div className="flex w-full flex-wrap gap-2 lg:justify-end">
-                {["Daily", "Weekly", "Monthly"].map((item) => (
-                  <button
-                    key={item}
-                    onClick={() => setActive(item as "Daily" | "Weekly" | "Monthly")}
-                    className={`flex-1 rounded-xl px-3 py-2 text-sm font-medium transition sm:flex-none sm:px-4 ${
-                      active === item
-                        ? "bg-blue-600 text-white shadow-sm"
-                        : "border border-gray-200 bg-white text-gray-600"
-                    }`}
-                  >
-                    {item}
-                  </button>
-                ))}
-              </div>
-            </div>
+            
           </div>
         </div>
 

@@ -9,6 +9,7 @@ import ToggleNav from "../svgIcons/ToggleNav";
 import Link from "next/link";
 import GlobalNotificationCenter from "../(super-admin)/component/DashboardNotificationToast";
 import { useEffect, useMemo, useState } from "react";
+import { FaUserAlt } from "react-icons/fa";
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE_URL ||
@@ -96,7 +97,7 @@ export default function TopBar() {
   const displayName = profile?.name || user?.name || "User";
   const displayRole = profile?.role || user?.role || "Role";
   const displayImage =
-    profile?.profile_image || "https://i.pravatar.cc/40?img=3";
+    profile?.profile_image || "https://upload.wikimedia.org/wikipedia/commons/9/99/Sample_User_Icon.png";
 
   const normalizedRole = String(profile?.role || user?.role || "")
     .toLowerCase()
@@ -178,15 +179,15 @@ export default function TopBar() {
           ) : null}
         </div>
 
-        <Link href="/profile" className="min-w-0">
-          <div className="flex min-w-0 cursor-pointer items-center gap-2.5 sm:gap-3">
+        <Link href="/profile" className="min-w-0 ">
+          <div className="flex min-w-0 cursor-pointer items-center gap-2.5 sm:gap-3 ">
             <Image
               src={displayImage}
               alt="profile"
               width={40}
               height={40}
               unoptimized
-              className="h-[36px] w-[36px] rounded-full object-cover sm:h-[40px] sm:w-[40px]"
+              className="h-[36px] w-[36px] rounded-full object-cover sm:h-[40px] sm:w-[40px] shadow-sm"
             />
 
             <div className="hidden min-w-0 leading-tight md:block">

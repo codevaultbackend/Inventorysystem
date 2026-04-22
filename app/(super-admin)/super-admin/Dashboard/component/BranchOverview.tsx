@@ -47,13 +47,21 @@ export default function BranchOverview({
 
   return (
     <section className="overflow-hidden rounded-[20px] border border-[#E8EDF3] bg-white shadow-[0_1px_3px_rgba(16,24,40,0.08),0_1px_2px_rgba(16,24,40,0.04)]">
-      <div className="border-b border-[#EDF2F7] px-5 py-5">
-        <h3 className="text-[18px] font-semibold leading-[24px] tracking-[-0.02em] text-[#171717]">
+      <div className="border-b border-[#EDF2F7] px-5 py-5 flex justify-between">
+        <div className=""><h3 className="text-[18px] font-semibold leading-[24px] tracking-[-0.02em] text-[#171717]">
           {title}
         </h3>
-        <p className="mt-1 text-[13px] leading-[18px] text-[#9AA0AA]">
-          {subtitle}
-        </p>
+          <p className="mt-1 text-[13px] leading-[18px] text-[#9AA0AA]">
+            {subtitle}
+          </p></div>
+
+        <div>
+          <Link href='/super-admin/Branches/EditBranch'>
+            <button className="h-[50px] rounded-[8px] bg-blue-700 p-4 text-white">
+              Edit Branch
+            </button>
+          </Link>
+        </div>
       </div>
 
       <div className="max-h-[430px] overflow-auto">

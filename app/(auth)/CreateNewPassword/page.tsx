@@ -15,7 +15,7 @@ export default function CreateNewPassword() {
   const router = useRouter();
 
   const API_BASE =
-    process.env.NEXT_PUBLIC_API_BASE_URL || "https://ims-swp9.onrender.com";
+    process.env.NEXT_PUBLIC_API_BASE_URL || "https://ims-backend-nm9g.onrender.com";
 
   const passwordValid = useMemo(() => password.trim().length >= 6, [password]);
 

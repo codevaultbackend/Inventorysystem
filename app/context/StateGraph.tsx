@@ -9,7 +9,7 @@ export function StateLocationProvider({ children }) {
   const [stateLocation, setStateLocation] = useState(null);
   const [stateLoading, setStateLoading] = useState(true);
   const [stateError, setStateError] = useState("");
-
+  const BaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
   const fetchLocations = async () => {
 
     try {
@@ -23,7 +23,7 @@ export function StateLocationProvider({ children }) {
           : null;
 
       const res = await fetch(
-        "https://ims-swp9.onrender.com/stock-manager/state-graph",
+        `${BaseUrl}/stock-manager/state-graph`,
         {
           method: "GET",
           headers: {

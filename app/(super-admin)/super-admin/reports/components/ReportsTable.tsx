@@ -54,7 +54,7 @@ function getStoredToken() {
 function getApiBase() {
   return (
     process.env.NEXT_PUBLIC_API_URL?.replace(/\/+$/, "") ||
-    "https://ims-swp9.onrender.com"
+    "https://ims-backend-nm9g.onrender.com"
   );
 }
 

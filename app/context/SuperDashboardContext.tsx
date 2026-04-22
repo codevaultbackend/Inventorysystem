@@ -9,7 +9,7 @@ import {
   useCallback,
   useMemo,
 } from "react";
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 import { useAuth } from "./AuthContext";
 
 type Stats = {
@@ -66,6 +66,7 @@ type UserData = {
   phone?: string;
   role?: string;
   profile?: string;
+  profile_image?: string;
   branch?: string;
   status?: "Active" | "Inactive";
   lastLogin?: string;
@@ -127,18 +128,9 @@ const emptyDashboard: DashboardData = {
 const getStoredToken = () =>
   typeof window !== "undefined"
     ? localStorage.getItem("token") ||
-      localStorage.getItem("accessToken") ||
-      localStorage.getItem("authToken")
+    localStorage.getItem("accessToken") ||
+    localStorage.getItem("authToken")
     : null;
-
-const getAuthHeader = () => {
-  const token = getStoredToken();
-  if (!token) return null;
-
-  return {
-    Authorization: `Bearer ${token}`,
-  };
-};
 
 const toNumber = (value: unknown, fallback = 0) => {
   if (typeof value === "number" && !Number.isNaN(value)) return value;
@@ -204,13 +196,13 @@ const normalizeDashboard = (
     branchOverview: Array.isArray(raw?.branchOverview)
       ? raw.branchOverview
       : Array.isArray(raw?.branches)
-      ? raw.branches
-      : [],
+        ? raw.branches
+        : [],
     recentActivities: Array.isArray(raw?.recentActivities)
       ? raw.recentActivities
       : Array.isArray(raw?.recentActivity)
-      ? raw.recentActivity
-      : [],
+        ? raw.recentActivity
+        : [],
   };
 };
 
@@ -218,10 +210,10 @@ const normalizeUsers = (payload: any): UserData[] => {
   const rawUsers = Array.isArray(payload)
     ? payload
     : Array.isArray(payload?.users)
-    ? payload.users
-    : Array.isArray(payload?.data)
-    ? payload.data
-    : [];
+      ? payload.users
+      : Array.isArray(payload?.data)
+        ? payload.data
+        : [];
 
   return rawUsers.map((user: any, index: number) => ({
     id: Number(user?.id ?? index + 1),
@@ -230,6 +222,12 @@ const normalizeUsers = (payload: any): UserData[] => {
     phone: user?.phone ?? user?.contact_number ?? "",
     role: String(user?.role ?? ""),
     profile: user?.profile ?? user?.designation ?? "",
+    profile_image:
+      user?.profile_image ??
+      user?.profileImage ??
+      user?.avatar ??
+      user?.image ??
+      "",
     branch:
       user?.branch ??
       user?.branchName ??
@@ -239,7 +237,9 @@ const normalizeUsers = (payload: any): UserData[] => {
     status:
       user?.status === "Inactive" || user?.status === "inactive"
         ? "Inactive"
-        : "Active",
+        : user?.isActive === false
+          ? "Inactive"
+          : "Active",
     lastLogin: user?.lastLogin ?? user?.last_login ?? "",
   }));
 };
@@ -248,10 +248,10 @@ const normalizeBranches = (payload: any): Branch[] => {
   const rawBranches = Array.isArray(payload)
     ? payload
     : Array.isArray(payload?.branches)
-    ? payload.branches
-    : Array.isArray(payload?.data)
-    ? payload.data
-    : [];
+      ? payload.branches
+      : Array.isArray(payload?.data)
+        ? payload.data
+        : [];
 
   return rawBranches.map((branch: any, index: number) => ({
     id: Number(branch?.id ?? index + 1),
@@ -267,6 +267,30 @@ const normalizeBranches = (payload: any): Branch[] => {
     stock_value: toNumber(branch?.stock_value ?? branch?.stockValue ?? 0),
   }));
 };
+
+const getApiBaseUrl = () => {
+  return (
+    process.env.NEXT_PUBLIC_API_BASE_URL ||
+    process.env.NEXT_PUBLIC_API_URL ||
+    ""
+  );
+};
+
+const dashboardApi = axios.create({
+  baseURL: getApiBaseUrl(),
+  withCredentials: true,
+});
+
+dashboardApi.interceptors.request.use((config) => {
+  const token = getStoredToken();
+
+  if (token) {
+    config.headers = config.headers ?? {};
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+
+  return config;
+});
 
 /* ================= PROVIDER ================= */
 
@@ -302,24 +326,23 @@ export function SuperDashboardProvider({
 
   const getDashboardEndpoint = useCallback(() => {
     if (isSuperAdmin) {
-      return "/api/sqlbranch/super-dashboard";
+      return "/sqlbranch/super-dashboard";
     }
 
     if (user?.role === "admin" && branchId) {
-      return `/api/sqlbranch/branch/${branchId}`;
+      return `/sqlbranch/branch/${branchId}`;
     }
 
     return null;
   }, [isSuperAdmin, user?.role, branchId]);
 
+  const resolveErrorMessage = (err: unknown, fallback: string) => {
+    const error = err as AxiosError<any>;
+    return error?.response?.data?.message || fallback;
+  };
+
   const fetchDashboard = useCallback(async () => {
     if (!user || !isAllowedRole) return;
-
-    const headers = getAuthHeader();
-    if (!headers) {
-      setError("Authentication token not found");
-      return;
-    }
 
     const endpoint = getDashboardEndpoint();
     if (!endpoint) {
@@ -328,7 +351,7 @@ export function SuperDashboardProvider({
     }
 
     try {
-      const res = await axios.get(endpoint, { headers });
+      const res = await dashboardApi.get(endpoint);
       const dashboardData = normalizeDashboard(res.data, !isSuperAdmin);
       setData(dashboardData);
     } catch (err: any) {
@@ -337,21 +360,15 @@ export function SuperDashboardProvider({
         return;
       }
 
-      setError(err?.response?.data?.message || "Failed to load dashboard");
+      setError(resolveErrorMessage(err, "Failed to load dashboard"));
     }
   }, [user, isAllowedRole, getDashboardEndpoint, isSuperAdmin]);
 
   const fetchUsers = useCallback(async () => {
     if (!user || !isAllowedRole) return;
 
-    const headers = getAuthHeader();
-    if (!headers) {
-      setError("Authentication token not found");
-      return;
-    }
-
     try {
-      const res = await axios.get("/api/sqlbranch/get-users", { headers });
+      const res = await dashboardApi.get("/sqlbranch/d/get-users");
       setUsers(normalizeUsers(res.data));
     } catch (err: any) {
       if (err?.response?.status === 401 || err?.response?.status === 403) {
@@ -360,19 +377,13 @@ export function SuperDashboardProvider({
       }
 
       setError(
-        (prev) => prev || err?.response?.data?.message || "Failed to fetch users"
+        (prev) => prev || resolveErrorMessage(err, "Failed to fetch users")
       );
     }
-  }, [user, isAllowedRole, isSuperAdmin]);
+  }, [user, isAllowedRole]);
 
   const fetchBranches = useCallback(async () => {
     if (!user || !isAllowedRole) return;
-
-    const headers = getAuthHeader();
-    if (!headers) {
-      setError("Authentication token not found");
-      return;
-    }
 
     if (!isSuperAdmin) {
       setBranches([]);
@@ -380,7 +391,7 @@ export function SuperDashboardProvider({
     }
 
     try {
-      const res = await axios.get("/api/sqlbranch/branches", { headers });
+      const res = await dashboardApi.get("/sqlbranch/branches");
       setBranches(normalizeBranches(res.data));
     } catch (err: any) {
       if (err?.response?.status === 401 || err?.response?.status === 403) {
@@ -389,8 +400,7 @@ export function SuperDashboardProvider({
       }
 
       setError(
-        (prev) =>
-          prev || err?.response?.data?.message || "Failed to fetch branches"
+        (prev) => prev || resolveErrorMessage(err, "Failed to fetch branches")
       );
     }
   }, [user, isAllowedRole, isSuperAdmin]);
@@ -399,16 +409,9 @@ export function SuperDashboardProvider({
     if (!user || !isAllowedRole || !location) return;
     if (!isSuperAdmin) return;
 
-    const headers = getAuthHeader();
-    if (!headers) {
-      setError("Authentication token not found");
-      return;
-    }
-
     try {
-      const res = await axios.get(
-        `/api/sqlbranch/location/${encodeURIComponent(location)}`,
-        { headers }
+      const res = await dashboardApi.get(
+        `/sqlbranch/location/${encodeURIComponent(location)}`
       );
 
       const dashboardData = normalizeDashboard(res.data, false);
@@ -418,7 +421,7 @@ export function SuperDashboardProvider({
 
       setError(
         (prev) =>
-          prev || err?.response?.data?.message || "Failed to load location data"
+          prev || resolveErrorMessage(err, "Failed to load location data")
       );
     }
   }, [user, isAllowedRole, location, isSuperAdmin]);

@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 
 const StateLocationsContext = createContext<any>(null);
+const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL
 
 function getStoredUser() {
   if (typeof window === "undefined") return null;
@@ -50,7 +51,7 @@ export function StateLocationProvider({ children }: { children: React.ReactNode 
         typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
       const res = await fetch(
-        "https://ims-swp9.onrender.com/stock-manager/state",
+        `${baseUrl}/stock-manager/state`,
         {
           method: "GET",
           headers: {

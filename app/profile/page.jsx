@@ -74,8 +74,8 @@ async function setProfileApi(payload) {
 async function updateProfileApi(payload) {
   const token = getToken();
 
-  const res = await fetch(`${API_BASE}/profile/update-profile`, {
-    method: "PUT",
+  const res = await fetch(`${API_BASE}/profile/upload`, {
+    method: "POST",
     headers: {
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
@@ -205,7 +205,7 @@ export default function Profile() {
   }, [user]);
 
   const displayedImage = useMemo(() => {
-    return previewImage || "https://i.pravatar.cc/300?img=12";
+    return previewImage || "https://upload.wikimedia.org/wikipedia/commons/9/99/Sample_User_Icon.png";
   }, [previewImage]);
 
   const handleChange = (e) => {
@@ -298,7 +298,7 @@ export default function Profile() {
   return (
     <DashboardLayout>
       <div className="w-full min-h-screen bg-[#F6F8FA] px-4 sm:px-3 py-6">
-        <div className="max-w-[1200px] mx-auto">
+        <div className="max-w-[1200px] ">
           {/* TITLE */}
           <h2 className="text-[20px] font-[500] text-black mb-8">
             My Profile
