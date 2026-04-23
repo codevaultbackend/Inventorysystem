@@ -1,20 +1,20 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import BranchOverviewCounts, {
   DashboardIcons,
 } from "../Branches/Component/BranchOverviewPage";
-import { StockTrendBar } from "../Branches/Component/StockTrendBar";
-import { SalesTrendLine } from "../Branches/Component/SalesTrendLine";
+import PendingRejectedStockChart from "../../Components/PendingRejectedStockChart";
+import QuotationTrackingChart from "../../Components/QuotationTrackingChart";
 import InventoryItems from "../Branches/Component/InventoryItems";
 import { useAuth } from "../../../context/AuthContext";
 
 /* ================= Helpers ================= */
 
-function toNumber(value: any) {
-  if (!value) return 0;
-  if (typeof value === "number") return value;
-  return Number(String(value).replace(/,/g, "")) || 0;
+function toNumber(value: unknown): number {
+  if (value === null || value === undefined || value === "") return 0;
+  if (typeof value === "number") return Number.isFinite(value) ? value : 0;
+  return Number(String(value).replace(/,/g, "").trim()) || 0;
 }
 
 function getUserBranchId(user: any) {
@@ -22,44 +22,66 @@ function getUserBranchId(user: any) {
 
   return (
     user?.branch_id ||
+    user?.branchId ||
     user?.branch?.id ||
-    (Array.isArray(user?.branches) ? user.branches[0] : null) ||
+    user?.branch?.branch_id ||
+    (Array.isArray(user?.branches) && user.branches.length > 0
+      ? user.branches[0]?.id || user.branches[0]?.branch_id || user.branches[0]
+      : null) ||
     null
   );
 }
 
+function formatWeekLabel(value: string, fallbackIndex: number) {
+  if (!value) return `Week ${fallbackIndex + 1}`;
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+
+  return date.toLocaleDateString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+}
+
 /* ================= API ================= */
 
-async function getBranchDashboard(branchId: string) {
+async function getBranchDashboard(branchId: string | number) {
   const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "";
 
   const token =
     localStorage.getItem("token") ||
     localStorage.getItem("accessToken") ||
+    localStorage.getItem("authToken") ||
     "";
 
   const res = await fetch(`${API_BASE}/sales/branch/${branchId}`, {
+    method: "GET",
     cache: "no-store",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
   });
 
   const text = await res.text();
+  let json: any = null;
 
   try {
-    const json = JSON.parse(text);
-
-    if (!res.ok) {
-      throw new Error(json?.message || "API Error");
-    }
-
-    return json;
+    json = text ? JSON.parse(text) : null;
   } catch {
     console.error("❌ RAW RESPONSE:", text);
     throw new Error("Invalid JSON / API returned HTML");
   }
+
+  if (!res.ok) {
+    throw new Error(
+      json?.message || json?.error || `Request failed with status ${res.status}`
+    );
+  }
+
+  return json;
 }
 
 /* ================= Page ================= */
@@ -71,12 +93,16 @@ export default function AdminDashboardPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const branchId = getUserBranchId(user);
-
-  /* ================= Fetch ================= */
+  const branchId = useMemo(() => getUserBranchId(user), [user]);
 
   useEffect(() => {
-    if (authLoading || !user || !branchId) return;
+    if (authLoading) return;
+    if (!user) return;
+
+    if (!branchId) {
+      setError("Branch ID not found for this user.");
+      return;
+    }
 
     let isMounted = true;
 
@@ -91,7 +117,7 @@ export default function AdminDashboardPage() {
         setData(result);
       } catch (err: any) {
         if (!isMounted) return;
-        setError(err.message);
+        setError(err?.message || "Failed to fetch dashboard data");
       } finally {
         if (isMounted) setLoading(false);
       }
@@ -104,8 +130,6 @@ export default function AdminDashboardPage() {
     };
   }, [authLoading, user, branchId]);
 
-  /* ================= STATES ================= */
-
   if (authLoading || loading) {
     return <div className="p-6">Loading Dashboard...</div>;
   }
@@ -113,9 +137,9 @@ export default function AdminDashboardPage() {
   if (error) {
     return (
       <div className="p-6 text-red-500">
-        {error}
+        <p>{error}</p>
         <button
-          className="block mt-3 bg-black text-white px-4 py-2"
+          className="mt-3 rounded-md bg-black px-4 py-2 text-white"
           onClick={() => window.location.reload()}
         >
           Retry
@@ -124,79 +148,89 @@ export default function AdminDashboardPage() {
     );
   }
 
-  if (!data) {
+  if (!data?.success) {
     return <div className="p-6 text-gray-500">No data available</div>;
   }
 
-  /* ================= Data Mapping ================= */
+  const cards = data?.cards || {};
+  const charts = data?.charts || {};
+  const products = Array.isArray(data?.products) ? data.products : [];
 
   const cardsData = [
     {
-      title: "Total Stock",
-      value: toNumber(data?.cards?.totalSales),
-      icon: DashboardIcons.Boxes,
-    },
-    {
-      title: "Stock Value",
-      value: toNumber(data?.cards?.salesThisMonth),
-      icon: DashboardIcons.IndianRupee,
-    },
-    {
       title: "Total Sales",
-      value: toNumber(data?.cards?.pendingQuotation),
+      value: toNumber(cards.totalSales),
       icon: DashboardIcons.ShoppingCart,
     },
     {
+      title: "Pending Quotations",
+      value: toNumber(cards.pendingQuotation),
+      icon: DashboardIcons.Boxes,
+    },
+    {
+      title: "Sales This Month",
+      value: toNumber(cards.salesThisMonth),
+      icon: DashboardIcons.IndianRupee,
+    },
+    {
       title: "Total Clients",
-      value: toNumber(data?.cards?.totalClients),
+      value: toNumber(cards.totalClients),
       icon: DashboardIcons.Users,
     },
   ];
 
-  const stockTrendData =
-    data?.charts?.stockTrend?.map((i: any, idx: number) => ({
-      week: i.week || `Week ${idx + 1}`,
-      in: toNumber(i.stockin),
-      out: toNumber(i.stockout),
-    })) || [];
+  const stockTrendData = Array.isArray(charts?.stockTrend)
+    ? charts.stockTrend.map((item: any, index: number) => ({
+        week: formatWeekLabel(item?.week, index),
+        in: toNumber(item?.stockin),
+        out: toNumber(item?.stockout),
+      }))
+    : [];
 
-  const salesTrendData =
-    data?.charts?.quotationTrend?.map((i: any, idx: number) => ({
-      week: i.week || `Week ${idx + 1}`,
-      purchase: toNumber(i.rejected),
-      sales: toNumber(i.pending),
-    })) || [];
+  const quotationTrendData = Array.isArray(charts?.quotationTrend)
+    ? charts.quotationTrend.map((item: any, index: number) => ({
+        week: formatWeekLabel(item?.week, index),
+        pending: toNumber(item?.pending),
+        rejected: toNumber(item?.rejected),
+      }))
+    : [];
 
-  const itemRows =
-    data?.products?.map((item: any, i: number) => ({
-      id: String(i + 1),
-      itemName: item.productName,
-      name: item.productName,
-      category: item.category,
-      quantity: toNumber(item.totalSales),
-      stock: toNumber(item.totalSales),
-      stockIn: toNumber(item.pendingQuotation),
-      stockOut: toNumber(item.rejectedQuotation),
-      status: "GOOD",
-      href: "/admin/all-stocks",
-    })) || [];
-
-  /* ================= UI ================= */
+  const itemRows = products.map((item: any, index: number) => ({
+    id: String(index + 1),
+    itemName: item?.productName || "-",
+    name: item?.productName || "-",
+    category: item?.category || "-",
+    quantity: toNumber(item?.totalSales),
+    stock: toNumber(item?.totalSales),
+    stockIn: toNumber(item?.pendingQuotation),
+    stockOut: toNumber(item?.rejectedQuotation),
+    totalRevenue: toNumber(item?.totalRevenue),
+    clients: toNumber(item?.clients),
+    pendingQuotation: toNumber(item?.pendingQuotation),
+    rejectedQuotation: toNumber(item?.rejectedQuotation),
+    status:
+      toNumber(item?.totalSales) > 0
+        ? "ACTIVE"
+        : toNumber(item?.pendingQuotation) > 0
+        ? "PENDING"
+        : "LOW",
+    href: "/admin/all-stocks",
+  }));
 
   return (
     <div className="space-y-8">
-      <div className="bg-white p-6 rounded-xl shadow-[1px_1px_4px_rgba(0,0,0,0.1)]">
+      <div className="rounded-xl bg-white p-6 shadow-[1px_1px_4px_rgba(0,0,0,0.1)]">
         <h1 className="text-2xl font-semibold">
-          {branchName || "My Branch"}
+          {branchName || "My Branch Dashboard"}
         </h1>
-        <p className="text-gray-500">{stateName}</p>
+        <p className="text-gray-500">{stateName || "Branch Overview"}</p>
       </div>
 
       <BranchOverviewCounts cards={cardsData} loading={loading} />
 
-      <div className="grid grid-cols-2 gap-6">
-        <StockTrendBar data={stockTrendData} />
-        <SalesTrendLine data={salesTrendData} />
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+        <PendingRejectedStockChart data={stockTrendData} />
+        <QuotationTrackingChart data={quotationTrendData} />
       </div>
 
       <InventoryItems

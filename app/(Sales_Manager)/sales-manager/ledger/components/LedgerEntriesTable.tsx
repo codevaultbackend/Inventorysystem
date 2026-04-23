@@ -139,7 +139,7 @@ export default function LedgerEntriesTable({
   const hasEntries = company.entries.length > 0;
 
   return (
-    <section className="overflow-hidden rounded-[14px] border border-[#CDD6E1] bg-white">
+    <section className="overflow-hidden rounded-[14px] border border-[#CDD6E1] bg-white h-[441px]">
       <div className="border-b border-[#D9E1EA] px-4 py-4 sm:px-5 sm:py-5 lg:px-[22px]">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="min-w-0">
@@ -174,7 +174,7 @@ export default function LedgerEntriesTable({
           Scroll horizontally to view complete details. Header stays fixed for easier reading.
         </div>
 
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto h-full esktop-table-scroll">
           <div className="min-w-[1060px] lg:min-w-[1120px] xl:min-w-[1240px]">
             <div className="max-h-[560px] overflow-y-auto overflow-x-hidden">
               <table className="w-full border-collapse">

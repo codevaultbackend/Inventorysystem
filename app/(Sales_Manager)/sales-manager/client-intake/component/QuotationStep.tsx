@@ -1,16 +1,10 @@
 "use client";
 
 import {
-  Building2,
-  CalendarDays,
   CheckCircle2,
   FilePlus2,
   FileText,
 } from "lucide-react";
-
-import { useRef } from "react";
-import html2canvas from "html2canvas";
-import jsPDF from "jspdf";
 
 import type {
   ClientFormData,
@@ -23,6 +17,8 @@ type Props = {
   createdClient: CreatedClient | null;
   products: Product[];
   total: number;
+  quotationId?: string | number | null;
+  quotationPdfUrl?: string;
   quotationNo: string;
   quotationCreatedAt: string;
   status?: "pending" | "approved" | "rejected";
@@ -49,57 +45,129 @@ function getStatusLabel(status: "pending" | "approved" | "rejected") {
   return "Pending Approval";
 }
 
+function getApiBaseUrl() {
+  return (
+    process.env.NEXT_PUBLIC_API_BASE_URL ||
+    process.env.NEXT_PUBLIC_API_URL ||
+    process.env.NEXT_PUBLIC_BACKEND_URL ||
+    ""
+  ).replace(/\/+$/, "");
+}
+
+function getStoredToken() {
+  if (typeof window === "undefined") return "";
+
+  return (
+    localStorage.getItem("accessToken") ||
+    localStorage.getItem("token") ||
+    localStorage.getItem("authToken") ||
+    localStorage.getItem("ims_token") ||
+    localStorage.getItem("imsToken") ||
+    localStorage.getItem("jwt") ||
+    ""
+  );
+}
+
+function triggerBrowserDownload(url: string, fileName: string) {
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = fileName;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+}
+
+async function downloadBlob(blob: Blob, fileName: string) {
+  const blobUrl = window.URL.createObjectURL(blob);
+  triggerBrowserDownload(blobUrl, fileName);
+
+  setTimeout(() => {
+    window.URL.revokeObjectURL(blobUrl);
+  }, 30000);
+}
+
 export default function QuotationStep({
   clientData,
   createdClient,
   products,
   total,
+  quotationId,
+  quotationPdfUrl,
   quotationNo,
   quotationCreatedAt,
   status = "pending",
   onCreateAnotherQuotation,
 }: Props) {
-  const pdfRef = useRef<HTMLDivElement>(null);
-
   const handleDownload = async () => {
-    if (!pdfRef.current) return;
+    try {
+      const fileName = `${quotationNo || "quotation"}.pdf`;
 
-    const canvas = await html2canvas(pdfRef.current, {
-      scale: 2,
-      useCORS: true,
-    });
+      // First try backend PDF route if quotationId exists
+      if (quotationId) {
+        const baseUrl = getApiBaseUrl();
+        const token = getStoredToken();
 
-    const imgData = canvas.toDataURL("image/png");
+        const response = await fetch(
+          `${baseUrl}/sales/quotation/${quotationId}/pdf?type=download`,
+          {
+            method: "GET",
+            headers: {
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+            credentials: "include",
+          }
+        );
 
-    const pdf = new jsPDF("p", "mm", "a4");
+        if (response.ok) {
+          const blob = await response.blob();
 
-    const imgWidth = 210;
-    const pageHeight = 295;
-    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+          if (blob.type && !blob.type.includes("pdf")) {
+            throw new Error("Invalid PDF response from server");
+          }
 
-    let heightLeft = imgHeight;
-    let position = 0;
+          await downloadBlob(blob, fileName);
+          return;
+        }
 
-    pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
-    heightLeft -= pageHeight;
+        console.error("Backend PDF download failed, using fallback blob/url.");
+      }
 
-    while (heightLeft > 0) {
-      position = heightLeft - imgHeight;
-      pdf.addPage();
-      pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
+      // Fallback to already generated quotationPdfUrl
+      if (quotationPdfUrl) {
+        if (quotationPdfUrl.startsWith("blob:")) {
+          triggerBrowserDownload(quotationPdfUrl, fileName);
+          return;
+        }
+
+        const response = await fetch(quotationPdfUrl, {
+          method: "GET",
+          credentials: "include",
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to download saved quotation PDF");
+        }
+
+        const blob = await response.blob();
+        await downloadBlob(blob, fileName);
+        return;
+      }
+
+      throw new Error("Quotation PDF not available");
+    } catch (error) {
+      console.error("Quotation PDF download failed:", error);
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Failed to download quotation PDF"
+      );
     }
-
-    pdf.save(`${quotationNo || "quotation"}.pdf`);
   };
 
   return (
     <div className="flex w-full justify-center px-4 py-6 sm:px-6 sm:py-8 lg:px-8 lg:py-10">
       <div className="w-full max-w-[980px]">
-        <div
-          ref={pdfRef}
-          className="rounded-[18px] border border-[#DEE4EC] bg-white p-4 shadow-[0_2px_10px_rgba(15,23,42,0.04)] sm:p-5 lg:p-6"
-        >
+        <div className="rounded-[18px] border border-[#DEE4EC] bg-white p-4 shadow-[0_2px_10px_rgba(15,23,42,0.04)] sm:p-5 lg:p-6">
           <div className="mb-5 flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
             <div className="w-full max-w-[620px]">
               <h1 className="text-[28px] font-[700] leading-[34px] tracking-[-0.02em] text-[#111827]">
@@ -127,8 +195,6 @@ export default function QuotationStep({
               </div>
             </div>
           </div>
-
-          {/* STEP INDICATOR */}
 
           <div className="mb-8 hidden w-full overflow-x-auto pb-1 sm:block">
             <div className="relative min-w-[560px] px-[18px] sm:px-[28px] lg:px-[42px]">
@@ -161,8 +227,6 @@ export default function QuotationStep({
             </div>
           </div>
 
-          {/* QUOTATION CARD */}
-
           <div className="rounded-[16px] border border-[#E5E7EB] bg-white">
             <div className="border-b border-[#EEF2F6] bg-[#F9FAFB] px-4 py-4 sm:px-5">
               <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
@@ -185,8 +249,6 @@ export default function QuotationStep({
                 </div>
               </div>
             </div>
-
-            {/* PRODUCTS TABLE */}
 
             <div className="overflow-x-auto">
               <table className="w-full min-w-[720px]">
@@ -247,8 +309,6 @@ export default function QuotationStep({
               </table>
             </div>
 
-            {/* TOTAL */}
-
             <div className="flex justify-end border-t border-[#EEF2F7] px-4 py-4">
               <div className="flex items-center gap-3">
                 <span className="text-[16px] font-[700]">Total:</span>
@@ -257,8 +317,6 @@ export default function QuotationStep({
                 </span>
               </div>
             </div>
-
-            {/* BUTTONS */}
 
             <div className="mt-5 flex flex-col-reverse gap-3 border-t border-[#EEF2F6] p-4 sm:flex-row sm:items-center sm:justify-end">
               <button

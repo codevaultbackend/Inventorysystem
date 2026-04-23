@@ -43,6 +43,14 @@ export type CreatedClient = {
   updatedAt?: string;
 };
 
+export type CreatedQuotation = {
+  id?: number;
+  quotation_no?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  pdf_url?: string;
+};
+
 type WorkflowStage = "builder" | "quotation_created";
 
 const STEPS = [
@@ -65,6 +73,7 @@ const STORAGE_KEYS = {
   step: "client-intake-step",
   clientData: "client-intake-client-data",
   createdClient: "client-intake-created-client",
+  createdQuotation: "client-intake-created-quotation",
   products: "client-intake-products",
   workflowStage: "client-intake-workflow-stage",
   quotationNo: "client-intake-quotation-no",
@@ -197,6 +206,8 @@ export default function ClientIntakePage() {
   const [products, setProducts] = useState<Product[]>([createInitialProduct()]);
   const [createdClient, setCreatedClient] =
     useState<CreatedClient | null>(null);
+  const [createdQuotation, setCreatedQuotation] =
+    useState<CreatedQuotation | null>(null);
 
   const [clientLoading, setClientLoading] = useState(false);
   const [clientApiError, setClientApiError] = useState("");
@@ -220,16 +231,31 @@ export default function ClientIntakePage() {
     if (typeof window === "undefined") return;
 
     const savedStep = window.sessionStorage.getItem(STORAGE_KEYS.step);
-    const savedClientData = window.sessionStorage.getItem(STORAGE_KEYS.clientData);
-    const savedCreatedClient = window.sessionStorage.getItem(STORAGE_KEYS.createdClient);
+    const savedClientData = window.sessionStorage.getItem(
+      STORAGE_KEYS.clientData
+    );
+    const savedCreatedClient = window.sessionStorage.getItem(
+      STORAGE_KEYS.createdClient
+    );
+    const savedCreatedQuotation = window.sessionStorage.getItem(
+      STORAGE_KEYS.createdQuotation
+    );
     const savedProducts = window.sessionStorage.getItem(STORAGE_KEYS.products);
-    const savedWorkflowStage = window.sessionStorage.getItem(STORAGE_KEYS.workflowStage);
-    const savedQuotationNo = window.sessionStorage.getItem(STORAGE_KEYS.quotationNo);
-    const savedQuotationCreatedAt = window.sessionStorage.getItem(STORAGE_KEYS.quotationCreatedAt);
+    const savedWorkflowStage = window.sessionStorage.getItem(
+      STORAGE_KEYS.workflowStage
+    );
+    const savedQuotationNo = window.sessionStorage.getItem(
+      STORAGE_KEYS.quotationNo
+    );
+    const savedQuotationCreatedAt = window.sessionStorage.getItem(
+      STORAGE_KEYS.quotationCreatedAt
+    );
 
     if (savedStep) setStep(Number(savedStep));
     if (savedClientData) setClientData(JSON.parse(savedClientData));
     if (savedCreatedClient) setCreatedClient(JSON.parse(savedCreatedClient));
+    if (savedCreatedQuotation)
+      setCreatedQuotation(JSON.parse(savedCreatedQuotation));
     if (savedProducts) setProducts(JSON.parse(savedProducts));
     if (savedWorkflowStage) setWorkflowStage(savedWorkflowStage as WorkflowStage);
     if (savedQuotationNo) setQuotationNo(savedQuotationNo);
@@ -271,6 +297,19 @@ export default function ClientIntakePage() {
       window.sessionStorage.removeItem(STORAGE_KEYS.createdClient);
     }
   }, [createdClient, hydrated]);
+
+  useEffect(() => {
+    if (!hydrated || typeof window === "undefined") return;
+
+    if (createdQuotation) {
+      window.sessionStorage.setItem(
+        STORAGE_KEYS.createdQuotation,
+        JSON.stringify(createdQuotation)
+      );
+    } else {
+      window.sessionStorage.removeItem(STORAGE_KEYS.createdQuotation);
+    }
+  }, [createdQuotation, hydrated]);
 
   useEffect(() => {
     if (!hydrated || typeof window === "undefined") return;
@@ -327,6 +366,7 @@ export default function ClientIntakePage() {
   const handleClientReset = () => {
     setClientData(initialClientData);
     setCreatedClient(null);
+    setCreatedQuotation(null);
     setClientApiError("");
     setQuotationApiError("");
     setProducts([createInitialProduct()]);
@@ -348,6 +388,7 @@ export default function ClientIntakePage() {
 
     setClientData(initialClientData);
     setCreatedClient(null);
+    setCreatedQuotation(null);
     setProducts([freshProduct]);
 
     setClientApiError("");
@@ -376,6 +417,7 @@ export default function ClientIntakePage() {
         JSON.stringify([freshProduct])
       );
       window.sessionStorage.removeItem(STORAGE_KEYS.createdClient);
+      window.sessionStorage.removeItem(STORAGE_KEYS.createdQuotation);
       window.sessionStorage.removeItem(STORAGE_KEYS.quotationNo);
       window.sessionStorage.removeItem(STORAGE_KEYS.quotationCreatedAt);
     }
@@ -497,16 +539,48 @@ export default function ClientIntakePage() {
         throw new Error(await parseErrorResponse(response));
       }
 
-      const blob = await response.blob();
+      const contentType = response.headers.get("content-type") || "";
 
-      if (quotationPdfUrl) {
-        URL.revokeObjectURL(quotationPdfUrl);
+      let quotationRecord: CreatedQuotation | null = null;
+      let quotationNumber = generateUiQuotationNo();
+      let quotationDate = formatUiDateTime(new Date());
+      let pdfUrl = "";
+
+      if (contentType.includes("application/json")) {
+        const data = await response.json();
+
+        quotationRecord =
+          data?.quotation ||
+          data?.data?.quotation ||
+          data?.result?.quotation ||
+          null;
+
+        quotationNumber =
+          quotationRecord?.quotation_no ||
+          data?.quotation_no ||
+          generateUiQuotationNo();
+
+        quotationDate =
+          quotationRecord?.createdAt ||
+          data?.createdAt ||
+          formatUiDateTime(new Date());
+
+        if (data?.pdf_url) {
+          pdfUrl = data.pdf_url;
+        } else if (quotationRecord?.pdf_url) {
+          pdfUrl = quotationRecord.pdf_url;
+        }
+      } else {
+        const blob = await response.blob();
+
+        if (quotationPdfUrl) {
+          URL.revokeObjectURL(quotationPdfUrl);
+        }
+
+        pdfUrl = URL.createObjectURL(blob);
       }
 
-      const pdfUrl = URL.createObjectURL(blob);
-      const quotationNumber = generateUiQuotationNo();
-      const quotationDate = formatUiDateTime(new Date());
-
+      setCreatedQuotation(quotationRecord);
       setQuotationPdfUrl(pdfUrl);
       setQuotationNo(quotationNumber);
       setQuotationCreatedAt(quotationDate);
@@ -524,6 +598,15 @@ export default function ClientIntakePage() {
           STORAGE_KEYS.quotationCreatedAt,
           quotationDate
         );
+
+        if (quotationRecord) {
+          window.sessionStorage.setItem(
+            STORAGE_KEYS.createdQuotation,
+            JSON.stringify(quotationRecord)
+          );
+        } else {
+          window.sessionStorage.removeItem(STORAGE_KEYS.createdQuotation);
+        }
       }
     } catch (error: unknown) {
       setQuotationApiError(
@@ -549,15 +632,17 @@ export default function ClientIntakePage() {
   if (workflowStage === "quotation_created") {
     return (
       <QuotationStep
-        clientData={clientData}
-        createdClient={createdClient}
-        products={products}
-        total={total}
-        quotationNo={quotationNo}
-        quotationCreatedAt={quotationCreatedAt}
-        status="pending"
-        onCreateAnotherQuotation={handleCreateAnotherQuotation}
-      />
+  clientData={clientData}
+  createdClient={createdClient}
+  products={products}
+  total={total}
+  quotationId={createdQuotation?.id ?? null}
+  quotationPdfUrl={quotationPdfUrl}
+  quotationNo={createdQuotation?.quotation_no || quotationNo}
+  quotationCreatedAt={createdQuotation?.createdAt || quotationCreatedAt}
+  status="pending"
+  onCreateAnotherQuotation={handleCreateAnotherQuotation}
+/>
     );
   }
 
@@ -620,20 +705,22 @@ export default function ClientIntakePage() {
                     >
                       <div className="absolute -left-[52px] h-[38px] w-[38px] shrink-0 rounded-full border border-[#D5D5D5] bg-[#F8F8F8]">
                         <div
-                          className={`absolute inset-[3px] flex items-center justify-center rounded-full border text-[14px] font-[700] text-white ${isActive
+                          className={`absolute inset-[3px] flex items-center justify-center rounded-full border text-[14px] font-[700] text-white ${
+                            isActive
                               ? "border-[#2563EB] bg-[#2563EB]"
                               : "border-[#C9C9C9] bg-[#D3D3D3]"
-                            }`}
+                          }`}
                         >
                           {item.id}
                         </div>
                       </div>
 
                       <div
-                        className={`flex h-[32px] items-center justify-center whitespace-nowrap rounded-full border px-[16px] text-[13px] font-[600] ${isActive
+                        className={`flex h-[32px] items-center justify-center whitespace-nowrap rounded-full border px-[16px] text-[13px] font-[600] ${
+                          isActive
                             ? "border-[#BFDBFE] bg-[#EFF6FF] text-[#2563EB]"
                             : "border-[#DFDFDF] bg-[#EFEFEF] text-[#7A7A7A]"
-                          }`}
+                        }`}
                       >
                         {item.label}
                       </div>
@@ -659,10 +746,11 @@ export default function ClientIntakePage() {
                     >
                       <div className="relative h-[38px] w-[38px] rounded-full border border-[#D5D5D5] bg-[#F8F8F8]">
                         <div
-                          className={`absolute inset-[3px] flex items-center justify-center rounded-full border text-[14px] font-[700] text-white ${isActive
+                          className={`absolute inset-[3px] flex items-center justify-center rounded-full border text-[14px] font-[700] text-white ${
+                            isActive
                               ? "border-[#2563EB] bg-[#2563EB]"
                               : "border-[#C9C9C9] bg-[#D3D3D3]"
-                            }`}
+                          }`}
                         >
                           {item.id}
                         </div>
@@ -671,10 +759,11 @@ export default function ClientIntakePage() {
                       <div className="mt-[5px] h-0 w-0 border-b-[7px] border-l-[5px] border-r-[5px] border-b-[#D9D9D9] border-l-transparent border-r-transparent" />
 
                       <div
-                        className={`mt-[6px] flex h-[32px] items-center justify-center whitespace-nowrap rounded-full border px-[16px] text-[13px] font-[600] ${isActive
+                        className={`mt-[6px] flex h-[32px] items-center justify-center whitespace-nowrap rounded-full border px-[16px] text-[13px] font-[600] ${
+                          isActive
                             ? "border-[#BFDBFE] bg-[#EFF6FF] text-[#2563EB]"
                             : "border-[#DFDFDF] bg-[#EFEFEF] text-[#7A7A7A]"
-                          }`}
+                        }`}
                       >
                         {item.label}
                       </div>

@@ -7,6 +7,7 @@ import { LocationsProvider } from "@/app/context/LocationsContext";
 import { StateLocationProvider } from "@/app/context/StateLocation";
 import { StockProvider } from "@/app/context/StockContext";
 import { useAuth } from "@/app/context/AuthContext";
+import { QuotationPdfProvider } from "@/app/context/QuotationPdfContext";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -37,7 +38,10 @@ export default function Layout({ children }: LayoutProps) {
   return (
     <StockProvider>
       <DashboardLayout role={role}>
-        {children}
+        <QuotationPdfProvider>
+          {children}
+        </QuotationPdfProvider>
+        
       </DashboardLayout>
     </StockProvider>
   );

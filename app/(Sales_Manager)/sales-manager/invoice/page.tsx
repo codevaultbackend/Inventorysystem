@@ -13,6 +13,7 @@ import {
   ListFilter,
   Search,
 } from "lucide-react";
+import { useInvoicePdf } from "../../../hooks/useInvoicePdf";
 
 type InvoiceStats = {
   totalInvoice?: number | string;
@@ -177,30 +178,6 @@ function statusPillClass(status: string) {
   return "bg-[#FFF8E8] text-[#D48A00]";
 }
 
-function getInvoiceActionId(invoice: InvoiceItem) {
-  if (invoice.id && invoice.id > 0) return invoice.id;
-  return null;
-}
-
-function getFilenameFromDisposition(
-  disposition?: string,
-  fallback = "invoice.pdf"
-) {
-  if (!disposition) return fallback;
-
-  const utfMatch = disposition.match(/filename\*=UTF-8''([^;]+)/i);
-  if (utfMatch?.[1]) {
-    return decodeURIComponent(utfMatch[1]).replace(/["']/g, "");
-  }
-
-  const asciiMatch = disposition.match(/filename=([^;]+)/i);
-  if (asciiMatch?.[1]) {
-    return asciiMatch[1].replace(/["']/g, "").trim();
-  }
-
-  return fallback;
-}
-
 function DashboardStatCard({
   topText,
   value,
@@ -238,7 +215,6 @@ function DashboardStatCard({
         </div>
 
         <div className="mt-auto">
-          
           <h3 className="mt-[6px] truncate text-[28px] font-semibold leading-[1.05] tracking-[-0.03em] text-[#111827] sm:text-[30px] xl:text-[29px]">
             {value}
           </h3>
@@ -366,6 +342,7 @@ export default function InvoicePage() {
     type: ActionType;
   } | null>(null);
 
+  const { error: invoiceError, openPdf, downloadPdf } = useInvoicePdf();
   const baseUrl = getBaseUrl();
 
   useEffect(() => {
@@ -414,6 +391,12 @@ export default function InvoicePage() {
       setError("API base URL is missing.");
     }
   }, [baseUrl]);
+
+  useEffect(() => {
+    if (invoiceError) {
+      setActionMessage(invoiceError);
+    }
+  }, [invoiceError]);
 
   const filteredInvoices = useMemo(() => {
     const normalized = query.trim().toLowerCase();
@@ -465,92 +448,24 @@ export default function InvoicePage() {
     try {
       setActionMessage("");
 
-      const actionId = getInvoiceActionId(invoice);
+      const invoiceNo = String(invoice.invoiceNo || "").trim();
 
-      if (!actionId) {
-        setActionMessage("No invoice found.");
+      if (!invoiceNo || invoiceNo === "-") {
+        setActionMessage("Invoice number not found.");
         return;
       }
 
-      const token = getStoredToken();
       setBusyAction({ id: invoice.id, type });
 
-      const response = await axios.get(`${baseUrl}/sales/Invoice/${actionId}`, {
-        responseType: "blob",
-        headers: token
-          ? {
-              Authorization: `Bearer ${token}`,
-            }
-          : undefined,
-        validateStatus: () => true,
-      });
-
-      const contentType = response.headers["content-type"] || "";
-      const isPdf = contentType.includes("application/pdf");
-
-      if (!isPdf) {
-        let message = "Invoice PDF is not available.";
-
-        try {
-          const text = await response.data.text();
-          const parsed = text ? JSON.parse(text) : null;
-
-          message =
-            parsed?.error ||
-            parsed?.message ||
-            (response.status === 404
-              ? `Invoice not found for id ${actionId}.`
-              : "Invoice PDF is not available.");
-        } catch {
-          if (response.status === 404) {
-            message = `Invoice not found for id ${actionId}.`;
-          }
-        }
-
-        setActionMessage(message);
-        return;
-      }
-
-      const disposition = response.headers["content-disposition"];
-      const fallbackFileName = `${invoice.invoiceNo || "invoice"}.pdf`;
-      const safeFileName = getFilenameFromDisposition(
-        disposition,
-        fallbackFileName
-      );
-
-      const blob = new Blob([response.data], { type: "application/pdf" });
-      const blobUrl = URL.createObjectURL(blob);
-
       if (type === "view") {
-        const tab = window.open(blobUrl, "_blank", "noopener,noreferrer");
-
-        if (!tab) {
-          setActionMessage("Popup blocked. Please allow popups to view invoice.");
-        }
-
-        setTimeout(() => {
-          URL.revokeObjectURL(blobUrl);
-        }, 60000);
-
+        await openPdf(invoiceNo);
         return;
       }
 
-      const a = document.createElement("a");
-      a.href = blobUrl;
-      a.download = safeFileName;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-
-      setTimeout(() => {
-        URL.revokeObjectURL(blobUrl);
-      }, 2000);
+      await downloadPdf(invoiceNo);
     } catch (err: any) {
       setActionMessage(
-        err?.response?.data?.error ||
-          err?.response?.data?.message ||
-          err?.message ||
-          "Unable to fetch invoice."
+        err instanceof Error ? err.message : "Unable to fetch invoice."
       );
     } finally {
       setBusyAction(null);
@@ -615,7 +530,7 @@ export default function InvoicePage() {
 
   return (
     <div className="min-h-screen bg-[#F6F8FB] p-3 max-[650px]:p-0 max-[650px]:pt-[20px] lg:p-1">
-      <div className="mx-auto max-w-[1380px] rounded-[12px] bg-[#F2F7FF66] p-2 pl-4 shadow-[0_20px_50px_rgba(15,23,42,0.06)] sm:p-2 max-[650px]:p-1">
+      <div className="mx-auto max-w-[1380px] rounded-[12px]  p-2 pl-4 shadow-[0_20px_50px_rgba(15,23,42,0.06)] sm:p-2 max-[650px]:p-1">
         <div className="space-y-5">
           <section className="grid grid-cols-2 gap-[14px] sm:grid-cols-2 xl:grid-cols-4">
             <DashboardStatCard

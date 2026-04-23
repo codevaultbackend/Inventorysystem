@@ -11,11 +11,50 @@ import {
   normalizeLedgerClients,
 } from "./data/ledgerData";
 
+type LedgerClientApiItem = {
+  clientId?: number;
+  companyName?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  branchId?: number | string | null;
+  gstNumber?: string | null;
+  totalEntries?: number | string | null;
+  totalAmount?: number | string | null;
+  pendingAmount?: number | string | null;
+  revenue?: number | string | null;
+};
+
+type LedgerBranchGroupApiItem = {
+  branchId?: number | string | null;
+  totalClients?: number | string | null;
+  totalEntries?: number | string | null;
+  totalAmount?: number | string | null;
+  pendingAmount?: number | string | null;
+  revenue?: number | string | null;
+  clients?: LedgerClientApiItem[] | null;
+};
+
+type LedgerBranchSummaryItem = {
+  branchId?: number | string | null;
+  totalClients?: number | string | null;
+  totalEntries?: number | string | null;
+  totalAmount?: number | string | null;
+  revenue?: number | string | null;
+  pendingAmount?: number | string | null;
+};
+
 type LedgerApiShape = {
   success?: boolean;
   message?: string;
-  clients?: any[];
+  clients?: LedgerBranchGroupApiItem[] | LedgerClientApiItem[];
+  branchSummary?: LedgerBranchSummaryItem[];
 };
+
+function toNumber(value: unknown): number {
+  if (value === null || value === undefined || value === "") return 0;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
 
 function getStoredToken() {
   if (typeof window === "undefined") return "";
@@ -58,10 +97,97 @@ function getApiBaseUrl() {
   ).replace(/\/+$/, "");
 }
 
+function isGroupedLedgerResponse(
+  clients: LedgerBranchGroupApiItem[] | LedgerClientApiItem[] | undefined
+): clients is LedgerBranchGroupApiItem[] {
+  return (
+    Array.isArray(clients) &&
+    clients.length > 0 &&
+    typeof clients[0] === "object" &&
+    clients[0] !== null &&
+    "clients" in clients[0]
+  );
+}
+
+function getCompanyShort(companyName?: string | null, email?: string | null) {
+  const cleanName = String(companyName || "").trim();
+
+  if (cleanName) {
+    const short = cleanName
+      .split(" ")
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part.charAt(0).toUpperCase())
+      .join("");
+
+    if (short) return short;
+  }
+
+  const emailPrefix = String(email || "").split("@")[0]?.trim();
+  if (emailPrefix) return emailPrefix.slice(0, 2).toUpperCase();
+
+  return "NA";
+}
+
+function normalizeFlatClientsToCompanies(
+  rawClients: LedgerClientApiItem[]
+): LedgerCompany[] {
+  return rawClients.map((item, index) => ({
+    clientId: Number(item?.clientId ?? index + 1),
+    companyName:
+      String(item?.companyName || "").trim() || item?.email || `Client ${index + 1}`,
+    companyShort: getCompanyShort(item?.companyName, item?.email),
+    email: item?.email || "-",
+    phone: item?.phone || "-",
+    branchId: Number(item?.branchId ?? 0),
+    gstNumber: item?.gstNumber || "N/A",
+    totalEntries: toNumber(item?.totalEntries),
+    totalAmt: toNumber(item?.totalAmount),
+    pendingAmt: toNumber(item?.pendingAmount),
+    revenue: toNumber(item?.revenue),
+  }));
+}
+
+function buildBranchSummaryFromFlatClients(
+  rawClients: LedgerClientApiItem[]
+): LedgerBranchSummaryItem[] {
+  const grouped = new Map<string, LedgerBranchSummaryItem>();
+
+  rawClients.forEach((client) => {
+    const key = String(client?.branchId ?? "0");
+
+    if (!grouped.has(key)) {
+      grouped.set(key, {
+        branchId: client?.branchId ?? 0,
+        totalClients: 0,
+        totalEntries: 0,
+        totalAmount: 0,
+        pendingAmount: 0,
+        revenue: 0,
+      });
+    }
+
+    const existing = grouped.get(key)!;
+
+    existing.totalClients = toNumber(existing.totalClients) + 1;
+    existing.totalEntries =
+      toNumber(existing.totalEntries) + toNumber(client?.totalEntries);
+    existing.totalAmount =
+      toNumber(existing.totalAmount) + toNumber(client?.totalAmount);
+    existing.pendingAmount =
+      toNumber(existing.pendingAmount) + toNumber(client?.pendingAmount);
+    existing.revenue =
+      toNumber(existing.revenue) + toNumber(client?.revenue);
+  });
+
+  return Array.from(grouped.values());
+}
+
 export default function LedgerPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [companies, setCompanies] = useState<LedgerCompany[]>([]);
+  const [branchSummary, setBranchSummary] = useState<LedgerBranchSummaryItem[]>([]);
 
   useEffect(() => {
     let ignore = false;
@@ -90,14 +216,52 @@ export default function LedgerPage() {
           throw new Error(res.data?.message || "Failed to load ledger data.");
         }
 
-        const rawClients = Array.isArray(res.data?.clients)
-          ? res.data.clients
+        const rawClients = Array.isArray(res.data?.clients) ? res.data.clients : [];
+        const rawBranchSummary = Array.isArray(res.data?.branchSummary)
+          ? res.data.branchSummary
           : [];
 
-        const normalized = normalizeLedgerClients(rawClients);
+        let normalizedCompanies: LedgerCompany[] = [];
+        let normalizedBranchSummary: LedgerBranchSummaryItem[] = rawBranchSummary;
+
+        if (rawClients.length > 0) {
+          if (isGroupedLedgerResponse(rawClients)) {
+            // SUPER SALES MANAGER FLOW — keep as it is
+            normalizedCompanies = normalizeLedgerClients(rawClients);
+
+            if (!normalizedBranchSummary.length) {
+              normalizedBranchSummary = rawClients.map((group) => ({
+                branchId: group?.branchId ?? 0,
+                totalClients: toNumber(
+                  group?.totalClients ??
+                    (Array.isArray(group?.clients) ? group.clients.length : 0)
+                ),
+                totalEntries: toNumber(group?.totalEntries),
+                totalAmount: toNumber(group?.totalAmount),
+                pendingAmount: toNumber(group?.pendingAmount),
+                revenue: toNumber(group?.revenue),
+              }));
+            }
+          } else {
+            // SALES MANAGER FLOW — flat client array
+            const flatClients = rawClients as LedgerClientApiItem[];
+
+            normalizedCompanies = normalizeFlatClientsToCompanies(flatClients);
+
+            if (!normalizedBranchSummary.length) {
+              normalizedBranchSummary =
+                buildBranchSummaryFromFlatClients(flatClients);
+            }
+          }
+        }
 
         if (!ignore) {
-          setCompanies(normalized);
+          setCompanies(normalizedCompanies);
+          setBranchSummary(normalizedBranchSummary);
+
+          console.log("Ledger API response:", res.data);
+          console.log("Normalized companies:", normalizedCompanies);
+          console.log("Normalized branchSummary:", normalizedBranchSummary);
         }
       } catch (err: any) {
         console.error("Ledger fetch error:", err);
@@ -110,6 +274,7 @@ export default function LedgerPage() {
         if (!ignore) {
           setError(message);
           setCompanies([]);
+          setBranchSummary([]);
         }
 
         if (err?.response?.status === 401 && typeof window !== "undefined") {
@@ -130,49 +295,51 @@ export default function LedgerPage() {
     };
   }, []);
 
-  const activeCompanies = useMemo(() => {
-    return companies.filter((company) => {
-      return (
-        Number(company.totalEntries || 0) > 0 ||
-        Number(company.totalAmt || 0) > 0 ||
-        Number(company.pendingAmt || 0) > 0 ||
-        Number(company.revenue || 0) > 0
-      );
-    });
-  }, [companies]);
-
   const stats = useMemo(() => {
-    const totalEntries = activeCompanies.reduce(
-      (sum, company) => sum + Number(company.totalEntries || 0),
+    const totalClientsFromSummary = branchSummary.reduce(
+      (sum, item) => sum + toNumber(item?.totalClients),
       0
     );
 
-    const totalRevenue = activeCompanies.reduce(
-      (sum, company) => sum + Number(company.revenue || 0),
+    const totalEntriesFromSummary = branchSummary.reduce(
+      (sum, item) => sum + toNumber(item?.totalEntries),
       0
     );
 
-    const totalPending = activeCompanies.reduce(
-      (sum, company) => sum + Number(company.pendingAmt || 0),
+    const totalAmount = branchSummary.reduce(
+      (sum, item) => sum + toNumber(item?.totalAmount),
       0
     );
 
-    const totalAmount = activeCompanies.reduce(
-      (sum, company) => sum + Number(company.totalAmt || 0),
+    const totalPendingFromSummary = branchSummary.reduce(
+      (sum, item) => sum + toNumber(item?.pendingAmount),
       0
     );
+
+    const totalRevenueFromSummary = branchSummary.reduce(
+      (sum, item) => sum + toNumber(item?.revenue),
+      0
+    );
+
+    const activeClients = companies.filter(
+      (company) =>
+        company.totalEntries > 0 ||
+        company.totalAmt > 0 ||
+        company.pendingAmt > 0 ||
+        company.revenue > 0
+    ).length;
 
     return {
-      monthlyRevenueTop: `₹${Number(totalAmount || 0).toLocaleString("en-IN")}`,
-      monthlyRevenuePercent: `${activeCompanies.length} active`,
-      monthlyRevenueLabel: "Month’s Revenue",
-      activeClients: activeCompanies.length,
-      pendingAmount: totalPending,
-      pendingThisWeekText: `${activeCompanies.length} active`,
-      todaysEntries: totalEntries,
-      totalRevenue,
+      monthlyRevenueTop: `₹${(totalAmount || 0).toLocaleString("en-IN")}`,
+      monthlyRevenuePercent: `${totalAmount}`,
+      monthlyRevenueLabel: "Total Amount",
+      activeClients: totalClientsFromSummary || companies.length,
+      pendingAmount: totalPendingFromSummary,
+      pendingThisWeekText: `${activeClients} active clients`,
+      todaysEntries: totalEntriesFromSummary,
+      totalRevenue: totalRevenueFromSummary,
     };
-  }, [activeCompanies]);
+  }, [branchSummary, companies]);
 
   if (loading) {
     return (
@@ -185,9 +352,7 @@ export default function LedgerPage() {
               <div className="h-[112px] rounded-[16px] bg-white" />
               <div className="h-[112px] rounded-[16px] bg-white" />
             </div>
-
             <div className="h-[110px] rounded-[16px] bg-[#EEF2FF]" />
-
             <div className="space-y-4">
               <div className="h-[150px] rounded-[16px] bg-white" />
               <div className="h-[150px] rounded-[16px] bg-white" />
@@ -220,10 +385,10 @@ export default function LedgerPage() {
         <div className="space-y-5">
           <LedgerStatsCards stats={stats} />
           <LedgerInfoBanner />
-          {activeCompanies.length === 0 ? (
+          {companies.length === 0 ? (
             <LedgerEmptyState />
           ) : (
-            <LedgerCompanyList companies={activeCompanies} />
+            <LedgerCompanyList companies={companies} />
           )}
         </div>
       </div>

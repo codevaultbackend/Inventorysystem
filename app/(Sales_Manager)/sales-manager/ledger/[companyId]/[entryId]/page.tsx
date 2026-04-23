@@ -58,7 +58,7 @@ export default function LedgerEntriesTable({
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:gap-[10px]">
             <h2 className="text-[15px] font-semibold leading-none text-[#111827]">
-              Company Name :
+              Company Name:
             </h2>
             <p className="truncate text-[13px] font-medium leading-none text-[#1F2937]">
               {companyLabel}
@@ -93,19 +93,19 @@ export default function LedgerEntriesTable({
                       Entry ID
                     </th>
                     <th className="sticky top-0 z-20 h-[42px] border-b border-[#C8D8E8] bg-[#D8E9F8] px-[18px] text-left text-[12px] font-semibold text-[#1F2937]">
-                      Transactions ID
+                      Transaction ID
                     </th>
                     <th className="sticky top-0 z-20 h-[42px] border-b border-[#C8D8E8] bg-[#D8E9F8] px-[18px] text-left text-[12px] font-semibold text-[#1F2937]">
                       Client
                     </th>
                     <th className="sticky top-0 z-20 h-[42px] border-b border-[#C8D8E8] bg-[#D8E9F8] px-[18px] text-left text-[12px] font-semibold text-[#1F2937]">
-                      Date &amp; Time
+                      Date & Time
                     </th>
                     <th className="sticky top-0 z-20 h-[42px] border-b border-[#C8D8E8] bg-[#D8E9F8] px-[18px] text-left text-[12px] font-semibold text-[#1F2937]">
-                      Received Amt.
+                      Received Amount
                     </th>
                     <th className="sticky top-0 z-20 h-[42px] border-b border-[#C8D8E8] bg-[#D8E9F8] px-[18px] text-left text-[12px] font-semibold text-[#1F2937]">
-                      Pending Amt.
+                      Pending Amount
                     </th>
                     <th className="sticky top-0 z-20 h-[42px] border-b border-[#C8D8E8] bg-[#D8E9F8] px-[18px] text-left text-[12px] font-semibold text-[#1F2937]">
                       Amount
