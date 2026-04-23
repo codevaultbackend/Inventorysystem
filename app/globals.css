@@ -85,6 +85,17 @@
 .desktop-table-scroll::-webkit-scrollbar-thumb:hover {
   background: #aebdce;
 }
-body{
-  outline: 0;
+/* Remove chart focus / hover borders globally */
+.recharts-wrapper,
+.recharts-surface {
+  outline: none !important;
+}
+
+.recharts-tooltip-wrapper {
+  outline: none !important;
+}
+
+.recharts-responsive-container:focus,
+.recharts-wrapper:focus {
+  outline: none !important;
 }

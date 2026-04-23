@@ -464,44 +464,47 @@ export default function SalesManagerDashboardPage() {
   }, [categorySales]);
 
   const quickCards = useMemo(() => {
-    return [
-      {
-        topText: formatAmount(quickAction?.todaySale || 0),
-        bigValue:
-          toNumber(quickAction?.todaySale || 0) > 0
-            ? formatCompactNumber(quickAction?.todaySale || 0)
-            : "0",
-        bottomLabel: "Today’s Sale",
-        circleBg: "bg-[#DDF3EC]",
-        iconColor: "text-[#8CCFC2]",
-        icon: <ShoppingCart size={22} />,
-      },
-      {
-        topText: `${categorySales.length} items`,
-        bigValue: formatAmount(quickAction?.totalSale || 0),
-        bottomLabel: "Total Sale",
-        circleBg: "bg-[#DCE3FA]",
-        iconColor: "text-[#88A3F8]",
-        icon: <TrendingUp size={22} />,
-      },
-      {
-        topText: `${toNumber(quickAction?.pendingQuotation)} pending`,
-        bigValue: formatAmount(quickAction?.pendingQuotation || 0),
-        bottomLabel: "Pending Quotation",
-        circleBg: "bg-[#F8DED3]",
-        iconColor: "text-[#F09776]",
-        icon: <FileText size={22} />,
-      },
-      {
-        topText: `${toNumber(quickAction?.readyToDispatch)} on schedule`,
-        bigValue: `${toNumber(quickAction?.readyToDispatch)}`,
-        bottomLabel: "Ready to Dispatch",
-        circleBg: "bg-[#F2D7DE]",
-        iconColor: "text-[#E76C8D]",
-        icon: <Truck size={22} />,
-      },
-    ];
-  }, [quickAction, categorySales.length]);
+  return [
+    {
+      topText: formatAmount(quickAction?.todaySale || 0),
+      bigValue:
+        toNumber(quickAction?.todaySale || 0) > 0
+          ? formatCompactNumber(quickAction?.todaySale || 0)
+          : "0",
+      bottomLabel: "Today’s Sale",
+      circleBg: "bg-[#DDF3EC]",
+      iconColor: "text-[#8CCFC2]",
+      icon: <ShoppingCart size={22} />,
+    },
+    {
+      topText: `${categorySales.length} items`,
+      bigValue: formatAmount(quickAction?.totalSale || 0),
+      bottomLabel: "Total Sale",
+      circleBg: "bg-[#DCE3FA]",
+      iconColor: "text-[#88A3F8]",
+      icon: <TrendingUp size={22} />,
+    },
+    {
+      topText: `${toNumber(quickAction?.pendingQuotation)} pending`,
+      bigValue: formatAmount(quickAction?.pendingQuotation || 0, false), // ✅ FIXED
+      bottomLabel: "Pending Quotation",
+      circleBg: "bg-[#F8DED3]",
+      iconColor: "text-[#F09776]",
+      icon: <FileText size={22} />,
+    },
+    {
+      topText: `${toNumber(quickAction?.readyToDispatch)} on schedule`,
+      bigValue: formatAmount(
+        quickAction?.readyToDispatch || 0,
+        false
+      ), 
+      bottomLabel: "Ready to Dispatch",
+      circleBg: "bg-[#F2D7DE]",
+      iconColor: "text-[#E76C8D]",
+      icon: <Truck size={22} />,
+    },
+  ];
+}, [quickAction, categorySales.length]);
 
   if (error || (!loading && !dashboard)) {
     return (

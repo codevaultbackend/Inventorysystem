@@ -2,7 +2,7 @@
 
 import { Download, Eye } from "lucide-react";
 
-type LedgerEntry = {
+export type LedgerEntry = {
   entryId: number;
   transactionId: string;
   client: string;
@@ -14,9 +14,10 @@ type LedgerEntry = {
   quotation_id?: number | null;
   invoiceId?: number | null;
   invoice_id?: number | null;
+  invoice_no?: string | null;
 };
 
-type LedgerCompany = {
+export type LedgerCompany = {
   id: number;
   companyName?: string;
   companyShort?: string;
@@ -25,8 +26,8 @@ type LedgerCompany = {
 
 type Props = {
   company: LedgerCompany;
-  onViewInvoice?: (entry: LedgerEntry) => void;
-  onDownloadInvoice?: (entry: LedgerEntry) => void;
+  onViewInvoice?: (entry: LedgerEntry) => void | Promise<void>;
+  onDownloadInvoice?: (entry: LedgerEntry) => void | Promise<void>;
   busyAction?: {
     entryId: number;
     type: "view" | "download";
@@ -39,7 +40,8 @@ const formatMoney = (value: number) =>
     minimumFractionDigits: 2,
   }).format(Number(value || 0));
 
-const formatEntryId = (entryId: number) => `LE${String(entryId).padStart(6, "0")}`;
+const formatEntryId = (entryId: number) =>
+  `LE${String(entryId).padStart(6, "0")}`;
 
 export default function LedgerEntriesTable({
   company,
@@ -63,7 +65,7 @@ export default function LedgerEntriesTable({
             </p>
           </div>
 
-          <div className="hidden lg:inline-flex shrink-0 items-center rounded-full bg-[#F3F6FA] px-4 py-2 text-[12px] font-semibold text-[#475467]">
+          <div className="hidden shrink-0 items-center rounded-full bg-[#F3F6FA] px-4 py-2 text-[12px] font-semibold text-[#475467] lg:inline-flex">
             Total Entries: {company.entries.length}
           </div>
         </div>
@@ -132,7 +134,9 @@ export default function LedgerEntriesTable({
                           key={`${company.id}-${entry.entryId}-${entry.transactionId}`}
                           className={`h-[64px] border-b border-[#EEF2F6] ${rowBg}`}
                         >
-                          <td className={`sticky left-0 z-10 ${rowBg} px-[22px] text-[12px] font-semibold text-[#374151]`}>
+                          <td
+                            className={`sticky left-0 z-10 ${rowBg} px-[22px] text-[12px] font-semibold text-[#374151]`}
+                          >
                             <span className="inline-flex rounded-[8px] bg-[#F3F6FA] px-[10px] py-[8px] leading-none text-[#24476B]">
                               {formatEntryId(entry.entryId)}
                             </span>
@@ -151,18 +155,26 @@ export default function LedgerEntriesTable({
                           </td>
 
                           <td className="px-[18px] text-[12px] font-semibold text-[#16A34A]">
-                            <div className="whitespace-nowrap">₹{formatMoney(entry.receivedAmount)}</div>
+                            <div className="whitespace-nowrap">
+                              ₹{formatMoney(entry.receivedAmount)}
+                            </div>
                           </td>
 
                           <td className="px-[18px] text-[12px] font-semibold text-[#F97316]">
-                            <div className="whitespace-nowrap">₹{formatMoney(entry.pendingAmount)}</div>
+                            <div className="whitespace-nowrap">
+                              ₹{formatMoney(entry.pendingAmount)}
+                            </div>
                           </td>
 
                           <td className="px-[18px] text-[12px] font-semibold text-[#16A34A]">
-                            <div className="whitespace-nowrap">₹{formatMoney(entry.amount)}</div>
+                            <div className="whitespace-nowrap">
+                              ₹{formatMoney(entry.amount)}
+                            </div>
                           </td>
 
-                          <td className={`sticky right-0 z-10 ${rowBg} px-[18px] text-center`}>
+                          <td
+                            className={`sticky right-0 z-10 ${rowBg} px-[18px] text-center`}
+                          >
                             <div className="inline-flex items-center gap-[6px]">
                               <button
                                 type="button"
@@ -181,7 +193,10 @@ export default function LedgerEntriesTable({
                                   disabled={!!busyAction}
                                   className="inline-flex h-[36px] min-w-[108px] items-center justify-center gap-[5px] rounded-[8px] border border-[#E5E7EB] bg-white px-[12px] text-[12px] font-medium text-[#374151] transition hover:bg-[#F8FAFC] disabled:cursor-not-allowed disabled:opacity-70"
                                 >
-                                  <Download className="h-[13px] w-[13px]" strokeWidth={1.9} />
+                                  <Download
+                                    className="h-[13px] w-[13px]"
+                                    strokeWidth={1.9}
+                                  />
                                   {isDownloading ? "Downloading..." : "Download"}
                                 </button>
                               ) : null}

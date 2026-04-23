@@ -1,333 +1,122 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import BranchOverviewCounts from "../Branches/Component/BranchOverviewPage";
+import { useEffect, useState } from "react";
+import BranchOverviewCounts, {
+  DashboardIcons,
+} from "../Branches/Component/BranchOverviewPage";
 import { StockTrendBar } from "../Branches/Component/StockTrendBar";
 import { SalesTrendLine } from "../Branches/Component/SalesTrendLine";
 import InventoryItems from "../Branches/Component/InventoryItems";
 import { useAuth } from "../../../context/AuthContext";
-import { getBranchDashboard } from "../../../lib/salesHierarchy";
-import { toNumber } from "../../../lib/salesDashboardApi";
 
-type ProductRow = {
-  productName: string;
-  category: string;
-  totalSales: number;
-  totalRevenue: number;
-  clients: number;
-  pendingQuotation: number;
-  rejectedQuotation: number;
-};
+/* ================= Helpers ================= */
 
-type BranchDashboardData = {
-  metrics: Array<{
-    title: string;
-    value: number;
-    trend?: string;
-    trendType?: "up" | "down";
-  }>;
-  stockTrend: Array<{
-    week: string;
-    stockIn: number;
-    stockOut: number;
-  }>;
-  quotationTrend: Array<{
-    week: string;
-    pending: number;
-    rejected: number;
-  }>;
-  products: ProductRow[];
-};
+function toNumber(value: any) {
+  if (!value) return 0;
+  if (typeof value === "number") return value;
+  return Number(String(value).replace(/,/g, "")) || 0;
+}
 
-type InventoryRow = {
-  id: string;
-  itemName: string;
-  name: string;
-  category: string;
-  quantity: number;
-  stock: number;
-  stockIn: number;
-  stockOut: number;
-  status: string;
-  href: string;
-};
+function getUserBranchId(user: any) {
+  if (!user) return null;
 
-function getUserBranchId(user: any): string {
-  if (!user) return "";
+  return (
+    user?.branch_id ||
+    user?.branch?.id ||
+    (Array.isArray(user?.branches) ? user.branches[0] : null) ||
+    null
+  );
+}
 
-  if (user?.branch_id !== undefined && user?.branch_id !== null) {
-    return String(user.branch_id);
-  }
+/* ================= API ================= */
 
-  if (user?.branchId !== undefined && user?.branchId !== null) {
-    return String(user.branchId);
-  }
+async function getBranchDashboard(branchId: string) {
+  const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "";
 
-  if (user?.branch?.id !== undefined && user?.branch?.id !== null) {
-    return String(user.branch.id);
-  }
+  const token =
+    localStorage.getItem("token") ||
+    localStorage.getItem("accessToken") ||
+    "";
 
-  if (Array.isArray(user?.branches) && user.branches.length > 0) {
-    const first = user.branches[0];
+  const res = await fetch(`${API_BASE}/sales/branch/${branchId}`, {
+    cache: "no-store",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  });
 
-    if (typeof first === "string" || typeof first === "number") {
-      return String(first);
+  const text = await res.text();
+
+  try {
+    const json = JSON.parse(text);
+
+    if (!res.ok) {
+      throw new Error(json?.message || "API Error");
     }
 
-    if (first?.id !== undefined && first?.id !== null) {
-      return String(first.id);
-    }
-
-    if (first?.branch_id !== undefined && first?.branch_id !== null) {
-      return String(first.branch_id);
-    }
-
-    if (first?.branchId !== undefined && first?.branchId !== null) {
-      return String(first.branchId);
-    }
+    return json;
+  } catch {
+    console.error("❌ RAW RESPONSE:", text);
+    throw new Error("Invalid JSON / API returned HTML");
   }
-
-  return "";
 }
 
-function SkeletonBlock({
-  className = "",
-  style,
-}: {
-  className?: string;
-  style?: React.CSSProperties;
-}) {
-  return (
-    <div
-      className={`animate-pulse rounded-xl bg-[#E9EEF5] ${className}`}
-      style={style}
-    />
-  );
-}
-
-function HeaderSkeleton() {
-  return (
-    <div className="rounded-2xl border border-[#EEF2F6] bg-white p-6 shadow-sm">
-      <SkeletonBlock className="h-8 w-[220px] max-w-full" />
-      <SkeletonBlock className="mt-3 h-4 w-[320px] max-w-full" />
-    </div>
-  );
-}
-
-function OverviewSkeleton() {
-  return (
-    <div className="rounded-2xl border border-[#EEF2F6] bg-white p-6 shadow-sm max-[768px]:border-0 max-[768px]:bg-transparent max-[768px]:p-0 max-[768px]:shadow-none">
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <div
-            key={i}
-            className="rounded-2xl border border-[#EEF2F6] bg-white p-5 shadow-sm"
-          >
-            <SkeletonBlock className="h-4 w-24" />
-            <SkeletonBlock className="mt-4 h-8 w-28" />
-            <SkeletonBlock className="mt-4 h-3 w-20" />
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function ChartSkeleton() {
-  return (
-    <div className="rounded-2xl border border-[#EEF2F6] bg-white p-6 shadow-sm max-[768px]:border-0 max-[768px]:bg-transparent max-[768px]:p-0 max-[768px]:shadow-none">
-      <SkeletonBlock className="h-5 w-40" />
-      <div className="mt-6 flex h-[320px] items-end gap-3 rounded-2xl bg-[#F8FAFC] p-4">
-        {Array.from({ length: 8 }).map((_, i) => (
-          <SkeletonBlock
-            key={i}
-            className="w-full rounded-t-xl"
-            style={{ height: `${35 + ((i % 4) + 1) * 12}%` }}
-          />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function TableSkeleton() {
-  return (
-    <div className="rounded-2xl border border-[#EEF2F6] bg-white p-6 shadow-sm max-[768px]:border-0 max-[768px]:bg-transparent max-[768px]:p-0 max-[768px]:shadow-none">
-      <SkeletonBlock className="mb-4 h-5 w-32" />
-
-      <div className="overflow-hidden rounded-2xl border border-[#EEF2F6] bg-white">
-        <div className="grid grid-cols-5 gap-4 border-b border-[#EEF2F6] px-4 py-4 max-[900px]:grid-cols-3">
-          <SkeletonBlock className="h-4 w-20" />
-          <SkeletonBlock className="h-4 w-20" />
-          <SkeletonBlock className="h-4 w-20" />
-          <SkeletonBlock className="h-4 w-20 max-[900px]:hidden" />
-          <SkeletonBlock className="h-4 w-20 max-[900px]:hidden" />
-        </div>
-
-        {Array.from({ length: 6 }).map((_, i) => (
-          <div
-            key={i}
-            className="grid grid-cols-5 gap-4 border-b border-[#EEF2F6] px-4 py-4 last:border-b-0 max-[900px]:grid-cols-3"
-          >
-            <SkeletonBlock className="h-4 w-24" />
-            <SkeletonBlock className="h-4 w-20" />
-            <SkeletonBlock className="h-4 w-16" />
-            <SkeletonBlock className="h-4 w-16 max-[900px]:hidden" />
-            <SkeletonBlock className="h-8 w-20 rounded-full max-[900px]:hidden" />
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
+/* ================= Page ================= */
 
 export default function AdminDashboardPage() {
-  const { user, branchName: authBranchName, stateName: authStateName } = useAuth();
+  const { user, branchName, stateName, loading: authLoading } = useAuth();
 
-  const [data, setData] = useState<BranchDashboardData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const branchId = useMemo(() => getUserBranchId(user), [user]);
+  const branchId = getUserBranchId(user);
 
-  const fetchBranchDashboard = useCallback(async () => {
-    if (!user) return;
+  /* ================= Fetch ================= */
 
-    if (!branchId) {
-      setError("Branch ID not found in logged in user");
-      setLoading(false);
-      return;
-    }
+  useEffect(() => {
+    if (authLoading || !user || !branchId) return;
 
-    try {
+    let isMounted = true;
+
+    const fetchData = async () => {
       setLoading(true);
       setError("");
 
-      const result = await getBranchDashboard(branchId);
-      setData(result);
-    } catch (err: any) {
-      setError(
-        err?.response?.data?.message ||
-          err?.message ||
-          "Failed to load branch details"
-      );
-      setData(null);
-    } finally {
-      setLoading(false);
-    }
-  }, [user, branchId]);
+      try {
+        const result = await getBranchDashboard(branchId);
 
-  useEffect(() => {
-    if (!user) return;
-    fetchBranchDashboard();
-  }, [user, fetchBranchDashboard]);
-
-  const statsData = useMemo(() => {
-    return {
-      totalStock: 0,
-      totalStockValue: 0,
-      totalSales: toNumber(data?.metrics?.[0]?.value),
-      agingItems: 0,
+        if (!isMounted) return;
+        setData(result);
+      } catch (err: any) {
+        if (!isMounted) return;
+        setError(err.message);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
     };
-  }, [data]);
 
-  const stockStatusData = useMemo(() => {
-    return {
-      good: 0,
-      damaged: 0,
-      repairable: 0,
+    fetchData();
+
+    return () => {
+      isMounted = false;
     };
-  }, []);
+  }, [authLoading, user, branchId]);
 
-  const branchSummary = useMemo(() => {
-    return {
-      totalBranches: 1,
-      activeBranches: 1,
-      inactiveBranches: 0,
-    };
-  }, []);
+  /* ================= STATES ================= */
 
-  const stockTrendData = useMemo(() => {
-    const rows = Array.isArray(data?.stockTrend) ? data.stockTrend : [];
-
-    return rows.map((row, index) => ({
-      week: row?.week || `Week ${index + 1}`,
-      in: toNumber(row?.stockIn),
-      out: toNumber(row?.stockOut),
-    }));
-  }, [data]);
-
-  const salesTrendData = useMemo(() => {
-    const rows = Array.isArray(data?.quotationTrend) ? data.quotationTrend : [];
-
-    return rows.map((row, index) => ({
-      week: row?.week || `Week ${index + 1}`,
-      purchase: toNumber(row?.rejected),
-      sales: toNumber(row?.pending),
-    }));
-  }, [data]);
-
-  const itemRows: InventoryRow[] = useMemo(() => {
-    const products = Array.isArray(data?.products) ? data.products : [];
-
-    return products.map((item, index) => ({
-      id: String(index + 1),
-      itemName: item?.productName || "-",
-      name: item?.productName || "-",
-      category: item?.category || "General",
-      quantity: toNumber(item?.totalSales),
-      stock: toNumber(item?.totalSales),
-      stockIn: toNumber(item?.pendingQuotation),
-      stockOut: toNumber(item?.rejectedQuotation),
-      status: "GOOD",
-      href: `/admin/all-stocks`,
-    }));
-  }, [data]);
-
-  const branchDisplayName = authBranchName || "My Branch";
-  const stateDisplayName = authStateName || "";
-
-  if (!user) {
-    return (
-      <div className="space-y-8">
-        <HeaderSkeleton />
-        <OverviewSkeleton />
-        <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-          <ChartSkeleton />
-          <ChartSkeleton />
-        </div>
-        <TableSkeleton />
-      </div>
-    );
+  if (authLoading || loading) {
+    return <div className="p-6">Loading Dashboard...</div>;
   }
 
-  if (!branchId && !loading) {
+  if (error) {
     return (
-      <div className="flex h-[400px] items-center justify-center">
-        <div className="rounded-2xl border border-[#EEF2F6] bg-white p-8 text-center shadow-sm">
-          <h2 className="text-lg font-semibold text-[#0F172A]">
-            Branch not found
-          </h2>
-          <p className="mt-2 text-sm text-[#64748B]">
-            Logged in branch information is missing.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error && !loading) {
-    return (
-      <div className="rounded-2xl border border-[#FECACA] bg-[#FEF2F2] p-6">
-        <h3 className="text-[16px] font-semibold text-[#B42318]">
-          Unable to load branch dashboard
-        </h3>
-        <p className="mt-2 text-[14px] text-[#7A271A]">{error}</p>
-
+      <div className="p-6 text-red-500">
+        {error}
         <button
-          type="button"
-          onClick={fetchBranchDashboard}
-          className="mt-4 inline-flex h-[40px] items-center justify-center rounded-[10px] bg-[#B42318] px-4 text-[14px] font-medium text-white transition hover:opacity-90"
+          className="block mt-3 bg-black text-white px-4 py-2"
+          onClick={() => window.location.reload()}
         >
           Retry
         </button>
@@ -335,61 +124,86 @@ export default function AdminDashboardPage() {
     );
   }
 
+  if (!data) {
+    return <div className="p-6 text-gray-500">No data available</div>;
+  }
+
+  /* ================= Data Mapping ================= */
+
+  const cardsData = [
+    {
+      title: "Total Stock",
+      value: toNumber(data?.cards?.totalSales),
+      icon: DashboardIcons.Boxes,
+    },
+    {
+      title: "Stock Value",
+      value: toNumber(data?.cards?.salesThisMonth),
+      icon: DashboardIcons.IndianRupee,
+    },
+    {
+      title: "Total Sales",
+      value: toNumber(data?.cards?.pendingQuotation),
+      icon: DashboardIcons.ShoppingCart,
+    },
+    {
+      title: "Total Clients",
+      value: toNumber(data?.cards?.totalClients),
+      icon: DashboardIcons.Users,
+    },
+  ];
+
+  const stockTrendData =
+    data?.charts?.stockTrend?.map((i: any, idx: number) => ({
+      week: i.week || `Week ${idx + 1}`,
+      in: toNumber(i.stockin),
+      out: toNumber(i.stockout),
+    })) || [];
+
+  const salesTrendData =
+    data?.charts?.quotationTrend?.map((i: any, idx: number) => ({
+      week: i.week || `Week ${idx + 1}`,
+      purchase: toNumber(i.rejected),
+      sales: toNumber(i.pending),
+    })) || [];
+
+  const itemRows =
+    data?.products?.map((item: any, i: number) => ({
+      id: String(i + 1),
+      itemName: item.productName,
+      name: item.productName,
+      category: item.category,
+      quantity: toNumber(item.totalSales),
+      stock: toNumber(item.totalSales),
+      stockIn: toNumber(item.pendingQuotation),
+      stockOut: toNumber(item.rejectedQuotation),
+      status: "GOOD",
+      href: "/admin/all-stocks",
+    })) || [];
+
+  /* ================= UI ================= */
+
   return (
     <div className="space-y-8">
-      {loading ? (
-        <>
-          <HeaderSkeleton />
-          <OverviewSkeleton />
-          <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-            <ChartSkeleton />
-            <ChartSkeleton />
-          </div>
-          <TableSkeleton />
-        </>
-      ) : (
-        <>
-          <div className="rounded-2xl border border-[#EEF2F6] bg-white p-6 shadow-sm">
-            <h1 className="text-[24px] font-semibold text-[#0F172A] md:text-[28px]">
-              {branchDisplayName}
-            </h1>
-            <p className="mt-1 text-[13px] text-[#64748B]">
-              Detailed branch analytics and inventory overview
-              {stateDisplayName ? ` • ${stateDisplayName}` : ""}
-            </p>
-          </div>
+      <div className="bg-white p-6 rounded-xl shadow-[1px_1px_4px_rgba(0,0,0,0.1)]">
+        <h1 className="text-2xl font-semibold">
+          {branchName || "My Branch"}
+        </h1>
+        <p className="text-gray-500">{stateName}</p>
+      </div>
 
-          <div className="rounded-2xl border border-[#EEF2F6] bg-white p-6 shadow-sm max-[768px]:border-0 max-[768px]:bg-transparent max-[768px]:p-0 max-[768px]:shadow-none">
-            <BranchOverviewCounts
-              stats={statsData}
-              stockStatus={stockStatusData}
-              branchSummary={branchSummary}
-            />
-          </div>
+      <BranchOverviewCounts cards={cardsData} loading={loading} />
 
-          <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-            <div className="rounded-2xl border border-[#EEF2F6] bg-white p-6 shadow-sm max-[768px]:border-0 max-[768px]:bg-transparent max-[768px]:p-0 max-[768px]:shadow-none">
-              <StockTrendBar data={stockTrendData} />
-            </div>
+      <div className="grid grid-cols-2 gap-6">
+        <StockTrendBar data={stockTrendData} />
+        <SalesTrendLine data={salesTrendData} />
+      </div>
 
-            <div className="rounded-2xl border border-[#EEF2F6] bg-white p-6 shadow-sm max-[768px]:border-0 max-[768px]:bg-transparent max-[768px]:p-0 max-[768px]:shadow-none">
-              <SalesTrendLine data={salesTrendData} />
-            </div>
-          </div>
-
-          <div className="rounded-2xl border border-[#EEF2F6] bg-white p-6 shadow-sm max-[768px]:border-0 max-[768px]:bg-transparent max-[768px]:p-0 max-[768px]:shadow-none">
-            <h3 className="mb-4 text-[16px] font-semibold text-[#0F172A]">
-              Inventory Items
-            </h3>
-
-            <InventoryItems
-              data={itemRows}
-              branchId={String(branchId)}
-              state={stateDisplayName}
-            />
-          </div>
-        </>
-      )}
+      <InventoryItems
+        data={itemRows}
+        branchId={branchId}
+        stateName={stateName}
+      />
     </div>
   );
 }

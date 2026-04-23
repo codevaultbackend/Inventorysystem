@@ -86,7 +86,7 @@ export default function BranchOverviewPage({
             return (
               <div
                 key={`${card?.title || "card"}-${index}`}
-                className="rounded-[22px] border border-[#E8EDF3] bg-white p-5 shadow-[0px_8px_24px_rgba(16,24,40,0.06)]"
+                className="rounded-[22px] border border-[#E8EDF3] bg-white p-5 shadow-[1px_1px_4px_rgba(0,0,0,0.1)]"
               >
                 <div className="flex h-full min-h-[132px] flex-col">
                   <div className="flex h-[48px] w-[48px] items-center justify-center rounded-[12px] bg-[#F8FBFF]">

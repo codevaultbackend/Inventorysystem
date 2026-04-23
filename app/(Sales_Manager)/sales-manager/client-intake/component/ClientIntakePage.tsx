@@ -562,8 +562,8 @@ export default function ClientIntakePage() {
   }
 
   return (
-    <div className="flex w-full justify-center px-4 py-6 sm:px-6 sm:py-8 lg:px-8 lg:py-10">
-      <div className="w-full max-w-[980px]">
+    <div className=" w-full px-4 py-6 sm:px-6 sm:py-8 lg:px-8 lg:py-5">
+      <div className="w-full max-w-full">
         {createdClient?.id ? (
           <div className="mb-4 rounded-[12px] border border-[#BBF7D0] bg-[#F0FDF4] px-4 py-3 text-[13px] text-[#166534]">
             Client saved successfully. Client Code:{" "}

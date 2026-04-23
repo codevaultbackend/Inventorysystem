@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import { notFound, useParams } from "next/navigation";
 import LedgerEntriesTable from "../components/LedgerEntriesTable";
+import { useInvoicePdf } from "../../../../hooks/useInvoicePdf";
 
 export type ClientLedgerEntry = {
   entryId: number;
@@ -56,16 +57,8 @@ function getApiBaseUrl() {
   ).replace(/\/+$/, "");
 }
 
-function getInvoiceActionId(entry: ClientLedgerEntry) {
-  const quotationId = Number(entry.quotationId ?? entry.quotation_id ?? 0);
-  const invoiceId = Number(entry.invoiceId ?? entry.invoice_id ?? 0);
-  const entryId = Number(entry.entryId ?? 0);
-
-  if (quotationId > 0) return quotationId;
-  if (invoiceId > 0) return invoiceId;
-  if (entryId > 0) return entryId;
-
-  return null;
+function getInvoiceIdFromEntry(entry: ClientLedgerEntry) {
+  return String(entry.transactionId || "").trim();
 }
 
 export default function CompanyLedgerEntriesPage() {
@@ -81,6 +74,8 @@ export default function CompanyLedgerEntriesPage() {
     entryId: number;
     type: ActionType;
   } | null>(null);
+
+  const { error: invoiceError, openPdf, downloadPdf } = useInvoicePdf();
 
   const baseUrl = getApiBaseUrl();
 
@@ -140,7 +135,9 @@ export default function CompanyLedgerEntriesPage() {
         setCompany({
           id: Number(companyId),
           companyName: firstEntry?.client || `Client ${companyId}`,
-          totalEntries: Number(responseData?.totalEntries || ledgerEntries.length || 0),
+          totalEntries: Number(
+            responseData?.totalEntries || ledgerEntries.length || 0
+          ),
           entries: ledgerEntries,
         });
       } catch (err: any) {
@@ -164,6 +161,12 @@ export default function CompanyLedgerEntriesPage() {
     fetchClientLedger();
   }, [companyId, baseUrl]);
 
+  useEffect(() => {
+    if (invoiceError) {
+      setActionMessage(invoiceError);
+    }
+  }, [invoiceError]);
+
   const pageTitle = useMemo(() => {
     if (!company) return "Ledger Entries";
     return `${company.companyName} Ledger Entries`;
@@ -176,94 +179,27 @@ export default function CompanyLedgerEntriesPage() {
     try {
       setActionMessage("");
 
-      const actionId = getInvoiceActionId(entry);
+      const invoiceId = getInvoiceIdFromEntry(entry);
 
-      if (!actionId) {
-        setActionMessage("No invoice found.");
+      if (!invoiceId) {
+        setActionMessage("Invoice ID not found in transaction ID.");
         return;
       }
-
-      const token = getStoredToken();
 
       setBusyAction({
         entryId: Number(entry.entryId),
         type,
       });
 
-      const response = await axios.post(
-        `${baseUrl}/gt/${actionId}/convert-invoice`,
-        {},
-        {
-          responseType: "blob",
-          headers: token
-            ? {
-                Authorization: `Bearer ${token}`,
-              }
-            : undefined,
-          validateStatus: () => true,
-          withCredentials: true,
-        }
-      );
-
-      const contentType = response.headers["content-type"] || "";
-      const isPdf = contentType.includes("application/pdf");
-
-      if (!isPdf) {
-        let parsed: any = null;
-
-        try {
-          const text = await response.data.text();
-          parsed = text ? JSON.parse(text) : null;
-        } catch {
-          parsed = null;
-        }
-
-        const message =
-          parsed?.error ||
-          parsed?.message ||
-          (response.status === 404
-            ? "No invoice found."
-            : "Invoice PDF is not available.");
-
-        setActionMessage(message);
-        return;
-      }
-
-      const blob = new Blob([response.data], { type: "application/pdf" });
-      const blobUrl = URL.createObjectURL(blob);
-      const fileName = `${entry.transactionId || `invoice-${entry.entryId}`}.pdf`;
-
       if (type === "view") {
-        const opened = window.open(blobUrl, "_blank", "noopener,noreferrer");
-
-        if (!opened) {
-          setActionMessage("Popup blocked. Please allow popups to view invoice.");
-        }
-
-        setTimeout(() => {
-          URL.revokeObjectURL(blobUrl);
-        }, 60000);
-
+        await openPdf(invoiceId);
         return;
       }
 
-      const link = document.createElement("a");
-      link.href = blobUrl;
-      link.download = fileName;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-
-      setTimeout(() => {
-        URL.revokeObjectURL(blobUrl);
-      }, 2000);
+      await downloadPdf(invoiceId);
     } catch (err: any) {
-      console.error("Invoice action error:", err);
       setActionMessage(
-        err?.response?.data?.error ||
-          err?.response?.data?.message ||
-          err?.message ||
-          "Unable to fetch invoice."
+        err instanceof Error ? err.message : "Unable to fetch invoice."
       );
     } finally {
       setBusyAction(null);
@@ -304,8 +240,8 @@ export default function CompanyLedgerEntriesPage() {
   }
 
   return (
-    <div className="min-h-screen  ">
-      <div className="mx-auto max-w-[1400px] rounded-[24px] shadow-[0_20px_50px_rgba(15,23,42,0.06)] ">
+    <div className="min-h-screen">
+      <div className="mx-auto max-w-[1400px] rounded-[24px] shadow-[0_20px_50px_rgba(15,23,42,0.06)]">
         <div className="mb-4">
           <h1 className="text-[20px] font-semibold tracking-[-0.02em] text-[#111827] sm:text-[24px]">
             {pageTitle}

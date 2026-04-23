@@ -1,7 +1,14 @@
 "use client";
 
-import { Dispatch, SetStateAction, useMemo, useState } from "react";
-import { ArrowRight, Box, PackagePlus, Trash2 } from "lucide-react";
+import {
+  Dispatch,
+  SetStateAction,
+  useMemo,
+  useState,
+  useEffect,
+} from "react";
+
+import { PackagePlus, Trash2, Loader2 } from "lucide-react";
 import type { Product } from "./ClientIntakePage";
 
 type Props = {
@@ -14,17 +21,21 @@ type Props = {
   apiError: string;
 };
 
-type ProductErrors = {
-  name?: string;
-  quantity?: string;
-  price?: string;
+type ItemList = {
+  stock_id: number;
+  product_name: string;
+  category: string;
+  available_qty: number;
+  unit_price: number;
+  total_value: number;
+  hsn: string;
+  status: string;
+  branch_id: number;
+  unit: string;
 };
 
 const createProduct = (): Product => ({
-  id:
-    typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
-      ? crypto.randomUUID()
-      : `product-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+  id: crypto.randomUUID(),
   name: "",
   quantity: "1",
   price: "0",
@@ -34,7 +45,7 @@ const createProduct = (): Product => ({
 });
 
 const currency = (value: number) =>
-  new Intl.NumberFormat("en-US", {
+  new Intl.NumberFormat("en-IN", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(value);
@@ -46,312 +57,293 @@ export default function RequirementsStep({
   onCreateQuotation,
   back,
   loading,
-  apiError,
 }: Props) {
-  const [errors, setErrors] = useState<Record<string, ProductErrors>>({});
-  const [formError, setFormError] = useState("");
+  const [items, setItems] = useState<ItemList[]>([]);
+  const [itemsLoading, setItemsLoading] = useState(false);
 
-  const handleProductChange = (
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+
+ const BaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL
+  const [searchMap, setSearchMap] = useState<Record<string, string>>({});
+
+  /* ================= Fetch ================= */
+
+  const fetchItems = async () => {
+    try {
+      setItemsLoading(true);
+
+      const token =
+        typeof window !== "undefined"
+          ? localStorage.getItem("accessToken") ||
+            localStorage.getItem("token")
+          : null;
+
+      const res = await fetch(
+        `${BaseUrl}/sales/getitemlist`,
+        {
+          headers: token
+            ? { Authorization: `Bearer ${token}` }
+            : {},
+        }
+      );
+
+      const data = await res.json();
+
+      if (data?.success) {
+        setItems(data.data || []);
+      }
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setItemsLoading(false);
+    }
+  };
+
+  /* ================= Filter ================= */
+
+  const getFilteredItems = (productId: string) => {
+    const search = searchMap[productId] || "";
+
+    if (!search) return items;
+
+    return items.filter((item) =>
+      item.product_name
+        .toLowerCase()
+        .includes(search.toLowerCase())
+    );
+  };
+
+  /* ================= Select ================= */
+
+  const handleSelectItem = (productId: string, item: ItemList) => {
+    setProducts((prev) =>
+      prev.map((p) =>
+        p.id === productId
+          ? {
+              ...p,
+              name: item.product_name,
+              price: String(item.unit_price),
+              hsn: item.hsn || "",
+              unit: item.unit || "",
+            }
+          : p
+      )
+    );
+
+    setOpenDropdown(null);
+
+    // reset search only for that dropdown
+    setSearchMap((prev) => ({
+      ...prev,
+      [productId]: "",
+    }));
+  };
+
+  /* ================= Outside Click ================= */
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+
+      if (target.closest("[data-product-dropdown]")) return;
+
+      setOpenDropdown(null);
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () =>
+      document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  /* ================= Handlers ================= */
+
+  const handleChange = (
     id: string,
     field: keyof Product,
     value: string
   ) => {
     setProducts((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, [field]: value } : item))
+      prev.map((item) =>
+        item.id === id ? { ...item, [field]: value } : item
+      )
+    );
+  };
+
+  const addProduct = () =>
+    setProducts((prev) => [...prev, createProduct()]);
+
+  const removeProduct = (id: string) =>
+    setProducts((prev) =>
+      prev.length > 1
+        ? prev.filter((item) => item.id !== id)
+        : prev
     );
 
-    setErrors((prev) => ({
-      ...prev,
-      [id]: {
-        ...prev[id],
-        [field]:
-          field === "name" || field === "quantity" || field === "price"
-            ? ""
-            : prev[id]?.[field as keyof ProductErrors],
-      },
-    }));
-
-    if (formError) setFormError("");
-  };
-
-  const addProduct = () => {
-    setProducts((prev) => [...prev, createProduct()]);
-  };
-
-  const removeProduct = (id: string) => {
-    if (products.length === 1) return;
-
-    setProducts((prev) => prev.filter((item) => item.id !== id));
-    setErrors((prev) => {
-      const next = { ...prev };
-      delete next[id];
-      return next;
-    });
-  };
-
-  const validate = () => {
-    const nextErrors: Record<string, ProductErrors> = {};
-    let hasError = false;
-
-    if (!products.length) {
-      setFormError("Please add at least one product.");
-      return false;
-    }
-
-    products.forEach((item) => {
-      const itemErrors: ProductErrors = {};
-
-      if (!item.name.trim()) {
-        itemErrors.name = "Product name is required.";
-        hasError = true;
-      }
-
-      if (!item.quantity.trim()) {
-        itemErrors.quantity = "Quantity is required.";
-        hasError = true;
-      } else if (Number(item.quantity) <= 0 || Number.isNaN(Number(item.quantity))) {
-        itemErrors.quantity = "Enter a valid quantity.";
-        hasError = true;
-      }
-
-      if (!item.price.trim()) {
-        itemErrors.price = "Unit price is required.";
-        hasError = true;
-      } else if (Number(item.price) < 0 || Number.isNaN(Number(item.price))) {
-        itemErrors.price = "Enter a valid unit price.";
-        hasError = true;
-      }
-
-      if (Object.keys(itemErrors).length > 0) {
-        nextErrors[item.id] = itemErrors;
-      }
-    });
-
-    setErrors(nextErrors);
-
-    if (hasError) {
-      setFormError("Please fill all required product details correctly.");
-    } else {
-      setFormError("");
-    }
-
-    return !hasError;
-  };
-
-  const handleCreate = async () => {
-    if (loading) return;
-    if (!validate()) return;
-
-    try {
-      await onCreateQuotation();
-    } catch (error) {
-      console.error("Create quotation failed:", error);
-    }
-  };
-
-  const totalAmount = useMemo(() => total, [total]);
+  /* ================= UI ================= */
 
   return (
-    <div className="rounded-[18px] border border-[#E5E7EB] bg-white">
-      <div className="px-4 py-4 sm:px-5 sm:py-5">
-        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="text-[20px] font-semibold text-[#111827]">
-            Product Requirements
-          </div>
+    <div className="rounded-[30px] border border-[#E5E7EB] bg-white p-5 shadow-sm">
 
-          <button
-            type="button"
-            onClick={addProduct}
-            className="inline-flex h-[40px] items-center justify-center gap-2 rounded-[10px] bg-[#2563EB] px-4 text-[14px] font-medium text-white transition hover:bg-[#1D4ED8]"
-          >
-            <PackagePlus size={16} />
-            Add Product
-          </button>
-        </div>
+      {/* Header */}
+      <div className="flex justify-between mb-4">
+        <h3 className="text-[18px] font-semibold">
+          Product Requirements
+        </h3>
 
-        <div className="space-y-4">
-          {products.map((item, index) => {
-            const qty = Number(item.quantity || 0);
-            const price = Number(item.price || 0);
-            const itemSubtotal = qty * price;
-            const itemErrors = errors[item.id] || {};
+        <button
+          onClick={addProduct}
+          className="flex items-center gap-2 rounded-[12px] border-[#E5E7EB] border-[1px] px-4 py-2 text-sm"
+        >
+          <PackagePlus size={16} />
+          Add Product
+        </button>
+      </div>
 
-            return (
-              <div
-                key={item.id}
-                className="rounded-[14px] border border-[#E5E7EB] bg-white p-4"
-              >
-                <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="flex items-center gap-2">
-                    <Box size={18} className="text-[#6B7280]" />
-                    <h4 className="text-[18px] font-semibold text-[#111827]">
-                      Product {index + 1}
-                    </h4>
-                  </div>
+      {/* Products */}
+      <div className="space-y-4">
+        {products.map((item, index) => {
+          const qty = Number(item.quantity || 0);
+          const price = Number(item.price || 0);
 
-                  {products.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => removeProduct(item.id)}
-                      className="inline-flex h-[38px] items-center justify-center gap-2 rounded-[10px] border border-[#FECACA] bg-[#FEF2F2] px-3 text-[13px] font-medium text-[#B91C1C] transition hover:bg-[#FEE2E2]"
-                    >
-                      <Trash2 size={15} />
-                      Remove
-                    </button>
-                  )}
+          const filteredItems = getFilteredItems(item.id);
+
+          return (
+            <div
+              key={item.id}
+              className="rounded-[20px] border border-[#E5E7EB] p-4"
+            >
+              <div className="flex justify-between mb-3">
+                <div className="font-medium">
+                  Product {index + 1}
                 </div>
 
-                <div className="grid grid-cols-1 gap-4">
-                  <div>
-                    <label className="mb-1.5 block text-[13px] font-medium text-[#374151]">
-                      Product Name <span className="text-[#DC2626]">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={item.name}
-                      onChange={(e) =>
-                        handleProductChange(item.id, "name", e.target.value)
-                      }
-                      placeholder="e.g., Industrial Pump Model X200"
-                      className={`h-[44px] w-full rounded-[12px] border bg-white px-3 text-[14px] text-[#111827] outline-none transition focus:ring-4 ${
-                        itemErrors.name
-                          ? "border-[#FCA5A5] focus:border-[#DC2626] focus:ring-[#FEE2E2]"
-                          : "border-[#D1D5DB] focus:border-[#2563EB] focus:ring-[#DBEAFE]"
-                      }`}
-                    />
-                    {itemErrors.name ? (
-                      <p className="mt-1 text-[12px] text-[#DC2626]">
-                        {itemErrors.name}
-                      </p>
-                    ) : null}
-                  </div>
-
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <div>
-                      <label className="mb-1.5 block text-[13px] font-medium text-[#374151]">
-                        Quantity <span className="text-[#DC2626]">*</span>
-                      </label>
-                      <input
-                        type="number"
-                        min="1"
-                        step="1"
-                        value={item.quantity}
-                        onChange={(e) =>
-                          handleProductChange(item.id, "quantity", e.target.value)
-                        }
-                        className={`h-[44px] w-full rounded-[12px] border bg-white px-3 text-[14px] text-[#111827] outline-none transition focus:ring-4 ${
-                          itemErrors.quantity
-                            ? "border-[#FCA5A5] focus:border-[#DC2626] focus:ring-[#FEE2E2]"
-                            : "border-[#D1D5DB] focus:border-[#2563EB] focus:ring-[#DBEAFE]"
-                        }`}
-                      />
-                      {itemErrors.quantity ? (
-                        <p className="mt-1 text-[12px] text-[#DC2626]">
-                          {itemErrors.quantity}
-                        </p>
-                      ) : null}
-                    </div>
-
-                    <div>
-                      <label className="mb-1.5 block text-[13px] font-medium text-[#374151]">
-                        Unit Price ($) <span className="text-[#DC2626]">*</span>
-                      </label>
-                      <input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={item.price}
-                        onChange={(e) =>
-                          handleProductChange(item.id, "price", e.target.value)
-                        }
-                        className={`h-[44px] w-full rounded-[12px] border bg-white px-3 text-[14px] text-[#111827] outline-none transition focus:ring-4 ${
-                          itemErrors.price
-                            ? "border-[#FCA5A5] focus:border-[#DC2626] focus:ring-[#FEE2E2]"
-                            : "border-[#D1D5DB] focus:border-[#2563EB] focus:ring-[#DBEAFE]"
-                        }`}
-                      />
-                      {itemErrors.price ? (
-                        <p className="mt-1 text-[12px] text-[#DC2626]">
-                          {itemErrors.price}
-                        </p>
-                      ) : null}
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="mb-1.5 block text-[13px] font-medium text-[#374151]">
-                      Specifications
-                    </label>
-                    <textarea
-                      value={item.specs}
-                      onChange={(e) =>
-                        handleProductChange(item.id, "specs", e.target.value)
-                      }
-                      rows={3}
-                      placeholder="Enter product specifications, features, or requirements"
-                      className="w-full rounded-[12px] border border-[#D1D5DB] bg-white px-3 py-3 text-[14px] text-[#111827] outline-none transition focus:border-[#2563EB] focus:ring-4 focus:ring-[#DBEAFE]"
-                    />
-                  </div>
-                </div>
-
-                <div className="mt-4 rounded-[10px] bg-[#F9FAFB] px-3 py-3 text-[13px] text-[#4B5563]">
-                  Subtotal:{" "}
-                  <span className="font-semibold text-[#111827]">
-                    ${currency(itemSubtotal)}
-                  </span>
-                </div>
+                {products.length > 1 && (
+                  <button onClick={() => removeProduct(item.id)}>
+                    <Trash2 size={16} />
+                  </button>
+                )}
               </div>
-            );
-          })}
-        </div>
 
-        {formError ? (
-          <div className="mt-5 rounded-[12px] border border-[#FECACA] bg-[#FEF2F2] px-4 py-3 text-[13px] font-medium text-[#B91C1C]">
-            {formError}
-          </div>
-        ) : null}
+              {/* Dropdown */}
+              <div className="relative " data-product-dropdown>
+                <input
+                  value={item.name}
+                  placeholder="Select Product"
+                  readOnly
+                  onClick={() => {
+                    setOpenDropdown(item.id);
+                    if (!items.length) fetchItems();
+                  }}
+                  className="w-full border-[#E5E7EB] border-[1px] rounded-[12px] cursor-pointer border px-3 py-2 text-[14px] outline-[#E5E7EB]"
+                />
 
-        {apiError ? (
-          <div className="mt-5 rounded-[12px] border border-[#FECACA] bg-[#FEF2F2] px-4 py-3 text-[13px] font-medium text-[#B91C1C]">
-            {apiError}
-          </div>
-        ) : null}
+                {openDropdown === item.id && (
+                  <div className="absolute z-40 mt-2 w-full rounded-[14px]  bg-white shadow-lg max-h-[320px] flex flex-col overflow-hidden border-[#E5E7EB] border-[1px]">
 
-        <div className="mt-5 rounded-[12px] bg-[#F4F8FF] px-4 py-4">
-          <div className="flex items-center justify-between gap-3">
-            <span className="text-[15px] font-semibold text-[#111827]">
-              Total Amount:
-            </span>
-            <span className="text-[20px] font-bold text-[#2563EB]">
-              ${currency(totalAmount)}
-            </span>
-          </div>
-        </div>
+                    {/* Search */}
+                    <div className="p-2">
+                      <input
+                        type="text"
+                        placeholder="Search product..."
+                        value={searchMap[item.id] || ""}
+                        onChange={(e) =>
+                          setSearchMap((prev) => ({
+                            ...prev,
+                            [item.id]: e.target.value,
+                          }))
+                        }
+                        className="w-full rounded-[10px] border-[#E5E7EB] border-[1px] px-3 py-2 text-sm  outline-[#E5E7EB]"
+                      />
+                    </div>
 
-        <div className="mt-5 flex flex-col-reverse gap-3 border-t border-[#EEF2F6] pt-4 sm:flex-row sm:items-center sm:justify-end">
-          <button
-            type="button"
-            onClick={back}
-            disabled={loading}
-            className="h-[44px] rounded-[10px] border border-[#D1D5DB] bg-white px-5 text-[14px] font-medium text-[#374151] transition hover:bg-[#F9FAFB] disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            Cancel
-          </button>
+                    {/* List */}
+                    <div className="overflow-y-auto max-h-[240px]">
+                      {itemsLoading ? (
+                        <div className="p-3 text-sm text-gray-500">
+                          Loading...
+                        </div>
+                      ) : filteredItems.length === 0 ? (
+                        <div className="p-3 text-sm text-gray-500">
+                          No products found
+                        </div>
+                      ) : (
+                        filteredItems.map((i) => (
+                          <button
+                            key={i.stock_id}
+                            onClick={() =>
+                              handleSelectItem(item.id, i)
+                            }
+                            className="w-full px-3 py-2 text-left hover:bg-[#F9FAFB] flex justify-between items-center"
+                          >
+                            <div>
+                              <div className="text-[14px]">
+                                {i.product_name}
+                              </div>
+                              <div className="text-[12px] text-gray-500">
+                                {i.category} • Qty {i.available_qty}
+                              </div>
+                            </div>
 
-          <button
-            type="button"
-            onClick={handleCreate}
-            disabled={loading || products.length === 0}
-            className={`inline-flex h-[44px] items-center justify-center gap-2 rounded-[10px] px-5 text-[14px] font-medium text-white transition ${
-              loading || products.length === 0
-                ? "cursor-not-allowed bg-[#BFD0FB]"
-                : "bg-[#2563EB] hover:bg-[#1D4ED8]"
-            }`}
-          >
-            {loading ? "Creating Quotation..." : "Create Quotation"}
-            {!loading && <ArrowRight size={16} />}
-          </button>
-        </div>
+                            <div className="text-[13px] font-medium">
+                              ₹{currency(i.unit_price)}
+                            </div>
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Qty + Price */}
+              <div className="grid grid-cols-2 gap-3 mt-3">
+                <input
+                  type="number"
+                  value={item.quantity}
+                  onChange={(e) =>
+                    handleChange(item.id, "quantity", e.target.value)
+                  }
+                  className="rounded-[12px] border-[#E5E7EB] border-[1px] px-3 py-2"
+                />
+
+                <input
+                  type="number"
+                  value={item.price}
+                  onChange={(e) =>
+                    handleChange(item.id, "price", e.target.value)
+                  }
+                  className="rounded-[12px] border-[#E5E7EB] border-[1px] px-3 py-2"
+                />
+              </div>
+
+              <div className="mt-2 text-sm">
+                Subtotal ₹{currency(qty * price)}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Total */}
+      <div className="mt-5 text-right font-semibold">
+        Total ₹{currency(total)}
+      </div>
+
+      {/* Footer */}
+      <div className="flex justify-end gap-3 mt-4">
+        <button onClick={back} className="rounded-[12px] border-[#E5E7EB] border-[1px] px-4 py-2">
+          Back
+        </button>
+
+        <button
+          onClick={onCreateQuotation}
+          disabled={loading}
+          className="rounded-[12px] bg-blue-600 text-white px-4 py-2 flex items-center gap-2"
+        >
+          {loading && <Loader2 size={16} className="animate-spin" />}
+          {loading ? "Creating..." : "Create Quotation"}
+        </button>
       </div>
     </div>
   );

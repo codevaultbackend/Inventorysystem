@@ -37,7 +37,7 @@ export function SalesTrendLine({
   currency = false,
 }: Props) {
   return (
-    <div className="rounded-[24px] border border-[#E6ECF2] bg-white p-5 shadow-[0_8px_24px_rgba(15,23,42,0.05)] sm:p-6">
+    <div className="rounded-[24px] border border-[#E6ECF2] bg-white p-5 shadow-[1px_1px_4px_rgba(0,0,0,0.1)] sm:p-6">
       <div className="mb-5 flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h3 className="truncate text-[16px] font-semibold text-[#111827]">{title}</h3>
