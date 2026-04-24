@@ -53,10 +53,7 @@ export default function CashflowChart() {
 
         </div>
 
-        <select className="border border-gray-200 rounded-lg text-sm px-3 py-1.5 bg-white shadow-sm">
-          <option>Monthly</option>
-          <option>Yearly</option>
-        </select>
+        
 
       </div>
 

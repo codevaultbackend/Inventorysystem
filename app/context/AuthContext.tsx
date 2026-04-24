@@ -90,7 +90,7 @@ function getRouteByRole(role: Role | null): string {
   const roleRoutes: Record<Role, string> = {
     super_admin: "/super-admin",
     admin: "/super-admin/admin_dash",
-    super_inventory_manager: "/inventory-manager",
+    super_inventory_manager: "/inventory-manager/Dashboard",
     inventory_manager: "/inventory-manager/admin-dashboard",
     super_stock_manager: "/stock-manager",
     stock_manager: "/stock-manager",

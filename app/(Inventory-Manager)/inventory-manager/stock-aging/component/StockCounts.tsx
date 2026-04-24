@@ -36,10 +36,6 @@ export default function StockCount({ title, value, icon: Icon }: Props) {
           </h3>
         </div>
 
-        <div className="inline-flex items-center gap-1 text-[12px] font-[600] text-[#22C55E] sm:mb-1 sm:text-[14px]">
-          <ArrowUpRight size={15} className="sm:h-4 sm:w-4" />
-          +12.5%
-        </div>
       </div>
     </div>
   );

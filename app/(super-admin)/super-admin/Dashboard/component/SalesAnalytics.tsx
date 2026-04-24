@@ -97,16 +97,6 @@ export default function SalesAnalytics({ data = [], loading = false }: Props) {
         </div>
 
         <div className="relative w-fit shrink-0">
-          <select
-            value={filter}
-            onChange={(e) => setFilter(e.target.value as FilterType)}
-            className="h-9 appearance-none rounded-[10px] border border-transparent bg-white pr-7 text-[14px] font-medium text-[#666666] outline-none"
-          >
-            <option value="weekly">Weekly</option>
-            <option value="monthly">Monthly</option>
-            <option value="yearly">Yearly</option>
-          </select>
-
           <ChevronDown className="pointer-events-none absolute right-0 top-1/2 h-4 w-4 -translate-y-1/2 text-[#8B8B8B]" />
         </div>
       </div>

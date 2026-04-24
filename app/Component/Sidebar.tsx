@@ -37,7 +37,7 @@ type SidebarProps = {
 
 const ROLE_NAV_ITEMS: Record<string, NavItem[]> = {
   super_admin: [
-    { label: "Dashboard", href: "/super-admin", icon: PiWindowsLogo },
+    { label: "Dashboard", href: "/super-admin/Dashboard", icon: PiWindowsLogo },
     {
       label: "Branch Overview",
       href: "/super-admin/Branches",
@@ -103,7 +103,7 @@ const ROLE_NAV_ITEMS: Record<string, NavItem[]> = {
   super_inventory_manager: [
     {
       label: "Dashboard",
-      href: "/inventory-manager/admin-dashboard",
+      href: "/inventory-manager/Dashboard",
       icon: DashboardIcon,
     },
     {

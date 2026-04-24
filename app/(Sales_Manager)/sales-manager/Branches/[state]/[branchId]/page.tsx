@@ -49,21 +49,18 @@ export default function BranchPage() {
       title: "Total Sales",
       value: data?.metrics?.[0]?.value || 0,
       icon: DashboardIcons.ShoppingCart,
-      trend: "+12.5%",
       trendType: "up" as const,
     },
     {
       title: "Total Pending Quatation",
       value: data?.metrics?.[1]?.value || 0,
       icon: DashboardIcons.FileText,
-      trend: "+12.5%",
       trendType: "up" as const,
     },
     {
       title: "Sales This Months",
       value: data?.metrics?.[2]?.value || 0,
       icon: DashboardIcons.Settings2,
-      trend: "+12.5%",
       trendType: "down" as const,
     },
     {

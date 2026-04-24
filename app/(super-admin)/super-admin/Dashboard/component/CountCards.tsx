@@ -79,7 +79,7 @@ export default function DashboardStats({ data, loading = false }: DashboardProps
   ];
 
   return (
-    <section className="grid grid-cols-2 gap-4 sm:grid-cols-2 2xl:grid-cols-4">
+    <section className="grid grid-cols-4 max-[768px]:grid-cols-2 gap-4  2xl:grid-cols-4">
       {stats.map((item, index) => (
         <article
           key={index}
@@ -87,20 +87,20 @@ export default function DashboardStats({ data, loading = false }: DashboardProps
         >
           <div className="flex h-full flex-col justify-between">
             <div
-              className={`flex h-12 w-12 items-center justify-center rounded-[12px] ${item.iconWrap}`}
+              className={`flex h-[50px] w-[50px] items-center justify-center rounded-[12px] ${item.iconWrap}`}
             >
-              <item.icon className={`h-5 w-5 ${item.iconColor}`} strokeWidth={2} />
+              <item.icon className={`h-[24px] w-[24px] ${item.iconColor}`} strokeWidth={2} />
             </div>
 
             <div className="pt-8">
-              <p className="text-[14px] font-normal leading-[20px] text-[#8B8B8B]">
+              <p className="text-[12px] font-[400] leading-[20px] text-[#949494]">
                 {item.title}
               </p>
 
               {loading ? (
                 <div className="mt-3 h-10 w-28 animate-pulse rounded-lg bg-[#EEF2F7]" />
               ) : (
-                <h2 className="mt-2 text-[28px] font-normal leading-[34px] tracking-[-0.02em] text-[#111111] md:text-[32px]">
+                <h2 className="mt-2 text-[28px] font-[500] leading-[34px] tracking-[-0.02em] text-[#000000] md:text-[32px]">
                   {formatNumber(item.value, item.isCurrency)}
                 </h2>
               )}

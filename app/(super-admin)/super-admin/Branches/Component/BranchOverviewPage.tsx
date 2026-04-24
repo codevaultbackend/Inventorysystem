@@ -46,7 +46,7 @@ export default function BranchOverviewPage({ stats }: Props) {
   ];
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-5 lg:gap-6">
+    <div className="grid grid-cols-4  xl:grid-cols-4 gap-4 sm:gap-5 lg:gap-6">
       {cards.map((item, index) => {
         const Icon = item.icon;
 
@@ -85,10 +85,6 @@ export default function BranchOverviewPage({ stats }: Props) {
                 <h2 className="text-[22px] sm:text-[26px] lg:text-[28px] font-semibold text-[#0F172A] leading-none">
                   {formatNumber(item.value)}
                 </h2>
-
-                <span className="flex items-center gap-1 text-[#16A34A] text-[11px] sm:text-[13px] font-medium whitespace-nowrap">
-                  <FaChartLine /> +12.5%
-                </span>
               </div>
             </div>
           </div>

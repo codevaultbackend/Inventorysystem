@@ -74,7 +74,6 @@ export async function getOverviewDashboard() {
             dashboardData?.summary?.totalRevenue ??
             dashboardData?.totalRevenue
         ),
-        trend: "+12.5%",
         trendType: "up" as const,
       },
       {
@@ -135,19 +134,16 @@ export async function getStateDashboard(state: string) {
       {
         title: "Total Sales",
         value: toNumber(data?.cards?.totalSales),
-        trend: "+12.5%",
         trendType: "up" as const,
       },
       {
         title: "Total Pending Quatation",
         value: toNumber(data?.cards?.pendingQuotation),
-        trend: "+12.5%",
         trendType: "up" as const,
       },
       {
         title: "Sales This Months",
         value: toNumber(data?.cards?.salesThisMonth),
-        trend: "+12.5%",
         trendType: "down" as const,
       },
       {
@@ -170,19 +166,16 @@ export async function getBranchDashboard(branchId: string | number) {
       {
         title: "Total Sales",
         value: toNumber(data?.cards?.totalSales),
-        trend: "+12.5%",
         trendType: "up" as const,
       },
       {
         title: "Total Pending Quatation",
         value: toNumber(data?.cards?.pendingQuotation),
-        trend: "+12.5%",
         trendType: "up" as const,
       },
       {
         title: "Sales This Months",
         value: toNumber(data?.cards?.salesThisMonth),
-        trend: "+12.5%",
         trendType: "down" as const,
       },
       {
@@ -209,25 +202,21 @@ export async function getItemDashboard(itemId: string | number) {
       {
         title: "Total Quantity Sold",
         value: toNumber(data?.cards?.totalQty),
-        trend: "+12.5%",
         trendType: "up" as const,
       },
       {
         title: "Available Stock Value",
         value: toNumber(data?.cards?.stockValue),
-        trend: "+12.5%",
         trendType: "up" as const,
       },
       {
         title: "Total Revenue",
         value: toNumber(data?.cards?.totalRevenue),
-        trend: "+12.5%",
         trendType: "up" as const,
       },
       {
         title: "Total Invoice",
         value: toNumber(data?.cards?.totalInvoices),
-        trend: "+12.5%",
         trendType: "up" as const,
       },
     ],

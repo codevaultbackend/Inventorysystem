@@ -44,7 +44,7 @@ type StateDashboardPayload = {
 
 function HeaderSkeleton() {
   return (
-    <div className="rounded-2xl border border-[#EEF2F6] bg-white p-6 shadow-sm animate-pulse">
+    <div className=" animate-pulse">
       <div className="h-8 w-52 rounded-md bg-[#E9EEF5]" />
       <div className="mt-3 h-4 w-72 max-w-full rounded-md bg-[#E9EEF5]" />
     </div>
@@ -280,7 +280,7 @@ export default function StatePage() {
         </>
       ) : (
         <>
-          <div className="rounded-2xl border border-[#EEF2F6] bg-white p-6 shadow-sm">
+          <div className="">
             <h1 className="text-[24px] font-semibold text-[#0F172A] md:text-[28px]">
               {stateName}
             </h1>

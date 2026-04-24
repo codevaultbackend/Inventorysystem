@@ -86,28 +86,24 @@ export default function ItemPage() {
       title: "Total Quantity Sold",
       value: data?.metrics?.[0]?.value || 0,
       icon: DashboardIcons.ShoppingCart,
-      trend: "+12.5%",
       trendType: "up" as const,
     },
     {
       title: "Available Stock Value",
       value: data?.metrics?.[1]?.value || 0,
       icon: DashboardIcons.Boxes,
-      trend: "+12.5%",
       trendType: "up" as const,
     },
     {
       title: "Total Revenue",
       value: data?.metrics?.[2]?.value || 0,
       icon: DashboardIcons.IndianRupee,
-      trend: "+12.5%",
       trendType: "up" as const,
     },
     {
       title: "Total Invoice",
       value: data?.metrics?.[3]?.value || 0,
       icon: DashboardIcons.FileText,
-      trend: "+12.5%",
       trendType: "up" as const,
     },
   ];

@@ -112,7 +112,7 @@ type InventoryRow = {
 
 function HeaderSkeleton() {
   return (
-    <div className="animate-pulse rounded-2xl border border-[#EEF2F6] bg-white p-6 shadow-sm">
+    <div className="animate-pulse ">
       <div className="h-8 w-56 rounded-md bg-[#E9EEF5]" />
       <div className="mt-3 h-4 w-72 max-w-full rounded-md bg-[#E9EEF5]" />
     </div>
@@ -121,7 +121,7 @@ function HeaderSkeleton() {
 
 function OverviewCardsSkeleton() {
   return (
-    <div className="rounded-2xl border border-[#EEF2F6] bg-white p-6 shadow-sm">
+    <div className="rounded-2xl ">
       <div className="grid grid-cols-1 gap-4 animate-pulse sm:grid-cols-2 xl:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
           <div
@@ -217,6 +217,8 @@ export default function BranchDetailsPage() {
   const params = useParams();
   const stateName = decodeURIComponent((params?.state as string) || "");
   const branchId = decodeURIComponent((params?.branchId as string) || "");
+
+  
 
   const [dashboardData, setDashboardData] = useState<BranchDetailsPayload | null>(
     null
@@ -391,7 +393,7 @@ export default function BranchDetailsPage() {
 
   return (
     <div className="w-full min-w-0 space-y-8">
-      <div className="rounded-2xl border border-[#EEF2F6] bg-white p-6 shadow-sm">
+      <div className="rounded-2xl ">
         <h1 className="text-[24px] font-semibold text-[#0F172A] md:text-[28px]">
           {dashboardData?.branch?.name || `Branch ${branchId}`}
         </h1>
@@ -400,7 +402,7 @@ export default function BranchDetailsPage() {
         </p>
       </div>
 
-      <div className="rounded-2xl border border-[#EEF2F6] bg-white p-6 shadow-sm">
+      <div className="">
         <BranchOverviewCounts
           stats={statsData}
           stockStatus={stockStatusData}
@@ -409,16 +411,16 @@ export default function BranchDetailsPage() {
       </div>
 
       <div className="grid w-full min-w-0 grid-cols-1 gap-6 xl:grid-cols-2">
-        <div className="min-w-0 rounded-2xl border border-[#EEF2F6] bg-white p-6 shadow-sm">
+        <div className="min-w-0 ">
           <StockTrendBar data={stockTrendData} />
         </div>
 
-        <div className="min-w-0 rounded-2xl border border-[#EEF2F6] bg-white p-6 shadow-sm">
+        <div className="min-w-0 ">
           <SalesTrendLine data={salesTrendData} />
         </div>
       </div>
 
-      <div className="rounded-2xl border border-[#EEF2F6] bg-white p-6 shadow-sm">
+      <div className="rounded-2xl ">
         <h3 className="mb-4 text-[16px] font-semibold text-[#0F172A]">
           Inventory Items
         </h3>

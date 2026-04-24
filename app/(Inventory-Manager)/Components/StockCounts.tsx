@@ -25,6 +25,7 @@ export default function StockCount({
       className="
         bg-white
         rounded-[20px]
+        h-[153px]
         p-4
         sm:p-5
         md:p-6

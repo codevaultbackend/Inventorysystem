@@ -30,10 +30,7 @@ export default function PurchaseAmountChart({ data }: any) {
           Purchase Amount Over Time
         </h2>
 
-        <select className="h-[38px] w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700 outline-none sm:w-auto">
-          <option>Monthly</option>
-          <option>Yearly</option>
-        </select>
+        
       </div>
 
       <div className="min-h-0 flex-1">
