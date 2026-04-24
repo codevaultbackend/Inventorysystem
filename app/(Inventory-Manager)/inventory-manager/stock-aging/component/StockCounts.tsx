@@ -17,7 +17,7 @@ const iconStyles: Record<string, string> = {
 
 export default function StockCount({ title, value, icon: Icon }: Props) {
   return (
-    <div className="rounded-[20px] border border-[#EAECF0] bg-white px-4 pb-4 pt-4 shadow-[0px_1px_2px_rgba(16,24,40,0.04),0px_1px_3px_rgba(16,24,40,0.08)] sm:rounded-[24px] sm:px-5">
+    <div className=" border border-[#EAECF0] bg-white px-4 pb-4 pt-4 shadow-[1px_1px_4px_rgba(0,0,0,0.1)] rounded-[24px] sm:px-5">
       <div
         className={`flex h-[46px] w-[46px] items-center justify-center rounded-[12px] sm:h-[52px] sm:w-[52px] ${
           iconStyles[title] ?? "bg-[#F8FAFC] text-[#101828]"

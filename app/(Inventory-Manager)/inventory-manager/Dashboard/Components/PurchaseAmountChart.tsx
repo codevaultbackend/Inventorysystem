@@ -26,7 +26,7 @@ export default function PurchaseAmountChart({ data }: any) {
   return (
     <div className="flex h-full w-full flex-col">
       <div className="mb-3 flex flex-col gap-3 sm:mb-4 sm:flex-row sm:items-center sm:justify-between">
-        <h2 className="text-[15px] font-semibold text-gray-800 sm:text-base lg:text-lg">
+        <h2 className="text-[18px] font-semibold text-gray-800 sm:text-base lg:text-lg">
           Purchase Amount Over Time
         </h2>
 

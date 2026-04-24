@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useParams, usePathname, useRouter } from "next/navigation";
+import { ChevronLeft } from "lucide-react";
 import {
   Area,
   AreaChart,
@@ -45,11 +46,11 @@ function normalizeChartData(data: any, batchRows: any[]) {
         `Batch ${index + 1}`,
       value: toNumber(
         item.value ||
-          item.amount ||
-          item.qty ||
-          item.quantity ||
-          item.total ||
-          item.totalValue
+        item.amount ||
+        item.qty ||
+        item.quantity ||
+        item.total ||
+        item.totalValue
       ),
     }));
   }
@@ -281,8 +282,8 @@ export default function InventoryItemPage() {
 
         setError(
           err?.response?.data?.message ||
-            err?.message ||
-            "Failed to load item details"
+          err?.message ||
+          "Failed to load item details"
         );
       } finally {
         setLoading(false);
@@ -376,10 +377,12 @@ export default function InventoryItemPage() {
       <div className="mx-auto w-full max-w-[1440px] space-y-4">
         <div className="flex items-start gap-4">
           <button
+            type="button"
             onClick={() => router.back()}
-            className="flex h-[40px] w-[40px] items-center justify-center rounded-[16px] border border-[#E5E7EB] bg-white text-[40px] leading-none text-[#111827] shadow-sm"
+            className="flex h-[50px] w-[50px] shrink-0 items-center justify-center rounded-[16px] border border-[#E5E7EB] bg-white text-[#111827] shadow-[0_1px_3px_rgba(15,23,42,0.08)] transition hover:bg-[#F9FAFB] active:scale-[0.98]"
+            aria-label="Go back"
           >
-            ‹
+            <ChevronLeft className="h-[26px] w-[26px] stroke-[2.5]" />
           </button>
 
           <div>

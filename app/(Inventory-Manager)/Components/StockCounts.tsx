@@ -74,11 +74,10 @@ export default function StockCount({
           {/* Value */}
           <h2
             className="
-              text-[20px]
-              sm:text-[24px]
-              md:text-[28px]
-              font-[700]
-              text-[#111827]
+              text-[28px]
+              max-[768px]::text-[22px]
+              font-[500]
+              text-[#000000]
               tracking-tight
               break-all
             "

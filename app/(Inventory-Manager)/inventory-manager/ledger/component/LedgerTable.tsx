@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Search, Upload, Download } from "lucide-react";
+import { Search } from "lucide-react";
 
 type Column = {
   key: string;
@@ -20,7 +20,6 @@ const LOAD_MORE_ROWS = 12;
 export default function LedgerTable({ columns, data, onView }: Props) {
   const [search, setSearch] = useState("");
   const [visibleCount, setVisibleCount] = useState(INITIAL_ROWS);
-
   const loaderRef = useRef<HTMLDivElement | null>(null);
 
   const filtered = useMemo(() => {
@@ -29,10 +28,7 @@ export default function LedgerTable({ columns, data, onView }: Props) {
     if (!query) return data;
 
     return data.filter((row) =>
-      Object.values(row ?? {})
-        .join(" ")
-        .toLowerCase()
-        .includes(query)
+      Object.values(row ?? {}).join(" ").toLowerCase().includes(query)
     );
   }, [data, search]);
 
@@ -50,14 +46,13 @@ export default function LedgerTable({ columns, data, onView }: Props) {
 
     const observer = new IntersectionObserver(
       (entries) => {
-        const firstEntry = entries[0];
+        if (!entries[0]?.isIntersecting) return;
 
-        if (!firstEntry?.isIntersecting) return;
-
-        setVisibleCount((prev) => {
-          if (prev >= filtered.length) return prev;
-          return Math.min(prev + LOAD_MORE_ROWS, filtered.length);
-        });
+        setVisibleCount((prev) =>
+          prev >= filtered.length
+            ? prev
+            : Math.min(prev + LOAD_MORE_ROWS, filtered.length)
+        );
       },
       {
         root: null,
@@ -74,34 +69,29 @@ export default function LedgerTable({ columns, data, onView }: Props) {
   const hasMore = visibleCount < filtered.length;
 
   return (
-    <div className="w-full">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-        <div className="relative w-full max-w-[420px]">
-          <Search
-            size={16}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-          />
+    <div className="w-full overflow-hidden rounded-[24px] bg-white">
+      <div className="flex flex-col gap-3 px-4 py-5 sm:px-5 lg:flex-row lg:items-center lg:justify-between">
+        <div className="relative h-[40px] w-full lg:w-[480px]">
+          <Search className="pointer-events-none absolute left-4 top-1/2 h-[16px] w-[16px] -translate-y-1/2 text-[#9CA3AF]" />
 
           <input
             type="text"
             placeholder="Search by item..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2.5 rounded-lg bg-[#F5F6F8] text-sm outline-none"
+            className="h-full w-full rounded-[12px] border border-transparent bg-[#F5F5F5] pl-11 pr-4 text-[13px] font-[500] text-[#111827] outline-none placeholder:text-[#9CA3AF] focus:border-[#E5E7EB] focus:bg-white"
           />
         </div>
-
-       
       </div>
 
-      <div className="overflow-x-auto rounded-xl border border-gray-200">
-        <table className="w-full text-sm">
-          <thead className="bg-[#F3F4F6] text-gray-600">
+      <div className="ledger-table-scroll max-h-[430px] overflow-auto">
+        <table className="w-full min-w-[1040px] border-separate border-spacing-0">
+          <thead className="sticky top-0 z-20">
             <tr>
               {columns.map((col) => (
                 <th
                   key={col.key}
-                  className="text-left px-6 py-3 font-semibold whitespace-nowrap"
+                  className="h-[39px] whitespace-nowrap border-y border-[#E5E7EB] bg-[#F3F3F3] px-4 text-left text-[12px] font-[700] text-[#111827] first:pl-5 last:pr-5"
                 >
                   {col.label}
                 </th>
@@ -109,41 +99,42 @@ export default function LedgerTable({ columns, data, onView }: Props) {
             </tr>
           </thead>
 
-          <tbody className="divide-y">
-            {visibleRows.map((row, i) => (
-              <tr key={row?.id ?? i} className="hover:bg-gray-50 border-[#D3D3D3]">
-                {columns.map((col) => {
-                  if (col.key === "action") {
+          <tbody>
+            {visibleRows.length ? (
+              visibleRows.map((row, i) => (
+                <tr
+                  key={row?.id ?? i}
+                  className="bg-white transition hover:bg-[#FAFBFC]"
+                >
+                  {columns.map((col) => {
+                    const isAction = col.key === "action";
+
                     return (
-                      <td key={col.key} className="px-6 py-4 whitespace-nowrap">
-                        <button
-                          type="button"
-                          onClick={() => onView?.(row)}
-                          className="text-blue-600 hover:underline"
-                        >
-                          View
-                        </button>
+                      <td
+                        key={col.key}
+                        className="h-[39px] whitespace-nowrap border-b border-[#E5E7EB] px-4 text-[12px] font-[600] text-[#111827] first:pl-5 last:pr-5"
+                      >
+                        {isAction ? (
+                          <button
+                            type="button"
+                            onClick={() => onView?.(row)}
+                            className="text-[12px] font-[600] text-[#2563EB] transition hover:text-[#1D4ED8]"
+                          >
+                            View
+                          </button>
+                        ) : (
+                          row?.[col.key] ?? "-"
+                        )}
                       </td>
                     );
-                  }
-
-                  return (
-                    <td
-                      key={col.key}
-                      className="px-6 py-4 text-gray-700 whitespace-nowrap"
-                    >
-                      {row?.[col.key] ?? "-"}
-                    </td>
-                  );
-                })}
-              </tr>
-            ))}
-
-            {!filtered.length && (
+                  })}
+                </tr>
+              ))
+            ) : (
               <tr>
                 <td
                   colSpan={columns.length}
-                  className="px-6 py-8 text-center text-gray-500"
+                  className="h-[180px] bg-white px-5 text-center text-[14px] font-[600] text-[#94A3B8]"
                 >
                   No data found
                 </td>
@@ -155,17 +146,38 @@ export default function LedgerTable({ columns, data, onView }: Props) {
         {filtered.length > 0 && (
           <div ref={loaderRef} className="w-full">
             {hasMore ? (
-              <div className="px-6 py-4 text-center text-sm text-gray-500">
+              <div className="px-6 py-4 text-center text-[12px] font-[600] text-[#64748B]">
                 Loading more data...
               </div>
             ) : (
-              <div className="px-6 py-4 text-center text-sm text-gray-400">
+              <div className="px-6 py-4 text-center text-[12px] font-[600] text-[#94A3B8]">
                 All data loaded
               </div>
             )}
           </div>
         )}
       </div>
+
+      <style jsx>{`
+        .ledger-table-scroll {
+          scrollbar-width: thin;
+          scrollbar-color: #cbd5e1 transparent;
+        }
+
+        .ledger-table-scroll::-webkit-scrollbar {
+          width: 8px;
+          height: 8px;
+        }
+
+        .ledger-table-scroll::-webkit-scrollbar-track {
+          background: transparent;
+        }
+
+        .ledger-table-scroll::-webkit-scrollbar-thumb {
+          background: #cbd5e1;
+          border-radius: 999px;
+        }
+      `}</style>
     </div>
   );
 }

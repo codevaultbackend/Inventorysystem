@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { ChevronLeft } from "lucide-react";
 import {
   Area,
   AreaChart,
@@ -47,11 +48,11 @@ function normalizePurchaseChart(data: any, itemRows: any[]) {
         `Item ${index + 1}`,
       value: toNumber(
         item.value ||
-          item.amount ||
-          item.purchaseAmount ||
-          item.totalPurchase ||
-          item.totalValue ||
-          item.stockValue
+        item.amount ||
+        item.purchaseAmount ||
+        item.totalPurchase ||
+        item.totalValue ||
+        item.stockValue
       ),
     }));
   }
@@ -106,13 +107,13 @@ function PurchaseAmountChart({ data }: { data: any[] }) {
   const yMax = maxValue <= 0 ? 100 : Math.ceil(maxValue / 10000) * 10000;
 
   return (
-    <div className="h-[405px] rounded-[24px] border border-[#E5E7EB] bg-white px-6 py-6 shadow-[0_2px_8px_rgba(16,24,40,0.08)]">
+    <div className="h-[405px] rounded-[24px] border border-[#E5E7EB] bg-white px-6 py-6 shadow-[1px_1px_4px_rgba(0,0,0,0.1)]">
       <div className="mb-5 flex items-start justify-between gap-4">
         <h2 className="text-[18px] font-[700] leading-[24px] text-[#111827]">
           Purchase Amount Over Time
         </h2>
 
-        
+
       </div>
 
       <div className="h-[315px] w-full">
@@ -262,8 +263,8 @@ export default function InventoryBranchPage() {
 
         setError(
           err?.response?.data?.message ||
-            err?.message ||
-            "Failed to load branch details"
+          err?.message ||
+          "Failed to load branch details"
         );
       } finally {
         setLoading(false);
@@ -354,11 +355,14 @@ export default function InventoryBranchPage() {
     <div className="min-h-screen bg-[#F7F9FB]">
       <div className="mx-auto w-full max-w-[1440px] space-y-4">
         <div className="flex items-start gap-4">
+
           <button
+            type="button"
             onClick={() => router.back()}
-            className="flex h-[40px] w-[40px] items-center justify-center rounded-[16px] border border-[#E5E7EB] bg-white text-[40px] leading-none text-[#111827] shadow-sm"
+            className="flex h-[50px] w-[50px] shrink-0 items-center justify-center rounded-[16px] border border-[#E5E7EB] bg-white text-[#111827] shadow-[0_1px_3px_rgba(15,23,42,0.08)] transition hover:bg-[#F9FAFB] active:scale-[0.98]"
+            aria-label="Go back"
           >
-            ‹
+            <ChevronLeft className="h-[26px] w-[26px] stroke-[2.5]" />
           </button>
 
           <div>

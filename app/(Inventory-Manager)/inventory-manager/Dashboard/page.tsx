@@ -299,7 +299,7 @@ export default function Dashboard() {
         </div>
 
         <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1fr_360px]">
-          <div className="h-[405px] rounded-[22px] border border-[#E8EDF3] bg-white px-6 py-6 shadow-[0_1px_4px_rgba(16,24,40,0.08)]">
+          <div className="h-[405px] rounded-[22px] border border-[#E8EDF3] bg-white px-6 py-6 shadow-[1px_1px_4px_rgba(0,0,0,0.1)]">
             <div className="mb-5 flex items-start justify-between gap-4">
               <h2 className="text-[18px] font-semibold text-[#111827]">
                 Purchase Amount Over Time

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { ChevronLeft } from "lucide-react";
 import {
   Area,
   AreaChart,
@@ -50,11 +51,11 @@ function normalizePurchaseChart(data: any, branchRows: any[]) {
         `Item ${index + 1}`,
       value: toNumber(
         item.value ||
-          item.amount ||
-          item.purchaseAmount ||
-          item.totalPurchase ||
-          item.totalValue ||
-          item.stockValue
+        item.amount ||
+        item.purchaseAmount ||
+        item.totalPurchase ||
+        item.totalValue ||
+        item.stockValue
       ),
     }));
   }
@@ -63,10 +64,10 @@ function normalizePurchaseChart(data: any, branchRows: any[]) {
     label: branch.branchName || branch.name || `Branch ${index + 1}`,
     value: toNumber(
       branch.purchaseAmount ||
-        branch.totalPurchase ||
-        branch.totalValue ||
-        branch.stockValue ||
-        branch.totalStockValue
+      branch.totalPurchase ||
+      branch.totalValue ||
+      branch.stockValue ||
+      branch.totalStockValue
     ),
   }));
 }
@@ -88,8 +89,8 @@ function normalizeAgingData(data: any, branchRows: any[]) {
         index === 0
           ? COLORS.blue
           : index === 1
-          ? COLORS.red
-          : COLORS.purple,
+            ? COLORS.red
+            : COLORS.purple,
     }));
   }
 
@@ -121,63 +122,76 @@ function PurchaseAmountChart({ data }: { data: any[] }) {
   const yMax = maxValue <= 0 ? 100 : Math.ceil(maxValue / 10000) * 10000;
 
   return (
-    <div className="h-[405px] rounded-[24px] border border-[#E5E7EB] bg-white px-6 py-6 shadow-[0_2px_8px_rgba(16,24,40,0.08)]">
-      <div className="mb-5 flex items-start justify-between gap-4">
-        <h2 className="text-[18px] font-[700] leading-[24px] text-[#111827]">
+    <div className="h-[378px] rounded-[24px] border border-[#E5E7EB] bg-white px-5 py-5 shadow-[1px_1px_4px_rgba(0,0,0,0.1)] sm:h-[405px] sm:px-6 sm:py-6">
+      <div className="mb-4 flex items-start justify-between gap-4 sm:mb-5">
+        <h2 className="text-[18px] font-[700] leading-[24px] tracking-[-0.02em] text-[#111827] sm:text-[18px]">
           Purchase Amount Over Time
         </h2>
 
-        
+
       </div>
 
-      <div className="h-[315px] w-full">
-        <ResponsiveContainer width="100%" height="100%">
-          <AreaChart
-            data={data}
-            margin={{ top: 5, right: 5, left: -10, bottom: 0 }}
-          >
-            <defs>
-              <linearGradient id="purchaseGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.16} />
-                <stop offset="95%" stopColor="#3B82F6" stopOpacity={0.02} />
-              </linearGradient>
-            </defs>
+      <div className="h-[292px] w-full sm:h-[315px]">
+        {data.length ? (
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart
+              data={data}
+              margin={{ top: 6, right: 4, left: -10, bottom: 2 }}
+            >
+              <defs>
+                <linearGradient
+                  id="purchaseGradient"
+                  x1="0"
+                  y1="0"
+                  x2="0"
+                  y2="1"
+                >
+                  <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.15} />
+                  <stop offset="95%" stopColor="#3B82F6" stopOpacity={0.02} />
+                </linearGradient>
+              </defs>
 
-            <XAxis
-              dataKey="label"
-              axisLine={false}
-              tickLine={false}
-              tick={{ fill: "#94A3B8", fontSize: 12 }}
-              dy={12}
-            />
+              <XAxis
+                dataKey="label"
+                axisLine={false}
+                tickLine={false}
+                interval="preserveStartEnd"
+                tick={{ fill: "#94A3B8", fontSize: 12, fontWeight: 500 }}
+                dy={12}
+              />
 
-            <YAxis
-              axisLine={false}
-              tickLine={false}
-              tick={{ fill: "#94A3B8", fontSize: 12 }}
-              domain={[0, yMax]}
-            />
+              <YAxis
+                axisLine={false}
+                tickLine={false}
+                tick={{ fill: "#94A3B8", fontSize: 12, fontWeight: 500 }}
+                domain={[0, yMax]}
+              />
 
-            <Tooltip
-              formatter={(value) => formatCurrency(toNumber(value))}
-              contentStyle={{
-                borderRadius: "12px",
-                border: "1px solid #E5E7EB",
-                boxShadow: "0 8px 24px rgba(15,23,42,0.08)",
-                fontSize: "12px",
-              }}
-            />
+              <Tooltip
+                formatter={(value) => formatCurrency(toNumber(value))}
+                contentStyle={{
+                  borderRadius: "12px",
+                  border: "1px solid #E5E7EB",
+                  boxShadow: "0 10px 24px rgba(15,23,42,0.10)",
+                  fontSize: "12px",
+                }}
+              />
 
-            <Area
-              type="monotone"
-              dataKey="value"
-              stroke="#3B82F6"
-              strokeWidth={3}
-              fill="url(#purchaseGradient)"
-              activeDot={{ r: 4 }}
-            />
-          </AreaChart>
-        </ResponsiveContainer>
+              <Area
+                type="monotone"
+                dataKey="value"
+                stroke="#3B82F6"
+                strokeWidth={3}
+                fill="url(#purchaseGradient)"
+                activeDot={{ r: 4 }}
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        ) : (
+          <div className="flex h-full items-center justify-center text-[13px] font-[600] text-[#94A3B8]">
+            No purchase data found
+          </div>
+        )}
       </div>
     </div>
   );
@@ -185,15 +199,16 @@ function PurchaseAmountChart({ data }: { data: any[] }) {
 
 function AgingDistributionChart({ data }: { data: any[] }) {
   return (
-    <div className="h-[405px] rounded-[24px] border border-[#E5E7EB] bg-white px-6 py-6 shadow-[0_2px_8px_rgba(16,24,40,0.08)]">
-      <h2 className="text-[18px] font-[700] leading-[24px] text-[#111827]">
+    <div className="h-[378px] rounded-[24px] border border-[#E5E7EB] bg-white px-5 py-5 shadow-[0_2px_8px_rgba(15,23,42,0.08)] sm:h-[405px] sm:px-6 sm:py-6">
+      <h2 className="text-[18px] font-[700] leading-[24px] tracking-[-0.02em] text-[#111827] sm:text-[18px]">
         Aging Distribution
       </h2>
-      <p className="mt-2 text-[13px] font-[500] text-[#111827]">
+
+      <p className="mt-2 text-[13px] font-[600] leading-[18px] text-[#111827]">
         Stock breakdown by age groups
       </p>
 
-      <div className="mt-4 flex h-[250px] items-center justify-center">
+      <div className="mt-4 flex h-[222px] items-center justify-center sm:h-[250px]">
         {data.length > 0 ? (
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
@@ -202,8 +217,8 @@ function AgingDistributionChart({ data }: { data: any[] }) {
                 dataKey="value"
                 cx="50%"
                 cy="50%"
-                innerRadius={70}
-                outerRadius={105}
+                innerRadius={66}
+                outerRadius={104}
                 startAngle={90}
                 endAngle={-270}
                 paddingAngle={5}
@@ -224,14 +239,14 @@ function AgingDistributionChart({ data }: { data: any[] }) {
         )}
       </div>
 
-      <div className="mt-1 flex flex-wrap items-center justify-center gap-4">
+      <div className="mt-1 flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
         {data.map((item) => (
           <div key={item.name} className="flex items-center gap-2">
             <span
               className="h-[12px] w-[12px] rounded-[2px]"
               style={{ backgroundColor: item.color }}
             />
-            <span className="text-[13px] font-[600] text-[#475569]">
+            <span className="text-[13px] font-[700] text-[#475569]">
               {item.name}
             </span>
           </div>
@@ -275,8 +290,8 @@ export default function InventoryStatePage() {
 
         setError(
           err?.response?.data?.message ||
-            err?.message ||
-            "Failed to load state details"
+          err?.message ||
+          "Failed to load state details"
         );
       } finally {
         setLoading(false);
@@ -321,17 +336,26 @@ export default function InventoryStatePage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-[#F7F9FB]">
-        <div className="mx-auto w-full max-w-[1440px] space-y-6 animate-pulse">
-          <div className="h-[72px] rounded-[24px] bg-white" />
+        <div className="mx-auto w-full max-w-[1440px] space-y-4">
+          <div className="flex animate-pulse items-start gap-4">
+            <div className="h-[50px] w-[50px] rounded-[16px] bg-white" />
+            <div>
+              <div className="h-8 w-64 rounded bg-white" />
+              <div className="mt-2 h-4 w-52 rounded bg-white" />
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
             {[...Array(4)].map((_, index) => (
               <div key={index} className="h-[150px] rounded-[24px] bg-white" />
             ))}
           </div>
-          <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1fr_365px]">
+
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_365px]">
             <div className="h-[405px] rounded-[24px] bg-white" />
             <div className="h-[405px] rounded-[24px] bg-white" />
           </div>
+
           <div className="h-[430px] rounded-[24px] bg-white" />
         </div>
       </div>
@@ -351,17 +375,19 @@ export default function InventoryStatePage() {
       <div className="mx-auto w-full max-w-[1440px] space-y-4">
         <div className="flex items-start gap-4">
           <button
+            type="button"
             onClick={() => router.back()}
-            className="flex h-[40px] w-[40px] items-center justify-center rounded-[16px] border border-[#E5E7EB] bg-white text-[40px] leading-none text-[#111827] shadow-sm"
+            className="flex h-[50px] w-[50px] shrink-0 items-center justify-center rounded-[16px] border border-[#E5E7EB] bg-white text-[#111827] shadow-[0_1px_3px_rgba(15,23,42,0.08)] transition hover:bg-[#F9FAFB] active:scale-[0.98]"
+            aria-label="Go back"
           >
-            ‹
+            <ChevronLeft className="h-[26px] w-[26px] stroke-[2.5]" />
           </button>
 
-          <div>
-            <h1 className="text-[28px] font-[700] leading-[34px] text-[#111827]">
+          <div className="min-w-0 pt-[2px]">
+            <h1 className="truncate text-[24px] font-[500] leading-[32px] tracking-[-0.03em] text-[#000000] sm:text-[28px] sm:leading-[34px]">
               {data?.state || stateName}
             </h1>
-            <p className="mt-1 text-[12px] font-[500] text-[#9CA3AF]">
+            <p className="mt-1 text-[12px] font-[600] leading-[16px] text-[#9CA3AF]">
               Detailed branch analytics and inventory
             </p>
           </div>
@@ -369,7 +395,7 @@ export default function InventoryStatePage() {
 
         <InventoryOverviewCards summary={summary} />
 
-        <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1fr_365px]">
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_365px]">
           <PurchaseAmountChart data={purchaseChartData} />
           <AgingDistributionChart data={agingChartData} />
         </div>

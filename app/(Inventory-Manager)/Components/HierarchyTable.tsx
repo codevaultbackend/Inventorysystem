@@ -17,6 +17,7 @@ type Props<T> = {
   columns: Column<T>[];
   getViewHref?: (row: T) => string | null;
   emptyMessage?: string;
+  hideAction?: boolean;
 };
 
 const INITIAL_ROWS = 20;
@@ -29,6 +30,7 @@ export default function HierarchyTable<T extends Record<string, any>>({
   columns,
   getViewHref,
   emptyMessage = "No data found",
+  hideAction = false,
 }: Props<T>) {
   const [search, setSearch] = useState("");
   const [visibleCount, setVisibleCount] = useState(INITIAL_ROWS);
@@ -61,6 +63,7 @@ export default function HierarchyTable<T extends Record<string, any>>({
     const observer = new IntersectionObserver(
       (entries) => {
         const first = entries[0];
+
         if (first?.isIntersecting) {
           setVisibleCount((prev) =>
             Math.min(prev + LOAD_MORE_ROWS, filteredData.length)
@@ -84,6 +87,7 @@ export default function HierarchyTable<T extends Record<string, any>>({
   }, [filteredData, visibleCount]);
 
   const hasMoreRows = visibleCount < filteredData.length;
+  const colSpan = hideAction ? columns.length : columns.length + 1;
 
   return (
     <div className="overflow-hidden rounded-[24px] border border-[#E6ECF2] bg-white shadow-[0_8px_24px_rgba(15,23,42,0.05)]">
@@ -96,6 +100,7 @@ export default function HierarchyTable<T extends Record<string, any>>({
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
           <div className="relative w-full sm:w-[260px]">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#98A2B3]" />
+
             <input
               type="text"
               value={search}
@@ -125,14 +130,17 @@ export default function HierarchyTable<T extends Record<string, any>>({
                 {columns.map((col) => (
                   <th
                     key={String(col.key)}
-                    className="whitespace-nowrap px-6 py-4 text-left text-[14px] font-semibold text-[#111827] bg-[#F3F6F9]"
+                    className="whitespace-nowrap bg-[#F3F6F9] px-6 py-4 text-left text-[14px] font-semibold text-[#111827]"
                   >
                     {col.title}
                   </th>
                 ))}
-                <th className="whitespace-nowrap px-6 py-4 text-left text-[14px] font-semibold text-[#111827] bg-[#F3F6F9]">
-                  Action
-                </th>
+
+                {!hideAction && (
+                  <th className="whitespace-nowrap bg-[#F3F6F9] px-6 py-4 text-left text-[14px] font-semibold text-[#111827]">
+                    Action
+                  </th>
+                )}
               </tr>
             </thead>
 
@@ -157,7 +165,7 @@ export default function HierarchyTable<T extends Record<string, any>>({
                       {columns.map((col) => (
                         <td
                           key={String(col.key)}
-                          className="whitespace-nowrap px-6 py-4 text-[14px] font-medium text-[#111827] bg-white border-[1px] border-[#E6E6E6]"
+                          className="whitespace-nowrap border-[1px] border-[#E6E6E6] bg-white px-6 py-4 text-[14px] font-medium text-[#111827]"
                         >
                           {col.render
                             ? col.render(row)
@@ -165,28 +173,30 @@ export default function HierarchyTable<T extends Record<string, any>>({
                         </td>
                       ))}
 
-                      <td className="whitespace-nowrap px-6 py-4 text-[14px] font-medium bg-white border-[1px] border-[#E6E6E6]">
-                        {href ? (
-                          <Link
-                            href={href}
-                            className="text-[#0D63C8] underline underline-offset-2 transition hover:text-[#084A97]"
-                          >
-                            View
-                          </Link>
-                        ) : (
-                          <span className="cursor-not-allowed text-[#94A3B8]">
-                            View
-                          </span>
-                        )}
-                      </td>
+                      {!hideAction && (
+                        <td className="whitespace-nowrap border-[1px] border-[#E6E6E6] bg-white px-6 py-4 text-[14px] font-medium">
+                          {href ? (
+                            <Link
+                              href={href}
+                              className="text-[#0D63C8] underline underline-offset-2 transition hover:text-[#084A97]"
+                            >
+                              View
+                            </Link>
+                          ) : (
+                            <span className="cursor-not-allowed text-[#94A3B8]">
+                              View
+                            </span>
+                          )}
+                        </td>
+                      )}
                     </tr>
                   );
                 })
               ) : (
                 <tr>
                   <td
-                    colSpan={columns.length + 1}
-                    className="px-6 py-10 text-center text-sm text-[#64748B] bg-white"
+                    colSpan={colSpan}
+                    className="bg-white px-6 py-10 text-center text-sm text-[#64748B]"
                   >
                     {emptyMessage}
                   </td>
