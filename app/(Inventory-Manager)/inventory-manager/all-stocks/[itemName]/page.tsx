@@ -29,20 +29,22 @@ const COLORS = ["#3B82F6", "#FF4D4F", "#8B5CF6", "#22C55E"];
 function getNumericBranchId(value: any): string {
   if (value === null || value === undefined) return "";
 
-  if (typeof value === "number" && !Number.isNaN(value)) return String(value);
+  if (typeof value === "number" && Number.isFinite(value)) return String(value);
 
   if (typeof value === "string") {
     const trimmed = value.trim();
     if (!trimmed) return "";
-    const onlyNumber = trimmed.match(/\d+/)?.[0] || "";
-    return onlyNumber && !Number.isNaN(Number(onlyNumber)) ? onlyNumber : "";
+    const match = trimmed.match(/\d+/)?.[0] || "";
+    return match;
   }
 
   if (typeof value === "object") {
     return (
-      getNumericBranchId(value.id) ||
       getNumericBranchId(value.branch_id) ||
       getNumericBranchId(value.branchId) ||
+      getNumericBranchId(value.id) ||
+      getNumericBranchId(value.branch?.id) ||
+      getNumericBranchId(value.branch?.branch_id) ||
       ""
     );
   }
@@ -50,7 +52,20 @@ function getNumericBranchId(value: any): string {
   return "";
 }
 
+function getStoredUser() {
+  if (typeof window === "undefined") return null;
+
+  try {
+    const raw = localStorage.getItem("user");
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
 function resolveBranchId(params: any, user: any): string {
+  const storedUser = getStoredUser();
+
   return (
     getNumericBranchId(params?.branchId) ||
     getNumericBranchId(params?.id) ||
@@ -61,6 +76,13 @@ function resolveBranchId(params: any, user: any): string {
     getNumericBranchId(user?.branches?.[0]?.id) ||
     getNumericBranchId(user?.branches?.[0]?.branch_id) ||
     getNumericBranchId(user?.branches?.[0]) ||
+    getNumericBranchId(storedUser?.branch_id) ||
+    getNumericBranchId(storedUser?.branchId) ||
+    getNumericBranchId(storedUser?.branch?.id) ||
+    getNumericBranchId(storedUser?.branch?.branch_id) ||
+    getNumericBranchId(storedUser?.branches?.[0]?.id) ||
+    getNumericBranchId(storedUser?.branches?.[0]?.branch_id) ||
+    getNumericBranchId(storedUser?.branches?.[0]) ||
     ""
   );
 }
@@ -71,31 +93,16 @@ function resolveExactItemName(params: any): string {
 
 function normalizeLineChart(data: any, batchRows: any[]) {
   const raw =
+    data?.charts?.monthlyTrend ||
     data?.charts?.stockOverTime ||
     data?.charts?.purchaseAmountOverTime ||
-    data?.charts?.monthlyPurchase ||
     data?.stockOverTime ||
-    data?.purchaseAmountOverTime ||
-    data?.monthlyPurchase ||
     [];
 
   if (Array.isArray(raw) && raw.length) {
     return raw.map((item: any, index: number) => ({
-      label:
-        item.month ||
-        item.label ||
-        item.name ||
-        item.date ||
-        item.period ||
-        `Batch ${index + 1}`,
-      value: toNumber(
-        item.value ||
-        item.amount ||
-        item.qty ||
-        item.quantity ||
-        item.total ||
-        item.totalValue
-      ),
+      label: item.month || item.label || item.name || `Batch ${index + 1}`,
+      value: toNumber(item.value || item.amount || item.qty || item.totalValue),
     }));
   }
 
@@ -108,41 +115,24 @@ function normalizeLineChart(data: any, batchRows: any[]) {
 function normalizeDonutChart(data: any, batchRows: any[]) {
   const raw =
     data?.charts?.statusChart ||
-    data?.charts?.statusDistribution ||
-    data?.charts?.agingDistribution ||
+    data?.charts?.agingChart ||
     data?.statusChart ||
-    data?.statusDistribution ||
-    data?.agingDistribution ||
+    data?.agingChart ||
     [];
 
   if (Array.isArray(raw) && raw.length) {
     return raw.map((item: any, index: number) => ({
-      name: item.status || item.name || item.label || `Group ${index + 1}`,
+      name: item.status || item.aging || item.name || item.label || `Group ${index + 1}`,
       value: toNumber(item.qty || item.value || item.total || item.count),
       color: COLORS[index % COLORS.length],
     }));
   }
 
-  const available = batchRows.reduce(
-    (sum, row) => sum + toNumber(row.qty || row.availableStock),
-    0
-  );
+  const available = batchRows.reduce((sum, row) => sum + toNumber(row.qty), 0);
 
-  const damaged = batchRows.reduce(
-    (sum, row) => sum + toNumber(row.damaged || row.damagedStock || row.scrap),
-    0
-  );
-
-  const dispatched = batchRows.reduce(
-    (sum, row) => sum + toNumber(row.dispatched || row.stockOut || row.dispatch),
-    0
-  );
-
-  return [
-    { name: "Available", value: available, color: "#3B82F6" },
-    { name: "Damaged", value: damaged, color: "#FF4D4F" },
-    { name: "Dispatched", value: dispatched, color: "#8B5CF6" },
-  ].filter((item) => item.value > 0);
+  return available
+    ? [{ name: "Available", value: available, color: "#3B82F6" }]
+    : [];
 }
 
 function StockValueChart({ data }: { data: any[] }) {
@@ -151,19 +141,14 @@ function StockValueChart({ data }: { data: any[] }) {
 
   return (
     <div className="h-[378px] rounded-[24px] border border-[#E5E7EB] bg-white px-5 py-5 shadow-[0_2px_8px_rgba(15,23,42,0.08)] sm:h-[405px] sm:px-6 sm:py-6">
-      <div className="mb-5 flex items-start justify-between gap-4">
-        <h2 className="text-[18px] font-[700] leading-[24px] tracking-[-0.02em] text-[#111827]">
-          Stock Value Over Time
-        </h2>
-      </div>
+      <h2 className="mb-5 text-[18px] font-[700] leading-[24px] tracking-[-0.02em] text-[#111827]">
+        Stock Value Over Time
+      </h2>
 
       <div className="h-[292px] w-full sm:h-[315px]">
         {data.length ? (
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart
-              data={data}
-              margin={{ top: 6, right: 4, left: -10, bottom: 2 }}
-            >
+            <AreaChart data={data} margin={{ top: 6, right: 4, left: -10, bottom: 2 }}>
               <defs>
                 <linearGradient id="itemStockGradient" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.15} />
@@ -171,39 +156,10 @@ function StockValueChart({ data }: { data: any[] }) {
                 </linearGradient>
               </defs>
 
-              <XAxis
-                dataKey="label"
-                axisLine={false}
-                tickLine={false}
-                tick={{ fill: "#94A3B8", fontSize: 12, fontWeight: 500 }}
-                dy={12}
-              />
-
-              <YAxis
-                axisLine={false}
-                tickLine={false}
-                tick={{ fill: "#94A3B8", fontSize: 12, fontWeight: 500 }}
-                domain={[0, yMax]}
-              />
-
-              <Tooltip
-                formatter={(value) => formatCurrency(toNumber(value))}
-                contentStyle={{
-                  borderRadius: "12px",
-                  border: "1px solid #E5E7EB",
-                  boxShadow: "0 10px 24px rgba(15,23,42,0.10)",
-                  fontSize: "12px",
-                }}
-              />
-
-              <Area
-                type="monotone"
-                dataKey="value"
-                stroke="#3B82F6"
-                strokeWidth={3}
-                fill="url(#itemStockGradient)"
-                activeDot={{ r: 4 }}
-              />
+              <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fill: "#94A3B8", fontSize: 12, fontWeight: 500 }} dy={12} />
+              <YAxis axisLine={false} tickLine={false} tick={{ fill: "#94A3B8", fontSize: 12, fontWeight: 500 }} domain={[0, yMax]} />
+              <Tooltip formatter={(value) => formatCurrency(toNumber(value))} />
+              <Area type="monotone" dataKey="value" stroke="#3B82F6" strokeWidth={3} fill="url(#itemStockGradient)" activeDot={{ r: 4 }} />
             </AreaChart>
           </ResponsiveContainer>
         ) : (
@@ -231,19 +187,7 @@ function ItemStatusChart({ data }: { data: any[] }) {
         {data.length ? (
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
-              <Pie
-                data={data}
-                dataKey="value"
-                cx="50%"
-                cy="50%"
-                innerRadius={66}
-                outerRadius={104}
-                startAngle={90}
-                endAngle={-270}
-                paddingAngle={5}
-                stroke="#ffffff"
-                strokeWidth={8}
-              >
+              <Pie data={data} dataKey="value" cx="50%" cy="50%" innerRadius={66} outerRadius={104} startAngle={90} endAngle={-270} paddingAngle={5} stroke="#ffffff" strokeWidth={8}>
                 {data.map((entry) => (
                   <Cell key={entry.name} fill={entry.color} />
                 ))}
@@ -261,10 +205,7 @@ function ItemStatusChart({ data }: { data: any[] }) {
       <div className="mt-1 flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
         {data.map((item) => (
           <div key={item.name} className="flex items-center gap-2">
-            <span
-              className="h-[12px] w-[12px] rounded-[2px]"
-              style={{ backgroundColor: item.color }}
-            />
+            <span className="h-[12px] w-[12px] rounded-[2px]" style={{ backgroundColor: item.color }} />
             <span className="text-[13px] font-[700] text-[#475569]">
               {item.name}
             </span>
@@ -300,13 +241,7 @@ export default function InventoryItemPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
 
-  const routeBranchId = useMemo(
-    () => getNumericBranchId(params?.branchId),
-    [params]
-  );
-
   const branchId = useMemo(() => resolveBranchId(params, user), [params, user]);
-
   const itemName = useMemo(() => resolveExactItemName(params), [params]);
 
   const [data, setData] = useState<any>(null);
@@ -319,14 +254,22 @@ export default function InventoryItemPage() {
         setLoading(true);
         setError("");
 
-        if (!branchId) throw new Error("Invalid branch id");
+        if (!branchId) {
+          console.error("BRANCH ID DEBUG:", {
+            params,
+            authUser: user,
+            storedUser: getStoredUser(),
+          });
+          throw new Error("Invalid branch id");
+        }
+
         if (!itemName) throw new Error("Invalid item name");
 
         const endpoint = `/combine/dashboard/item/${encodeURIComponent(
           branchId
         )}/${encodeURIComponent(itemName)}`;
 
-        console.log("ITEM DETAIL FETCH DEBUG", {
+        console.log("ITEM DETAIL FETCH DEBUG:", {
           branchId,
           itemName,
           endpoint,
@@ -342,13 +285,6 @@ export default function InventoryItemPage() {
           throw new Error(responseData?.message || "Invalid API response");
         }
       } catch (err: any) {
-        console.error("ITEM DETAIL API ERROR", {
-          message: err?.message,
-          status: err?.response?.status,
-          response: err?.response?.data,
-          url: err?.config?.url,
-        });
-
         if (err?.response?.status === 401) {
           localStorage.clear();
           router.replace("/login");
@@ -357,72 +293,47 @@ export default function InventoryItemPage() {
 
         setError(
           err?.response?.data?.message ||
-          err?.message ||
-          "Failed to load item details"
+            err?.message ||
+            "Failed to load item details"
         );
       } finally {
         setLoading(false);
       }
     };
 
-    if (!authLoading && branchId && itemName) {
+    if (!authLoading) {
       fetchItemDetails();
-    } else if (!authLoading && !branchId) {
-      setError("Invalid branch id");
-      setLoading(false);
-    } else if (!authLoading && !itemName) {
-      setError("Invalid item name");
-      setLoading(false);
     }
-  }, [authLoading, branchId, itemName, router]);
+  }, [authLoading, branchId, itemName, params, router, user]);
 
   const batchRows = useMemo(() => {
     const raw = data?.batches || data?.rows || data?.data?.batches || [];
 
     return Array.isArray(raw)
       ? raw.map((item: any, index: number) => ({
-        id: item?.id || index + 1,
-        batchNo: item?.batch_no || item?.batchNo || item?.grnNo || "-",
-        qty: toNumber(item?.qty || item?.quantity || item?.totalQty),
-        value: toNumber(item?.value || item?.totalValue || item?.stockValue),
-        damaged: toNumber(item?.damaged || item?.damagedStock || item?.scrap),
-        dispatched: toNumber(item?.dispatched || item?.stockOut || item?.dispatch),
-      }))
+          id: item?.id || index + 1,
+          batchNo: item?.batch_no || item?.batchNo || item?.grn || item?.grnNo || "-",
+          poNumber: item?.po_number || item?.poNumber || "-",
+          qty: toNumber(item?.qty || item?.quantity || item?.totalQty),
+          value: toNumber(item?.value || item?.totalValue || item?.stockValue),
+        }))
       : [];
   }, [data]);
 
-  const lineChartData = useMemo(
-    () => normalizeLineChart(data, batchRows),
-    [data, batchRows]
-  );
-
-  const donutChartData = useMemo(
-    () => normalizeDonutChart(data, batchRows),
-    [data, batchRows]
-  );
+  const lineChartData = useMemo(() => normalizeLineChart(data, batchRows), [data, batchRows]);
+  const donutChartData = useMemo(() => normalizeDonutChart(data, batchRows), [data, batchRows]);
 
   const summary = useMemo(() => {
     return {
       currentStock:
         toNumber(data?.stats?.totalStock) ||
-        toNumber(data?.summary?.currentStock) ||
         batchRows.reduce((sum: number, row: any) => sum + toNumber(row.qty), 0),
       totalStockValue:
         toNumber(data?.stats?.totalValue) ||
-        toNumber(data?.summary?.totalStockValue) ||
         batchRows.reduce((sum: number, row: any) => sum + toNumber(row.value), 0),
-      totalItems:
-        toNumber(data?.stats?.entries) ||
-        toNumber(data?.summary?.totalItems) ||
-        batchRows.length,
-      stockIn:
-        toNumber(data?.stats?.stockIn) ||
-        toNumber(data?.summary?.stockIn) ||
-        0,
-      stockOut:
-        toNumber(data?.stats?.stockOut) ||
-        toNumber(data?.summary?.stockOut) ||
-        0,
+      totalItems: toNumber(data?.stats?.entries) || batchRows.length,
+      stockIn: toNumber(data?.stats?.stockIn),
+      stockOut: toNumber(data?.stats?.stockOut),
     };
   }, [data, batchRows]);
 
@@ -464,7 +375,7 @@ export default function InventoryItemPage() {
           </button>
 
           <div className="min-w-0 pt-[2px]">
-            <h1 className="truncate text-[24px] font-[500] leading-[32px] tracking-[-0.03em] text-[#000000] ">
+            <h1 className="truncate text-[24px] font-[500] leading-[32px] tracking-[-0.03em] text-[#000000]">
               {data?.item || data?.itemName || itemName}
             </h1>
             <p className="mt-1 text-[12px] font-[600] leading-[16px] text-[#9CA3AF]">
@@ -491,6 +402,11 @@ export default function InventoryItemPage() {
               key: "batchNo",
               title: "Batch No",
               render: (row: any) => row?.batchNo || "-",
+            },
+            {
+              key: "poNumber",
+              title: "PO Number",
+              render: (row: any) => row?.poNumber || "-",
             },
             {
               key: "qty",

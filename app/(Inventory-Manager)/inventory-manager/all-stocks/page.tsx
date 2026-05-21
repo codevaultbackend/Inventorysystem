@@ -10,10 +10,13 @@ import {
   Upload,
   FileSpreadsheet,
 } from "lucide-react";
+
 import InventoryOverviewCards from "../../Components/InventoryOverviewCards";
 import StockCategoryBarChart from "../../Components/StockCategoryBarChart";
 import HierarchyTable from "../../Components/HierarchyTable";
+
 import { useAuth } from "@/app/context/AuthContext";
+
 import {
   inventoryDashboardApi,
   formatCurrency,
@@ -28,8 +31,34 @@ type AddItemForm = {
   hsn: string;
   grn: string;
   purchaseOrder: string;
+
   quantity: string;
   rate: string;
+
+  batch_no: string;
+  sku: string;
+  sub_category: string;
+  brand: string;
+  type: string;
+  size: string;
+  color: string;
+  bundle_size: string;
+  unit: string;
+  model_no: string;
+  serial_no: string;
+  item_description: string;
+  item_code: string;
+
+  specification_grade: string;
+  specification_strength: string;
+
+  gst_percent: string;
+  rack_no: string;
+  location: string;
+  min_stock_level: string;
+  expiry_date: string;
+  warranty_months: string;
+  status: string;
 };
 
 const initialForm: AddItemForm = {
@@ -38,42 +67,115 @@ const initialForm: AddItemForm = {
   hsn: "",
   grn: "",
   purchaseOrder: "",
+
   quantity: "",
   rate: "",
+
+  batch_no: "",
+  sku: "",
+  sub_category: "",
+  brand: "",
+  type: "",
+  size: "",
+  color: "",
+  bundle_size: "",
+  unit: "PCS",
+  model_no: "",
+  serial_no: "",
+  item_description: "",
+  item_code: "",
+
+  specification_grade: "",
+  specification_strength: "",
+
+  gst_percent: "18",
+  rack_no: "",
+  location: "",
+  min_stock_level: "0",
+  expiry_date: "",
+  warranty_months: "0",
+  status: "GOOD",
 };
+
+type SelectFieldProps = {
+  label: string;
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
+  options: string[];
+  required?: boolean;
+};
+
+function SelectField({
+  label,
+  value,
+  onChange,
+  options,
+  required = false,
+}: SelectFieldProps) {
+  return (
+    <label className="block">
+      <span className="mb-2 block text-[13px] font-semibold text-[#334155]">
+        {label}{" "}
+        {required ? (
+          <span className="text-red-500">*</span>
+        ) : null}
+      </span>
+
+      <select
+        value={value}
+        onChange={onChange}
+        className="h-[48px] w-full rounded-[14px] border border-[#D9E2EC] bg-white px-4 text-[14px] font-medium text-[#0F172A] outline-none transition-all duration-200 focus:border-[#CBD5E1] focus:ring-4 focus:ring-[#E2E8F0]"
+      >
+        {options.map((option) => (
+          <option key={option} value={option}>
+            {option}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
 
 const STOCK_SHEET_UPLOAD_ENDPOINT = "/combine/bulk-upload";
 
 export default function InventoryBranchPage() {
   const params = useParams();
   const router = useRouter();
+
   const { user, loading: authLoading } = useAuth();
 
   const stateName = decodeURIComponent((params?.state as string) || "");
 
   const branchId = String(
     user?.branch_id ||
-      user?.branchId ||
-      user?.branch?.id ||
-      user?.branches?.[0]?.id ||
-      user?.branches?.[0] ||
-      ""
+    user?.branchId ||
+    user?.branch?.id ||
+    user?.branches?.[0]?.id ||
+    user?.branches?.[0] ||
+    ""
   );
 
   const [data, setData] = useState<any>(null);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   const [isAddOpen, setIsAddOpen] = useState(false);
+
   const [submitting, setSubmitting] = useState(false);
+
   const [submitError, setSubmitError] = useState("");
   const [submitSuccess, setSubmitSuccess] = useState("");
+
   const [form, setForm] = useState<AddItemForm>(initialForm);
 
   const [isUploadOpen, setIsUploadOpen] = useState(false);
+
   const [uploadingSheet, setUploadingSheet] = useState(false);
+
   const [uploadError, setUploadError] = useState("");
   const [uploadSuccess, setUploadSuccess] = useState("");
+
   const [selectedSheet, setSelectedSheet] = useState<File | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -91,8 +193,6 @@ export default function InventoryBranchPage() {
         `/combine/dashboard/branch-Id/${encodeURIComponent(branchId)}`
       );
 
-      console.log("API response:", res.data);
-
       if (res.data?.success) {
         setData(res.data);
       } else {
@@ -107,8 +207,8 @@ export default function InventoryBranchPage() {
 
       setError(
         err?.response?.data?.message ||
-          err?.message ||
-          "Failed to load branch details"
+        err?.message ||
+        "Failed to load branch details"
       );
     } finally {
       setLoading(false);
@@ -132,48 +232,72 @@ export default function InventoryBranchPage() {
     }));
   }, [data]);
 
-  const estimatedValue = useMemo(() => {
-    const quantity = Number(form.quantity || 0);
-    const rate = Number(form.rate || 0);
-    return quantity * rate;
-  }, [form.quantity, form.rate]);
+const estimatedValue = useMemo(() => {
+  const quantity = Number(form.quantity || 0);
+  const rate = Number(form.rate || 0);
+  const gstPercent = Number(form.gst_percent || 0);
+
+  const baseAmount = quantity * rate;
+
+  const gstAmount = (baseAmount * gstPercent) / 100;
+
+  const finalAmount = baseAmount + gstAmount;
+
+  return Number(finalAmount.toFixed(2));
+}, [form.quantity, form.rate, form.gst_percent]);
 
   const handleInputChange =
     (field: keyof AddItemForm) =>
-    (
-      e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-    ) => {
-      setSubmitError("");
-      setSubmitSuccess("");
-      setForm((prev) => ({
-        ...prev,
-        [field]: e.target.value,
-      }));
-    };
+      (
+        e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+      ) => {
+        setSubmitError("");
+        setSubmitSuccess("");
+
+        setForm((prev) => ({
+          ...prev,
+          [field]: e.target.value,
+        }));
+      };
 
   const closeModal = () => {
     if (submitting) return;
+
     setIsAddOpen(false);
+
     setSubmitError("");
     setSubmitSuccess("");
+
     setForm(initialForm);
   };
 
   const closeUploadModal = () => {
     if (uploadingSheet) return;
+
     setIsUploadOpen(false);
+
     setUploadError("");
     setUploadSuccess("");
+
     setSelectedSheet(null);
+
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
   };
 
   const validateForm = () => {
-    if (!form.item.trim()) return "Item name is required";
-    if (!form.quantity.trim()) return "Quantity is required";
-    if (!form.rate.trim()) return "Rate is required";
+    if (!form.item.trim()) {
+      return "Item name is required";
+    }
+
+    if (!form.quantity.trim()) {
+      return "Quantity is required";
+    }
+
+    if (!form.rate.trim()) {
+      return "Rate is required";
+    }
 
     const quantity = Number(form.quantity);
     const rate = Number(form.rate);
@@ -193,6 +317,7 @@ export default function InventoryBranchPage() {
     e.preventDefault();
 
     const validationError = validateForm();
+
     if (validationError) {
       setSubmitError(validationError);
       return;
@@ -200,23 +325,84 @@ export default function InventoryBranchPage() {
 
     try {
       setSubmitting(true);
+
       setSubmitError("");
       setSubmitSuccess("");
 
       const payload = {
         item: form.item.trim(),
+
         category: form.category.trim(),
-        hsn: form.hsn.trim(),
-        grn: form.grn.trim(),
-        purchaseOrder: form.purchaseOrder.trim(),
+
         quantity: Number(form.quantity),
+
         rate: Number(form.rate),
+
+        hsn: form.hsn.trim(),
+
+        grn: form.grn.trim(),
+
+        po_number: form.purchaseOrder.trim(),
+
+        batch_no: form.batch_no.trim(),
+
+        sku: form.sku.trim(),
+
+        sub_category: form.sub_category.trim(),
+
+        brand: form.brand.trim(),
+
+        type: form.type.trim(),
+
+        size: form.size.trim(),
+
+        color: form.color.trim(),
+
+        bundle_size: form.bundle_size.trim(),
+
+        unit: form.unit.trim() || "PCS",
+
+        model_no: form.model_no.trim(),
+
+        serial_no: form.serial_no.trim(),
+
+        item_description: form.item_description.trim(),
+
+        item_code: form.item_code.trim(),
+
+        specification:
+          form.specification_grade || form.specification_strength
+            ? {
+              grade: form.specification_grade.trim(),
+              strength: form.specification_strength.trim(),
+            }
+            : null,
+
+        gst_percent: Number(form.gst_percent || 18),
+
+        rack_no: form.rack_no.trim(),
+
+        location: form.location.trim(),
+
+        min_stock_level: Number(form.min_stock_level || 0),
+
+        expiry_date: form.expiry_date || null,
+
+        warranty_months: Number(form.warranty_months || 0),
+
+        status: form.status.trim() || "GOOD",
       };
 
-      const res = await inventoryDashboardApi.post("combine/add-stock", payload);
+      const res = await inventoryDashboardApi.post(
+        "combine/add-stock",
+        payload
+      );
 
       if (res.data?.success) {
-        setSubmitSuccess("Stock item added successfully");
+        setSubmitSuccess(
+          res.data?.message || "Stock item added successfully"
+        );
+
         await fetchBranchDetails();
 
         setTimeout(() => {
@@ -234,8 +420,8 @@ export default function InventoryBranchPage() {
 
       setSubmitError(
         err?.response?.data?.message ||
-          err?.message ||
-          "Failed to add stock item"
+        err?.message ||
+        "Failed to add stock item"
       );
     } finally {
       setSubmitting(false);
@@ -247,6 +433,7 @@ export default function InventoryBranchPage() {
     setUploadSuccess("");
 
     const file = e.target.files?.[0] || null;
+
     setSelectedSheet(file);
   };
 
@@ -259,6 +446,7 @@ export default function InventoryBranchPage() {
     }
 
     const lowerName = selectedSheet.name.toLowerCase();
+
     const isValidFile =
       lowerName.endsWith(".xlsx") ||
       lowerName.endsWith(".xls") ||
@@ -271,10 +459,12 @@ export default function InventoryBranchPage() {
 
     try {
       setUploadingSheet(true);
+
       setUploadError("");
       setUploadSuccess("");
 
       const formData = new FormData();
+
       formData.append("file", selectedSheet);
 
       if (branchId) {
@@ -299,6 +489,7 @@ export default function InventoryBranchPage() {
         setUploadSuccess(
           res.data?.message || "Stock sheet uploaded successfully"
         );
+
         await fetchBranchDetails();
 
         setTimeout(() => {
@@ -316,75 +507,24 @@ export default function InventoryBranchPage() {
 
       setUploadError(
         err?.response?.data?.message ||
-          err?.message ||
-          "Failed to upload stock sheet"
+        err?.message ||
+        "Failed to upload stock sheet"
       );
     } finally {
       setUploadingSheet(false);
     }
   };
 
-  if (loading || authLoading) {
-    return (
-      <div className="min-h-screen bg-[#F7F9FB]">
-        <div className="mx-auto w-full max-w-[1440px] space-y-6 px-4 py-5 sm:px-5 lg:px-6 animate-pulse">
-          <div className="rounded-[24px] border border-[#E5E7EB] bg-white px-5 py-5 shadow-sm sm:px-6">
-            <div className="h-8 w-[220px] rounded-md bg-[#E5E7EB]" />
-            <div className="mt-2 h-4 w-[240px] rounded-md bg-[#E5E7EB]" />
-          </div>
-
-          <div className="rounded-[24px] border border-[#E5E7EB] bg-white p-5 shadow-sm">
-            <div className="w-full overflow-x-auto">
-              <table className="min-w-[900px] w-full">
-                <thead className="bg-[#F3F6F9]">
-                  <tr>
-                    {[...Array(4)].map((_, index) => (
-                      <th key={index} className="px-6 py-4 text-left">
-                        <div className="h-4 w-24 rounded bg-[#E5E7EB]" />
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-
-                <tbody>
-                  {[...Array(5)].map((_, rowIndex) => (
-                    <tr
-                      key={rowIndex}
-                      className="border-t border-[#EDF2F7]"
-                    >
-                      {[...Array(4)].map((_, colIndex) => (
-                        <td key={colIndex} className="px-6 py-4">
-                          <div className="h-4 w-full max-w-[120px] rounded bg-[#E5E7EB]" />
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="rounded-[24px] border border-red-200 bg-red-50 px-5 py-4 text-sm font-medium text-red-600 shadow-sm">
-        {error}
-      </div>
-    );
-  }
-
   return (
     <>
-      <div className="min-h-screen bg-[#F7F9FB] ">
+      <div className="min-h-screen bg-[#F7F9FB]">
         <div className="mx-auto w-full max-w-[1440px] space-y-6">
           <div className="flex flex-col gap-4 rounded-[24px] border border-[#E6E6E6] bg-white px-5 py-5 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:px-6">
             <div className="min-w-0">
               <h1 className="text-[24px] font-semibold tracking-[-0.02em] text-[#0F172A]">
                 Inventory Items
               </h1>
+
               <p className="mt-1 text-[14px] font-medium text-[#64748B]">
                 Item wise inventory summary
               </p>
@@ -399,7 +539,7 @@ export default function InventoryBranchPage() {
                   setSelectedSheet(null);
                   setIsUploadOpen(true);
                 }}
-                className="inline-flex h-[46px] items-center justify-center gap-2 rounded-[14px] border border-[#D9E2EC] bg-white px-4 text-[14px] font-semibold text-[#0F172A] shadow-[0_4px_14px_rgba(15,23,42,0.06)] transition-all duration-300 hover:-translate-y-[1px] hover:bg-[#F8FAFC] active:translate-y-0"
+                className="inline-flex h-[46px] items-center justify-center gap-2 rounded-[14px] border border-[#D9E2EC] bg-white px-4 text-[14px] font-semibold text-[#0F172A]"
               >
                 <Upload size={18} />
                 Upload Sheet
@@ -412,7 +552,7 @@ export default function InventoryBranchPage() {
                   setSubmitSuccess("");
                   setIsAddOpen(true);
                 }}
-                className="inline-flex h-[46px] items-center justify-center gap-2 rounded-[14px] border border-[#D9E2EC] bg-[#0F172A] px-4 text-[14px] font-semibold text-white shadow-[0_8px_20px_rgba(15,23,42,0.12)] transition-all duration-300 hover:-translate-y-[1px] hover:bg-[#111C33] active:translate-y-0"
+                className="inline-flex h-[46px] items-center justify-center gap-2 rounded-[14px] border border-[#D9E2EC] bg-[#0F172A] px-4 text-[14px] font-semibold text-white"
               >
                 <Plus size={18} />
                 Add Item
@@ -450,40 +590,37 @@ export default function InventoryBranchPage() {
         </div>
       </div>
 
+      {/* ADD MODAL */}
+
       <div
-        className={`fixed inset-0 z-[100] transition-all duration-300 ${
-          isAddOpen
-            ? "pointer-events-auto bg-[rgba(15,23,42,0.42)] backdrop-blur-[2px]"
-            : "pointer-events-none bg-transparent"
-        }`}
+        className={`fixed inset-0 z-[100] transition-all duration-300 ${isAddOpen
+          ? "pointer-events-auto bg-[rgba(15,23,42,0.42)] backdrop-blur-[2px]"
+          : "pointer-events-none bg-transparent"
+          }`}
         onClick={closeModal}
       >
         <div className="flex min-h-[100dvh] items-end justify-center p-0 sm:items-center sm:p-4 md:p-6">
           <div
             onClick={(e) => e.stopPropagation()}
-            className={`flex h-[100dvh] w-full transform flex-col overflow-hidden rounded-t-[28px] border border-[#E2E8F0] bg-white shadow-[0_30px_70px_rgba(15,23,42,0.18)] transition-all duration-300 sm:h-auto sm:max-h-[92vh] sm:max-w-[760px] sm:rounded-[28px] ${
-              isAddOpen
-                ? "translate-y-0 scale-100 opacity-100"
-                : "translate-y-6 scale-[0.98] opacity-0"
-            }`}
+            className={`flex h-[100dvh] w-full transform flex-col overflow-hidden rounded-t-[28px] border border-[#E2E8F0] bg-white transition-all duration-300 sm:h-auto sm:max-h-[92vh] sm:max-w-[760px] sm:rounded-[28px] ${isAddOpen
+              ? "translate-y-0 scale-100 opacity-100"
+              : "translate-y-6 scale-[0.98] opacity-0"
+              }`}
           >
-            <div className="shrink-0 border-b border-[#EEF2F6] px-4 py-4 sm:px-5 sm:py-5 md:px-6">
-              <div className="mb-3 flex justify-center sm:hidden">
-                <div className="h-1.5 w-12 rounded-full bg-[#D9E2EC]" />
-              </div>
-
-              <div className="flex items-start justify-between gap-3 sm:gap-4">
+            <div className="border-b border-[#EEF2F6] px-4 py-4 sm:px-5 sm:py-5 md:px-6">
+              <div className="flex items-start justify-between gap-3">
                 <div className="flex min-w-0 items-start gap-3">
-                  <div className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-[14px] border border-[#E2E8F0] bg-[#F8FAFC] text-[#0F172A] sm:h-[46px] sm:w-[46px]">
+                  <div className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-[14px] border border-[#E2E8F0] bg-[#F8FAFC] text-[#0F172A]">
                     <Package2 size={20} />
                   </div>
 
                   <div className="min-w-0">
-                    <h2 className="text-[18px] font-semibold tracking-[-0.02em] text-[#0F172A] sm:text-[22px]">
+                    <h2 className="text-[18px] font-semibold text-[#0F172A]">
                       Add Stock Item
                     </h2>
-                    <p className="mt-1 text-[12px] font-medium text-[#64748B] sm:text-[14px]">
-                      Fill the stock details to create a new inventory entry
+
+                    <p className="mt-1 text-[12px] font-medium text-[#64748B]">
+                      Fill stock details
                     </p>
                   </div>
                 </div>
@@ -491,7 +628,7 @@ export default function InventoryBranchPage() {
                 <button
                   type="button"
                   onClick={closeModal}
-                  className="inline-flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-[12px] border border-[#E2E8F0] bg-white text-[#475569] transition-all duration-200 hover:bg-[#F8FAFC] sm:h-[40px] sm:w-[40px]"
+                  className="inline-flex h-[38px] w-[38px] items-center justify-center rounded-[12px] border border-[#E2E8F0]"
                 >
                   <X size={18} />
                 </button>
@@ -523,31 +660,150 @@ export default function InventoryBranchPage() {
                     label="HSN"
                     value={form.hsn}
                     onChange={handleInputChange("hsn")}
-                    placeholder="Enter HSN code"
                   />
 
                   <Field
                     label="GRN"
                     value={form.grn}
                     onChange={handleInputChange("grn")}
-                    placeholder="Enter GRN number"
                   />
 
                   <Field
                     label="Purchase Order"
                     value={form.purchaseOrder}
                     onChange={handleInputChange("purchaseOrder")}
-                    placeholder="Enter PO number"
                   />
 
-                  <div className="hidden sm:block" />
+                  <Field
+                    label="Batch No"
+                    value={form.batch_no}
+                    onChange={handleInputChange("batch_no")}
+                  />
+
+                  <Field
+                    label="SKU"
+                    value={form.sku}
+                    onChange={handleInputChange("sku")}
+                  />
+
+                  <Field
+                    label="Sub Category"
+                    value={form.sub_category}
+                    onChange={handleInputChange("sub_category")}
+                  />
+
+                  <Field
+                    label="Brand"
+                    value={form.brand}
+                    onChange={handleInputChange("brand")}
+                  />
+
+                  <Field
+                    label="Type"
+                    value={form.type}
+                    onChange={handleInputChange("type")}
+                  />
+
+                  <Field
+                    label="Size"
+                    value={form.size}
+                    onChange={handleInputChange("size")}
+                  />
+
+                  <Field
+                    label="Color"
+                    value={form.color}
+                    onChange={handleInputChange("color")}
+                  />
+
+                  <Field
+                    label="Bundle Size"
+                    value={form.bundle_size}
+                    onChange={handleInputChange("bundle_size")}
+                  />
+
+                  <Field
+                    label="Unit"
+                    value={form.unit}
+                    onChange={handleInputChange("unit")}
+                  />
+
+                  <Field
+                    label="Model No"
+                    value={form.model_no}
+                    onChange={handleInputChange("model_no")}
+                  />
+
+                  <Field
+                    label="Serial No"
+                    value={form.serial_no}
+                    onChange={handleInputChange("serial_no")}
+                  />
+
+                  <Field
+                    label="Item Code"
+                    value={form.item_code}
+                    onChange={handleInputChange("item_code")}
+                  />
+
+                  <Field
+                    label="Rack No"
+                    value={form.rack_no}
+                    onChange={handleInputChange("rack_no")}
+                  />
+
+                  <Field
+                    label="Location"
+                    value={form.location}
+                    onChange={handleInputChange("location")}
+                  />
+
+                  <Field
+                    label="GST %"
+                    type="number"
+                    value={form.gst_percent}
+                    onChange={handleInputChange("gst_percent")}
+                  />
+
+                  <Field
+                    label="Min Stock Level"
+                    type="number"
+                    value={form.min_stock_level}
+                    onChange={handleInputChange("min_stock_level")}
+                  />
+
+                  <Field
+                    label="Warranty Months"
+                    type="number"
+                    value={form.warranty_months}
+                    onChange={handleInputChange("warranty_months")}
+                  />
+
+                  <Field
+                    label="Expiry Date"
+                    type="date"
+                    value={form.expiry_date}
+                    onChange={handleInputChange("expiry_date")}
+                  />
+
+                  <SelectField
+                    label="Status"
+                    value={form.status}
+                    onChange={handleInputChange("status")}
+                    options={[
+                      "GOOD",
+                      "LOW STOCK",
+                      "OUT OF STOCK",
+                      "DAMAGED",
+                      "EXPIRED",
+                    ]}
+                  />
 
                   <Field
                     label="Quantity"
                     type="number"
                     value={form.quantity}
                     onChange={handleInputChange("quantity")}
-                    placeholder="Enter quantity"
                     required
                   />
 
@@ -556,9 +812,35 @@ export default function InventoryBranchPage() {
                     type="number"
                     value={form.rate}
                     onChange={handleInputChange("rate")}
-                    placeholder="Enter rate"
                     required
                   />
+
+                  <Field
+                    label="Specification Grade"
+                    value={form.specification_grade}
+                    onChange={handleInputChange("specification_grade")}
+                  />
+
+                  <Field
+                    label="Specification Strength"
+                    value={form.specification_strength}
+                    onChange={handleInputChange("specification_strength")}
+                  />
+                </div>
+
+                <div className="mt-4">
+                  <label className="block">
+                    <span className="mb-2 block text-[13px] font-semibold text-[#334155]">
+                      Item Description
+                    </span>
+
+                    <textarea
+                      value={form.item_description}
+                      onChange={handleInputChange("item_description")}
+                      rows={4}
+                      className="w-full rounded-[14px] border border-[#D9E2EC] bg-white px-4 py-3 text-[14px] font-medium text-[#0F172A] outline-none"
+                    />
+                  </label>
                 </div>
 
                 <div className="mt-5 rounded-[20px] border border-[#E5E7EB] bg-[#F8FAFC] px-4 py-4">
@@ -567,13 +849,10 @@ export default function InventoryBranchPage() {
                       <p className="text-[13px] font-medium text-[#64748B]">
                         Estimated Value
                       </p>
-                      <h3 className="mt-1 break-words text-[22px] font-semibold tracking-[-0.02em] text-[#0F172A] sm:text-[24px]">
+
+                      <h3 className="mt-1 text-[22px] font-semibold text-[#0F172A]">
                         {formatCurrency(estimatedValue)}
                       </h3>
-                    </div>
-
-                    <div className="text-[12px] font-medium text-[#94A3B8] sm:text-right">
-                      Final value will be calculated by backend
                     </div>
                   </div>
                 </div>
@@ -591,12 +870,12 @@ export default function InventoryBranchPage() {
                 ) : null}
               </div>
 
-              <div className="shrink-0 border-t border-[#EEF2F6] bg-white px-4 py-4 sm:px-5 sm:py-5 md:px-6">
+              <div className="border-t border-[#EEF2F6] bg-white px-4 py-4 sm:px-5 sm:py-5 md:px-6">
                 <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
                   <button
                     type="button"
                     onClick={closeModal}
-                    className="inline-flex h-[48px] w-full items-center justify-center rounded-[14px] border border-[#D9E2EC] bg-white px-5 text-[14px] font-semibold text-[#334155] transition-all duration-200 hover:bg-[#F8FAFC] sm:w-auto"
+                    className="inline-flex h-[48px] items-center justify-center rounded-[14px] border border-[#D9E2EC] bg-white px-5 text-[14px] font-semibold text-[#334155]"
                   >
                     Cancel
                   </button>
@@ -604,7 +883,7 @@ export default function InventoryBranchPage() {
                   <button
                     type="submit"
                     disabled={submitting}
-                    className="inline-flex h-[48px] w-full items-center justify-center gap-2 rounded-[14px] bg-[#0F172A] px-5 text-[14px] font-semibold text-white shadow-[0_10px_24px_rgba(15,23,42,0.14)] transition-all duration-300 hover:-translate-y-[1px] hover:bg-[#111C33] disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:translate-y-0 sm:w-auto"
+                    className="inline-flex h-[48px] items-center justify-center gap-2 rounded-[14px] bg-[#0F172A] px-5 text-[14px] font-semibold text-white disabled:opacity-70"
                   >
                     {submitting ? (
                       <>
@@ -615,138 +894,6 @@ export default function InventoryBranchPage() {
                       <>
                         <Plus size={16} />
                         Add Stock
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
-            </form>
-          </div>
-        </div>
-      </div>
-
-      <div
-        className={`fixed inset-0 z-[101] transition-all duration-300 ${
-          isUploadOpen
-            ? "pointer-events-auto bg-[rgba(15,23,42,0.42)] backdrop-blur-[2px]"
-            : "pointer-events-none bg-transparent"
-        }`}
-        onClick={closeUploadModal}
-      >
-        <div className="flex min-h-[100dvh] items-end justify-center p-0 sm:items-center sm:p-4 md:p-6">
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className={`flex h-[100dvh] w-full transform flex-col overflow-hidden rounded-t-[28px] border border-[#E2E8F0] bg-white shadow-[0_30px_70px_rgba(15,23,42,0.18)] transition-all duration-300 sm:h-auto sm:max-h-[90vh] sm:max-w-[620px] sm:rounded-[28px] ${
-              isUploadOpen
-                ? "translate-y-0 scale-100 opacity-100"
-                : "translate-y-6 scale-[0.98] opacity-0"
-            }`}
-          >
-            <div className="shrink-0 border-b border-[#EEF2F6] px-4 py-4 sm:px-5 sm:py-5 md:px-6">
-              <div className="mb-3 flex justify-center sm:hidden">
-                <div className="h-1.5 w-12 rounded-full bg-[#D9E2EC]" />
-              </div>
-
-              <div className="flex items-start justify-between gap-3 sm:gap-4">
-                <div className="flex min-w-0 items-start gap-3">
-                  <div className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-[14px] border border-[#E2E8F0] bg-[#F8FAFC] text-[#0F172A] sm:h-[46px] sm:w-[46px]">
-                    <FileSpreadsheet size={20} />
-                  </div>
-
-                  <div className="min-w-0">
-                    <h2 className="text-[18px] font-semibold tracking-[-0.02em] text-[#0F172A] sm:text-[22px]">
-                      Upload Stock Sheet
-                    </h2>
-                    <p className="mt-1 text-[12px] font-medium text-[#64748B] sm:text-[14px]">
-                      Upload .xlsx, .xls, or .csv sheet to add inventory in bulk
-                    </p>
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={closeUploadModal}
-                  className="inline-flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-[12px] border border-[#E2E8F0] bg-white text-[#475569] transition-all duration-200 hover:bg-[#F8FAFC] sm:h-[40px] sm:w-[40px]"
-                >
-                  <X size={18} />
-                </button>
-              </div>
-            </div>
-
-            <form
-              onSubmit={handleSheetUpload}
-              className="flex min-h-0 flex-1 flex-col"
-            >
-              <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-5 sm:py-5 md:px-6">
-                <div className="rounded-[20px] border border-dashed border-[#CBD5E1] bg-[#F8FAFC] p-4 sm:p-5">
-                  <label className="block">
-                    <span className="mb-2 block text-[13px] font-semibold text-[#334155]">
-                      Select Sheet File <span className="text-red-500">*</span>
-                    </span>
-
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept=".xlsx,.xls,.csv"
-                      onChange={handleSheetFileChange}
-                      className="block w-full cursor-pointer rounded-[14px] border border-[#D9E2EC] bg-white px-4 py-3 text-[14px] font-medium text-[#0F172A] file:mr-4 file:rounded-[10px] file:border-0 file:bg-[#0F172A] file:px-4 file:py-2 file:text-[13px] file:font-semibold file:text-white hover:file:bg-[#111C33]"
-                    />
-                  </label>
-
-                  <div className="mt-4 rounded-[16px] border border-[#E5E7EB] bg-white px-4 py-3">
-                    <p className="text-[13px] font-medium text-[#64748B]">
-                      Selected File
-                    </p>
-                    <p className="mt-1 break-all text-[14px] font-semibold text-[#0F172A]">
-                      {selectedSheet?.name || "No file selected"}
-                    </p>
-                  </div>
-
-                  <div className="mt-4 text-[12px] font-medium leading-5 text-[#94A3B8]">
-                    Supported formats: .xlsx, .xls, .csv
-                    <br />
-                    Uploaded records will be processed by backend and reflected in
-                    inventory after successful upload.
-                  </div>
-                </div>
-
-                {uploadError ? (
-                  <div className="mt-4 rounded-[16px] border border-red-200 bg-red-50 px-4 py-3 text-[14px] font-medium text-red-600">
-                    {uploadError}
-                  </div>
-                ) : null}
-
-                {uploadSuccess ? (
-                  <div className="mt-4 rounded-[16px] border border-emerald-200 bg-emerald-50 px-4 py-3 text-[14px] font-medium text-emerald-700">
-                    {uploadSuccess}
-                  </div>
-                ) : null}
-              </div>
-
-              <div className="shrink-0 border-t border-[#EEF2F6] bg-white px-4 py-4 sm:px-5 sm:py-5 md:px-6">
-                <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-                  <button
-                    type="button"
-                    onClick={closeUploadModal}
-                    className="inline-flex h-[48px] w-full items-center justify-center rounded-[14px] border border-[#D9E2EC] bg-white px-5 text-[14px] font-semibold text-[#334155] transition-all duration-200 hover:bg-[#F8FAFC] sm:w-auto"
-                  >
-                    Cancel
-                  </button>
-
-                  <button
-                    type="submit"
-                    disabled={uploadingSheet}
-                    className="inline-flex h-[48px] w-full items-center justify-center gap-2 rounded-[14px] bg-[#0F172A] px-5 text-[14px] font-semibold text-white shadow-[0_10px_24px_rgba(15,23,42,0.14)] transition-all duration-300 hover:-translate-y-[1px] hover:bg-[#111C33] disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:translate-y-0 sm:w-auto"
-                  >
-                    {uploadingSheet ? (
-                      <>
-                        <Loader2 size={16} className="animate-spin" />
-                        Uploading...
-                      </>
-                    ) : (
-                      <>
-                        <Upload size={16} />
-                        Upload Sheet
                       </>
                     )}
                   </button>
@@ -784,6 +931,7 @@ function Field({
       <span className="mb-2 block text-[13px] font-semibold text-[#334155]">
         {label} {required ? <span className="text-red-500">*</span> : null}
       </span>
+
       <input
         type={type}
         value={value}

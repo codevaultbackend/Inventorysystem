@@ -114,7 +114,7 @@ function MetricCard({
               {value}
             </h3>
 
-           
+
           </div>
         </div>
       </div>
@@ -261,15 +261,6 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-[#F6F8FB]">
       <div className="w-full space-y-6">
-        <div>
-          <h1 className="text-[28px] font-semibold leading-[34px] tracking-[-0.03em] text-[#111827]">
-            Inventory Dashboard
-          </h1>
-          <p className="mt-1 text-[13px] text-[#9AA0AA]">
-            Detailed inventory analytics and stock overview
-          </p>
-        </div>
-
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <MetricCard
             label="Total Stock Items"
@@ -298,14 +289,14 @@ export default function Dashboard() {
           />
         </div>
 
-        <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1fr_360px]">
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1fr_360px] mb-[16px]">
           <div className="h-[405px] rounded-[22px] border border-[#E8EDF3] bg-white px-6 py-6 shadow-[1px_1px_4px_rgba(0,0,0,0.1)]">
             <div className="mb-5 flex items-start justify-between gap-4">
               <h2 className="text-[18px] font-semibold text-[#111827]">
                 Purchase Amount Over Time
               </h2>
 
-              
+
             </div>
 
             <div className="h-[315px] w-full">
@@ -435,9 +426,8 @@ export default function Dashboard() {
                     ].map((head, index) => (
                       <th
                         key={head}
-                        className={`h-[48px] border-b border-[#E5E7EB] bg-[#F6FAFD] px-6 text-left text-[14px] font-semibold text-[#111827] ${
-                          index === 0 ? "sticky left-0 z-30" : ""
-                        }`}
+                        className={`h-[48px] border-b border-[#E5E7EB] bg-[#F6FAFD] px-6 text-left text-[14px] font-semibold text-[#111827] ${index === 0 ? "sticky left-0 z-30" : ""
+                          }`}
                       >
                         {head}
                       </th>
@@ -478,9 +468,11 @@ export default function Dashboard() {
 
                         <td className="h-[52px] border-b border-[#E5E7EB] px-6 text-[14px]">
                           <Link
-                            href={`/inventory-manager/Branches/${encodeURIComponent(
-                              row.itemName
-                            )}`}
+                            href={`/inventory-manager/all-stocks/${String(row.itemName || "")
+                              .trim()
+                              .toLowerCase()
+                              .replace(/\s+/g, "-")
+                              .replace(/-+/g, "-")}`}
                             className="font-medium text-[#0B66D8] underline underline-offset-2 transition hover:text-[#084F93]"
                           >
                             View

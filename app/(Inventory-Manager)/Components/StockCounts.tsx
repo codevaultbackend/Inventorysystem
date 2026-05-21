@@ -18,21 +18,21 @@ export default function StockCount({
   percentage,
   icon: Icon,
   trend = "up",
-  iconBgColor = "#E8F1FF",
+  iconBgColor = "#EEF2FF",
 }: StockCountProps) {
   return (
     <div
       className="
         bg-white
-        rounded-[20px]
+        rounded-[24px]
         h-[153px]
         p-4
         sm:p-5
         md:p-6
         border border-[#EEF2F6]
-        shadow-[1px_1px_4px_rgba(0,0,0,0.1)]
+        shadow-[1px_1px_1px_0px_#0000001A]
         transition-all
-        hover:shadow-[0px_10px_28px_rgba(17,24,39,0.06)]
+        hover:shadow-[1px_1px_1px_0px_#0000001A]
         w-full
       "
     >
