@@ -1,0 +1,71 @@
+"use client";
+
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
+import { ChevronDown } from "lucide-react";
+
+type StockTrendPoint = {
+  week: string;
+  in: number;
+  out: number;
+};
+
+type Props = {
+  data?: StockTrendPoint[];
+};
+
+export function StockTrendBar({ data = [] }: Props) {
+  return (
+    <div className="bg-white rounded-2xl border border-[#EEF2F6] shadow-[1px_1px_4px_rgba(0,0,0,0.1)] p-6 w-full">
+      <div className="flex items-start justify-between mb-6">
+        <div>
+          <h3 className="text-[16px] font-semibold text-[#0F172A]">
+            Sales & Purchase Trends
+          </h3>
+          <p className="text-[12px] text-[#64748B] mt-1">
+            Track sales and purchase trends
+          </p>
+        </div>
+      </div>
+
+      <div className="h-[260px]">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={data} barGap={12}>
+            <CartesianGrid
+              strokeDasharray="4 4"
+              vertical={false}
+              stroke="#E2E8F0"
+            />
+            <XAxis
+              dataKey="week"
+              tick={{ fill: "#94A3B8", fontSize: 12 }}
+              axisLine={false}
+              tickLine={false}
+            />
+            <YAxis
+              tick={{ fill: "#94A3B8", fontSize: 12 }}
+              axisLine={false}
+              tickLine={false}
+            />
+            <Tooltip
+              contentStyle={{
+                backgroundColor: "#fff",
+                borderRadius: "12px",
+                border: "1px solid #E2E8F0",
+              }}
+            />
+            <Bar dataKey="in" fill="#22C55E" radius={[6, 6, 0, 0]} />
+            <Bar dataKey="out" fill="#EF4444" radius={[6, 6, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+}
